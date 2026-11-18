@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/EcoSphere/Scenes/Tutorial1.unity
+    guid: 4c8985e378e89d945b94319394607d9c
+  - enabled: 1
     path: Assets/EcoSphere/Scenes/FirstLight.unity
     guid: b61c6d5580ff43148a89135368776ebb
   - enabled: 1
@@ -14,5 +17,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/EcoSphere/Scenes/System.unity
     guid: 0db1a2820bf278d4b9f86db5e90025e7
+  - enabled: 1
+    path: Assets/EcoSphere/Scenes/LevelPrep.unity
+    guid: cc5769076abcf9b4eb5ea104a9e1ec8c
+  - enabled: 1
+    path: Assets/EcoSphere/Scenes/Results.unity
+    guid: 7dc7453fa5c6679429eb7a207d262d71
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

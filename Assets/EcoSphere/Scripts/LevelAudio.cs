@@ -7,6 +7,7 @@ namespace EcoSphere
     public sealed class LevelAudio : MonoBehaviour
     {
         public AudioClip music, shoot, ricochet, match, breakaway;
+        public AudioClip laser;
         [Header("Announcer")]
         public AudioClip worldComplete, creationFailed;
         public AudioClip cryosphere, heliosphere;
@@ -23,6 +24,7 @@ namespace EcoSphere
         static readonly System.Random calloutRandom = new System.Random();
         readonly Queue<AudioClip> voiceQueue = new Queue<AudioClip>();
         Coroutine voiceRoutine;
+        public bool IsAnnouncing => voiceRoutine != null || voiceQueue.Count > 0 || (voiceSource && voiceSource.isPlaying);
         float shootEmphasisUntil, backgroundGain = 1;
 
         public void Initialize()
@@ -42,6 +44,7 @@ namespace EcoSphere
             shootSource.priority = 32;
             shootSource.pitch = shootPitch;
             if (shoot) shoot.LoadAudioData();
+            if (laser) laser.LoadAudioData();
             musicSource.clip = music;
             musicSource.loop = true;
             musicSource.priority = 160;
@@ -71,6 +74,11 @@ namespace EcoSphere
             shootSource.PlayOneShot(shoot);
         }
         public void Ricochet() { if (ricochet) effectsSource.PlayOneShot(ricochet); }
+
+        public void FireLaser()
+        {
+            if (laser && effectsSource) effectsSource.PlayOneShot(laser);
+        }
 
         public void Resolve(int matched, int released)
         {
@@ -102,7 +110,7 @@ namespace EcoSphere
             int selected = -1;
             for (int i = 0; i < gains.Count; i++)
             {
-                if (gains[i] < 15) continue;
+                if (gains[i] < ElementScoring.Inclusion) continue;
                 if (selected >= 0) return MixedResourceCallout;
                 selected = i;
             }
@@ -142,9 +150,16 @@ namespace EcoSphere
             while (voiceQueue.Count > 0)
             {
                 voiceSource.clip = voiceQueue.Dequeue(); voiceSource.Play();
-                yield return new WaitForSeconds(voiceSource.clip.length);
+                // Allow playback to start, then follow the source rather than a clip-length estimate.
+                yield return null;
+                while (voiceSource && voiceSource.isPlaying) yield return null;
             }
             voiceRoutine = null;
+        }
+
+        public IEnumerator WaitForAnnouncements()
+        {
+            while (IsAnnouncing) yield return null;
         }
 
         IEnumerator MatchThenBreakaway(bool hasBreakaway)

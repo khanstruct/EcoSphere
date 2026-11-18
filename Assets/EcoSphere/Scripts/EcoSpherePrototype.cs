@@ -1,3 +1,4 @@
+using TMPro;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,22 +9,38 @@ using UnityEngine.UI;
 
 namespace EcoSphere
 {
-    public sealed class EcoSpherePrototype : MonoBehaviour
+    public sealed partial class EcoSpherePrototype : MonoBehaviour
     {
+        public enum LevelLayout { StoneTutorial, FirstTutorial }
+        [Header("Level layout")]
+        public LevelLayout levelLayout = LevelLayout.StoneTutorial;
+        bool StoneTutorial => levelLayout == LevelLayout.StoneTutorial;
         [Header("Approved artwork")]
         public Texture2D iceSurface, sunlightSurface, coreSurface;
+        public Material receivingPlanetMaterial;
+        public Texture2D stoneSurface;
+        public Sprite stoneIcon;
+        const int StoneType = 3;
+        Material stoneMaterial;
+        public Texture2D laserSurface;
+        public Sprite laserIcon;
+        public TMP_FontAsset uiFont;
         public Sprite iceIcon, sunlightIcon, coreHalo, leftArm, rightArm, foreground;
         [Header("Space backdrop")]
         public Sprite starfield, twinkleStar;
         [Header("Element RGB colors")]
         public Color iceColor = new Color32(55, 198, 255, 255);
         public Color sunlightColor = new Color32(255, 194, 40, 255);
+        public Color stoneColor = new Color32(150, 101, 59, 255);
         [Header("Turn settings")]
         public float shotSpeed = 13;
         public float rotationDegrees = 24;
         public float rotationDuration = .65f;
         [Header("Level resource target")]
-        [Min(1)] public int resourceGoal = 15;
+        [Min(1)] public int resourceGoal = ElementScoring.Inclusion;
+        [Min(1)] public int abundanceGoal = ElementScoring.Abundance;
+        int score;
+        bool stoneReleased;
         public const float VisualScale = .6f;
         public const float Radius = .44f * VisualScale;
         const int InitialRings = 4;
@@ -58,24 +75,30 @@ namespace EcoSphere
         }
         readonly List<CannonContactPart> cannonContacts = new List<CannonContactPart>();
         float spinAngle;
-        Text status, detail, iceLabel, sunLabel;
-        RectTransform goalLine;
+        TMP_Text status, detail, iceLabel, sunLabel;
+        RectTransform goalLine, abundanceLine;
         readonly List<RectTransform>[] bars = { new List<RectTransform>(), new List<RectTransform>() };
         readonly List<Image>[] barImages = { new List<Image>(), new List<Image>() };
-        Font font;
+        TMP_FontAsset font;
         bool smoke;
         public int CellCount => board.Cells.Count;
 
         void Start()
         {
-            smoke = Array.IndexOf(Environment.GetCommandLineArgs(), "-ecosphereSmoke") >= 0;
+            bool planetTesting = Array.IndexOf(Environment.GetCommandLineArgs(), "-planetSmoke") >= 0;
+            smoke = Array.IndexOf(Environment.GetCommandLineArgs(), "-ecosphereSmoke") >= 0 || LaserTesting || TutorialTesting || planetTesting || FirstTutorialTesting;
             BuildWorld();
             levelAudio = GetComponent<LevelAudio>();
             if (levelAudio) levelAudio.Initialize();
             BuildInterface();
             BuildBoard();
             LoadNext();
-            if (smoke) StartCoroutine(SmokeRun());
+            if (StoneTutorial && (!smoke || TutorialTesting)) ShowTutorial(0);
+            if (FirstTutorialTesting) StartCoroutine(FirstTutorialSmokeRun());
+            else if (planetTesting) StartCoroutine(PlanetSmokeRun());
+            else if (TutorialTesting) StartCoroutine(TutorialSmokeRun());
+            else if (LaserTesting) StartCoroutine(LaserSmokeRun());
+            else if (smoke) StartCoroutine(SmokeRun());
         }
 
         Material Surface(Texture2D texture, bool unlit = false)
@@ -129,6 +152,7 @@ namespace EcoSphere
             view.nearClipPlane = .1f; view.farClipPlane = 60;
             FitCamera();
             spaceBackground = new GameObject("Space backdrop").AddComponent<SpaceBackground>();
+            spaceBackground.gameObject.layer = 29;
             spaceBackground.Initialize(view, starfield, twinkleStar);
             var light = new GameObject("Upper-left soft light").AddComponent<Light>();
             light.type = LightType.Directional; light.intensity = 1.35f;
@@ -137,16 +161,20 @@ namespace EcoSphere
             RenderSettings.ambientLight = new Color(.48f, .5f, .6f);
             lineMaterial = new Material(Shader.Find("Sprites/Default")); materials.Add(lineMaterial);
             iceMaterial = Surface(iceSurface); sunlightMaterial = Surface(sunlightSurface);
+            laserMaterial = Surface(laserSurface);
+            stoneMaterial = Surface(stoneSurface);
             coreMaterial = Surface(coreSurface, true);
             cluster = new GameObject("Rotating hex cluster").transform; cluster.position = center;
             MakeSphere("Black hole core", -1, cluster, Vector3.zero);
             halo = SpritePart("Pulsing core halo", coreHalo, cluster, new Vector3(0, 0, .6f), 1.8f * VisualScale, -1).transform;
-            // A modest placeholder planet: the later ground-view reveal is outside this test level.
+            // Keep the receiving world's existing framing; its surface rotates independently.
             var globe = GameObject.CreatePrimitive(PrimitiveType.Sphere); globe.name = "Receiving planet";
             globe.transform.position = new Vector3(0, 11.5f, 3); globe.transform.localScale = Vector3.one * 10;
             Destroy(globe.GetComponent<Collider>()); planet = globe.transform;
-            var pm = Surface(null); pm.SetColor("_BaseColor", new Color(.09f, .2f, .34f));
-            ApplySurface(globe.GetComponent<Renderer>(), pm, null, new Color(.09f, .2f, .34f));
+            var pm = receivingPlanetMaterial ? new Material(receivingPlanetMaterial) : Surface(null);
+            if (receivingPlanetMaterial) materials.Add(pm);
+            globe.GetComponent<Renderer>().sharedMaterial = pm;
+            globe.AddComponent<PlanetSurface>();
             foreach (float x in new[] { Left, Right })
             {
                 var boundary = Line("Ricochet boundary", transform, new Color(.2f, .38f, .52f, .65f), .025f);
@@ -161,7 +189,7 @@ namespace EcoSphere
         void FitCamera()
         {
             // Keep a 9 x 16 playfield completely visible, including in a landscape editor Game view.
-            view.orthographicSize = Mathf.Max(8, 4.65f / Mathf.Max(.1f, view.aspect));
+            FitPresentation();
         }
 
         void BuildGun()
@@ -207,55 +235,73 @@ namespace EcoSphere
             var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere); mesh.name = "Rotating surface";
             mesh.transform.SetParent(root.transform, false); mesh.transform.localScale = Vector3.one * Radius * 2;
             Destroy(mesh.GetComponent<Collider>());
-            ApplySurface(mesh.GetComponent<Renderer>(), type < 0 ? coreMaterial : type == 0 ? iceMaterial : sunlightMaterial,
-                type < 0 ? coreSurface : type == 0 ? iceSurface : sunlightSurface, Color.white);
+            ApplySurface(mesh.GetComponent<Renderer>(), type == StoneType ? stoneMaterial : type == LaserType ? laserMaterial : type < 0 ? coreMaterial : type == 0 ? iceMaterial : sunlightMaterial,
+                type == StoneType ? stoneSurface : type == LaserType ? laserSurface : type < 0 ? coreSurface : type == 0 ? iceSurface : sunlightSurface, Color.white);
             var appearance = root.AddComponent<SphereAppearance>(); appearance.surface = mesh.transform;
             appearance.spin = type < 0 ? 8 : 12;
-            if (type >= 0)
-                appearance.icon = SpritePart("Camera-facing type icon", type == 0 ? iceIcon : sunlightIcon,
+            if (type == LaserType) MakeLaserDisplay(root);
+            else if (type >= 0)
+                appearance.icon = SpritePart("Camera-facing type icon", type == StoneType ? stoneIcon : type == 0 ? iceIcon : sunlightIcon,
                     root.transform, new Vector3(0, 0, -.47f * VisualScale), .5f * VisualScale, 4).transform;
             return root;
         }
 
         void BuildBoard()
         {
+            // Shuffle a balanced inner ring, leaving both ammo types for the final lesson.
+            var inner = new List<Vector2Int>(BoardRules.Directions);
+            for (int i = inner.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                var swap = inner[i]; inner[i] = inner[j]; inner[j] = swap;
+            }
             // Same-type groups intentionally exist at startup. Only the fired sphere seeds matching.
             for (int q = -InitialRings; q <= InitialRings; q++) for (int r = -InitialRings; r <= InitialRings; r++)
             {
                 if (Mathf.Abs(q + r) > InitialRings || (q == 0 && r == 0)) continue;
                 var cell = new Vector2Int(q, r);
                 Vector2 p = BoardRules.Position(cell);
-                float angle = Mathf.Atan2(p.y, p.x) * Mathf.Rad2Deg;
-                int sector = Mathf.FloorToInt((angle + 180) / 60);
-                int type = sector % 2;
+                int ring = Mathf.Max(Mathf.Abs(q), Mathf.Abs(r), Mathf.Abs(q + r));
+                int type = ring == InitialRings ? 1 : ring >= 2 ? 0 : inner.IndexOf(cell) % 2;
+                if (!StoneTutorial)
+                    type = p.x < -.0001f || (Mathf.Abs(p.x) <= .0001f && p.y < 0) ? 0 : 1;
+                else if (cell == TutorialStoneCell) type = StoneType;
                 board.Cells.Add(cell, type);
-                visuals.Add(cell, MakeSphere((type == 0 ? "Ice " : "Sunlight ") + cell, type, cluster, p));
+                visuals.Add(cell, MakeSphere((type == StoneType ? "Stone " : type == 0 ? "Ice " : "Sunlight ") + cell, type, cluster, p));
             }
         }
 
         void LoadNext()
         {
             if (complete || failed) return;
-            if (!shotSelector.TryNext(board.Cells.Values, out loadedType)) return;
+            if (shots == 0 && LaserTesting) loadedType = LaserType;
+            else if (StoneTutorial && !LaserTesting && tutorialStage <= 2) loadedType = 1;
+            else if (StoneTutorial && !LaserTesting && tutorialStage == 3) loadedType = 0;
+            else if (!shotSelector.TryNext(ElementTypes(), out loadedType)) return;
             loaded = MakeSphere("Loaded " + (loadedType == 0 ? "Ice" : "Sunlight"), loadedType, gun,
                 new Vector3(0, .57f * VisualScale, -.1f));
             ready = true; status.text = "AIM · CLICK TO FIRE";
+            if (StoneTutorial && (!smoke || TutorialTesting) && pendingTutorial >= 0) ShowTutorial(pendingTutorial);
         }
 
         void Update()
         {
             FitCamera();
+            if (tutorialPaused || Time.frameCount <= tutorialResumeFrame) return;
             if (halo) halo.localScale = Vector3.one * (1.8f * VisualScale / coreHalo.bounds.size.x) * (1 + .035f * Mathf.Sin(Time.time * 2));
             if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame && !smoke)
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-            if (ready && !smoke && Mouse.current != null)
+            bool touching = Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed;
+            if (ready && !smoke && (Mouse.current != null || touching))
             {
-                Vector2 target = view.ScreenToWorldPoint(new Vector3(Mouse.current.position.x.ReadValue(), Mouse.current.position.y.ReadValue(), 25));
+                Vector2 pointer = touching ? Touchscreen.current.primaryTouch.position.ReadValue() : Mouse.current.position.ReadValue();
+                bool pressed = touching ? Touchscreen.current.primaryTouch.press.wasPressedThisFrame : Mouse.current.leftButton.wasPressedThisFrame;
+                Vector2 target = view.ScreenToWorldPoint(new Vector3(pointer.x, pointer.y, 25));
                 Vector2 delta = target - (Vector2)gun.position;
                 float angle = Mathf.Clamp(Mathf.Atan2(delta.x, delta.y) * Mathf.Rad2Deg, -75, 75);
                 gun.rotation = Quaternion.Euler(0, 0, -angle);
                 direction = gun.up;
-                if (Mouse.current.leftButton.wasPressedThisFrame && target.y > gun.position.y + .15f &&
+                if (pressed && playableScreen.Contains(pointer) && target.y > gun.position.y + .15f &&
                     Mathf.Abs(target.x) <= 4.65f && target.y <= 7.8f) Fire();
             }
             aim.enabled = ready && loaded;
@@ -276,11 +322,11 @@ namespace EcoSphere
             UpdateVisualizer();
         }
 
-        Color ColorFor(int type) => type == 0 ? iceColor : sunlightColor;
+        Color ColorFor(int type) => type == StoneType ? stoneColor : type == LaserType ? Color.red : type == 0 ? iceColor : sunlightColor;
 
         void Fire()
         {
-            if (!ready || !loaded || armBusy) return;
+            if (tutorialPaused || !ready || !loaded || armBusy) return;
             ready = false; shots++;
             shotRicochets = 0; shotHasElementCallout = false;
             if (levelAudio) levelAudio.Shoot();
@@ -388,14 +434,21 @@ namespace EcoSphere
             projectile.transform.SetParent(cluster, false);
             projectile.transform.localPosition = BoardRules.Position(chosen);
             board.Cells.Add(chosen, loadedType); visuals.Add(chosen, projectile); projectile = null;
+            if (loadedType == LaserType)
+            {
+                visuals[chosen].transform.localRotation = Quaternion.identity;
+                visuals[chosen].GetComponent<LaserSphere>().placedTurn = shots;
+            }
+            foreach (var offset in BoardRules.Directions) RotateLaserContact(chosen + offset);
             // Even a would-be match loses immediately if its attached position touches an obstacle.
             if (CheckGameOver()) return;
             int iceBefore = totals[0], sunlightBefore = totals[1];
             var matches = board.MatchFrom(chosen);
             lastMatch = matches.Count; matchedCount += matches.Count;
-            RemoveCells(matches, 0);
+            RemoveCells(matches, ElementScoring.MatchRate(matches.Count));
             var released = board.Disconnected(); lastRelease = released.Count;
-            RemoveCells(released, 3);
+            AdvanceTutorial(matches.Count, released);
+            RemoveCells(released, ElementScoring.Breakaway, true);
             if (levelAudio) levelAudio.Resolve(lastMatch, lastRelease);
             if (levelAudio) shotHasElementCallout = levelAudio.AnnounceResources(totals[0] - iceBefore, totals[1] - sunlightBefore);
             complete = board.Cells.Count == 0;
@@ -406,13 +459,17 @@ namespace EcoSphere
             StartCoroutine(FinishTurn());
         }
 
-        void RemoveCells(HashSet<Vector2Int> cells, int contributionMultiplier)
+        void RemoveCells(HashSet<Vector2Int> cells, int pointsPerSphere, bool released = false)
         {
             foreach (var cell in cells)
             {
-                int type = board.Cells[cell]; totals[type] += contributionMultiplier;
+                int type = board.Cells[cell];
+                if (released && type == StoneType) stoneReleased = true;
+                bool contributes = type >= 0 && type < totals.Length;
+                if (contributes) totals[type] += pointsPerSphere;
+                if (type != LaserType) score += pointsPerSphere;
                 var visual = visuals[cell]; visuals.Remove(cell); board.Cells.Remove(cell);
-                if (contributionMultiplier > 0) StartCoroutine(Ascend(visual, type));
+                if (released && (contributes || type == StoneType)) StartCoroutine(Ascend(visual, type));
                 else StartCoroutine(DissolveMatch(visual));
             }
         }
@@ -463,8 +520,7 @@ namespace EcoSphere
             yield return new WaitForSeconds(.85f);
             if (complete)
             {
-                status.text = "WORLD COMPLETE · R TO RESTART";
-                if (levelAudio) levelAudio.AnnounceResult(true);
+                yield return CompleteWorld();
                 yield break;
             }
             status.text = "CLUSTER ROTATING";
@@ -478,7 +534,29 @@ namespace EcoSphere
             cluster.rotation = Quaternion.Euler(0, 0, spinAngle);
             while (armBusy) yield return null;
             if (CheckGameOver()) yield break;
+            yield return ResolveLasers();
+            if (board.Cells.Count == 0)
+            {
+                complete = true;
+                yield return CompleteWorld();
+                yield break;
+            }
             LoadNext();
+        }
+
+        IEnumerator CompleteWorld()
+        {
+            ready = false;
+            status.text = "WORLD COMPLETE";
+            if (levelAudio) levelAudio.AnnounceResult(true);
+            if (smoke) yield break;
+            if (levelAudio) yield return levelAudio.WaitForAnnouncements();
+            else yield return new WaitForSecondsRealtime(1);
+            yield return new WaitForSecondsRealtime(.15f);
+            var appearance = planet.GetComponent<PlanetSurface>();
+            WorldProgress.Complete(LevelPrepView.SystemNumber, LevelPrepView.PlanetIndex,
+                appearance ? appearance.seaLevel : -.02f, planet.eulerAngles.y, stoneReleased);
+            SceneManager.LoadScene("Results");
         }
 
         bool CheckGameOver(bool previewOnly = false, float? previewAngle = null)
@@ -508,7 +586,7 @@ namespace EcoSphere
                 if (!touches) continue;
                 if (previewOnly) return true;
                 failed = true; ready = false; complete = false;
-                totals[0] = totals[1] = matchedCount = lastMatch = lastRelease = 0;
+                totals[0] = totals[1] = score = matchedCount = lastMatch = lastRelease = 0;
                 shown[0] = shown[1] = 0;
                 if (levelAudio) levelAudio.CancelResolution();
                 if (levelAudio) levelAudio.AnnounceResult(false);
@@ -519,20 +597,20 @@ namespace EcoSphere
             return false;
         }
 
-        Text Label(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, string text, int fontsize)
+        TMP_Text Label(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, string text, int fontsize)
         {
-            var go = new GameObject(name, typeof(RectTransform)); go.transform.SetParent(parent, false);
+            var go = new GameObject(name, typeof(RectTransform)); go.layer = 31; go.transform.SetParent(parent, false);
             var rect = (RectTransform)go.transform; rect.anchorMin = rect.anchorMax = anchor;
             rect.anchoredPosition = position; rect.sizeDelta = size;
-            var label = go.AddComponent<Text>(); label.font = font; label.fontSize = fontsize;
+            var label = go.AddComponent<TextMeshProUGUI>(); label.font = font; label.fontSize = fontsize;
             label.text = text; label.color = new Color(.85f, .91f, 1);
-            label.alignment = TextAnchor.MiddleCenter; label.raycastTarget = false;
+            label.alignment = TextAlignmentOptions.Center; label.raycastTarget = false;
             return label;
         }
 
         RectTransform Panel(string name, Transform parent, Vector2 anchor, Vector2 position, Vector2 size, Color color)
         {
-            var go = new GameObject(name, typeof(RectTransform)); go.transform.SetParent(parent, false);
+            var go = new GameObject(name, typeof(RectTransform)); go.layer = 31; go.transform.SetParent(parent, false);
             var rect = (RectTransform)go.transform; rect.anchorMin = rect.anchorMax = anchor;
             rect.anchoredPosition = position; rect.sizeDelta = size;
             var image = go.AddComponent<Image>(); image.color = color; image.raycastTarget = false;
@@ -541,18 +619,21 @@ namespace EcoSphere
 
         void BuildInterface()
         {
-            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            font = uiFont;
             var canvas = new GameObject("Prototype HUD", typeof(Canvas), typeof(CanvasScaler)).GetComponent<Canvas>();
+            gameplayCanvas = canvas;
             canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = view; canvas.planeDistance = 10;
             var scaler = canvas.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(900, 1600); scaler.matchWidthOrHeight = 1;
-            // Match the letterboxed world area instead of stretching the HUD across a landscape monitor.
+            // The HUD adapts independently around the uniformly scaled playable rectangle.
             var hud = Panel("Portrait HUD", canvas.transform, new Vector2(.5f, .5f), Vector2.zero,
                 new Vector2(900, 1600), Color.clear);
-            Label("Title", hud, new Vector2(.5f, 1), new Vector2(0, -45), new Vector2(850, 60), "ECOSPHERE / FIRST LIGHT", 29);
+            gameplayRoot = hud;
+            gameplayTitle = Label("Title", hud, new Vector2(.5f, 1), new Vector2(0, -45), new Vector2(850, 60), StoneTutorial ? "ECOSPHERE / TUTORIAL 2" : "ECOSPHERE / TUTORIAL 1", 29);
             status = Label("Turn", hud, new Vector2(.5f, 1), new Vector2(0, -100), new Vector2(850, 45), "", 21);
             detail = Label("Counters", hud, new Vector2(.5f, 0), new Vector2(0, 525), new Vector2(850, 42), "", 18);
             var strip = Panel("Resource visualizer", hud, new Vector2(.5f, 0), new Vector2(0, 95), new Vector2(860, 180), new Color(.01f, .018f, .035f, .96f));
+            resourcePanel = strip;
             for (int type = 0; type < 2; type++) for (int i = 0; i < 10; i++)
             {
                 float x = -398 + type * 420 + i * 39;
@@ -561,17 +642,19 @@ namespace EcoSphere
                 bar.pivot = new Vector2(.5f, 0); bars[type].Add(bar); barImages[type].Add(bar.GetComponent<Image>());
             }
             goalLine = Panel("Fixed resource goal", strip, new Vector2(.5f, 0), new Vector2(0, 36), new Vector2(825, 2), Color.white);
+            abundanceLine = Panel("Excess abundance", strip, new Vector2(.5f, 0), new Vector2(0, 36), new Vector2(825, 2), new Color(1, .76f, .24f));
             iceLabel = Label("Ice total", strip, new Vector2(.25f, 0), new Vector2(0, 16), new Vector2(390, 30), "ICE 0", 18);
             sunLabel = Label("Sunlight total", strip, new Vector2(.75f, 0), new Vector2(0, 16), new Vector2(390, 30), "SUNLIGHT 0", 18);
-            Label("Instructions", hud, new Vector2(.5f, 0), new Vector2(0, 485), new Vector2(850, 35),
-                "Mouse to aim · Click to fire · R to restart", 18);
+            instructions = Label("Instructions", hud, new Vector2(.5f, 0), new Vector2(0, 485), new Vector2(850, 35),
+                Application.isMobilePlatform ? "Tap the playfield to aim and fire" : "Mouse to aim · Click to fire · R to restart", 18);
         }
 
         void UpdateVisualizer()
         {
             int goal = Mathf.Max(1, resourceGoal);
             // Fixed display range keeps the target line stationary as resources arrive.
-            float scale = goal * 1.6f;
+            int abundance = Mathf.Max(goal + 1, abundanceGoal);
+            float scale = abundance * 1.2f;
             for (int type = 0; type < 2; type++)
             {
                 shown[type] = Mathf.Lerp(shown[type], totals[type], 1 - Mathf.Exp(-Time.deltaTime * 7));
@@ -582,9 +665,11 @@ namespace EcoSphere
                 }
             }
             goalLine.anchoredPosition = new Vector2(0, 36 + goal / scale * 125);
-            iceLabel.text = $"ICE {totals[0]}/{goal}" + (totals[0] >= goal ? " READY" : "");
-            sunLabel.text = $"SUNLIGHT {totals[1]}/{goal}" + (totals[1] >= goal ? " READY" : "");
-            detail.text = $"Matched {lastMatch} · Released {lastRelease} (x3) · Lost {lost} · Goal {goal}";
+            abundanceLine.anchoredPosition = new Vector2(0, 36 + abundance / scale * 125);
+            iceLabel.text = $"ICE {totals[0]}" + (totals[0] >= abundance ? " EXCESS" : totals[0] >= goal ? " READY" : "");
+            sunLabel.text = $"SUNLIGHT {totals[1]}" + (totals[1] >= abundance ? " EXCESS" : totals[1] >= goal ? " READY" : "");
+            detail.text = $"Score {score} · Matched {lastMatch} · Released {lastRelease}\nIncluded {goal} · Excess {abundance}";
+            PositionResourceGoals();
         }
 
         IEnumerator SmokeRun()
@@ -684,31 +769,40 @@ namespace EcoSphere
 
         void SmokeScoringChecks()
         {
-            board.Cells.Clear(); visuals.Clear(); totals[0] = totals[1] = 0;
-            var ice = new Vector2Int(1, 0); var sun = new Vector2Int(0, 1);
-            board.Cells[ice] = 0; board.Cells[sun] = 1;
-            visuals[ice] = new GameObject("Matched scoring test");
-            visuals[sun] = new GameObject("Released scoring test");
-            RemoveCells(new HashSet<Vector2Int> { ice }, 0);
-            RemoveCells(new HashSet<Vector2Int> { sun }, 3);
-            if (totals[0] != 0 || totals[1] != 3) throw new Exception("Matches must score zero; breakaways must score three");
-            var additional = new HashSet<Vector2Int>();
-            for (int i = 1; i <= 4; i++)
+            int[] sizes = { 3, 4, 5, 6, 8, 10, 19 };
+            int[] expected = { 30, 48, 70, 96, 160, 200, 380 };
+            for (int i = 0; i < sizes.Length; i++)
+                if (ElementScoring.MatchRate(sizes[i]) * sizes[i] != expected[i])
+                    throw new Exception("Incorrect capped match bonus");
+            board.Cells.Clear(); visuals.Clear(); totals[0] = totals[1] = score = 0;
+            var matched = new HashSet<Vector2Int>();
+            for (int i = 1; i <= 3; i++)
             {
-                var cell = new Vector2Int(i, 2); additional.Add(cell);
-                board.Cells[cell] = 1; visuals[cell] = new GameObject("Threshold scoring test");
+                var cell = new Vector2Int(i, 0); matched.Add(cell);
+                board.Cells[cell] = 0; visuals[cell] = new GameObject("Matched scoring test");
             }
-            RemoveCells(additional, 3);
-            if (totals[1] != 15 || LevelAudio.ResourceCallout(new[] { totals[0], totals[1] }) != 1)
-                throw new Exception("Five breakaway Sunlight spheres must qualify for Heliosphere");
+            RemoveCells(matched, ElementScoring.MatchRate(matched.Count));
+            if (totals[0] != 30 || score != 30) throw new Exception("Three matches must award 30 Ice and total points");
+            var sun = new Vector2Int(0, 1); var stone = new Vector2Int(0, 2);
+            board.Cells[sun] = 1; board.Cells[stone] = StoneType;
+            visuals[sun] = new GameObject("Sunlight scoring test"); visuals[stone] = new GameObject("Stone scoring test");
+            RemoveCells(new HashSet<Vector2Int> { sun, stone }, ElementScoring.Breakaway, true);
+            if (totals[0] != 30 || totals[1] != 50 || score != 130)
+                throw new Exception("Breakaways must award 50 each; Stone affects score without adding a resource bar");
+            board.Cells[sun] = 1; visuals[sun] = new GameObject("Threshold scoring test");
+            RemoveCells(new HashSet<Vector2Int> { sun }, ElementScoring.Breakaway, true);
+            if (totals[1] != 100 || LevelAudio.ResourceCallout(new[] { 0, totals[1] }) != -1)
+                throw new Exception("Two Sunlight breakaways must remain below the inclusion threshold");
             UpdateVisualizer(); float initialLine = goalLine.anchoredPosition.y;
-            totals[0] = totals[1] = resourceGoal * 4;
+            float initialExcess = abundanceLine.anchoredPosition.y;
+            totals[0] = totals[1] = abundanceGoal * 4;
             UpdateVisualizer();
-            if (Mathf.Abs(initialLine - goalLine.anchoredPosition.y) > .001f)
-                throw new Exception("Fixed target line moved when resource totals increased");
+            if (Mathf.Abs(initialLine - goalLine.anchoredPosition.y) > .001f || Mathf.Abs(initialExcess - abundanceLine.anchoredPosition.y) > .001f)
+                throw new Exception("Fixed threshold lines moved when totals increased");
+            if (!iceLabel.text.Contains("EXCESS") || !sunLabel.text.Contains("EXCESS"))
+                throw new Exception("Abundance threshold did not mark elements as excessive");
             Debug.Log("ECOSPHERE_SCORING_CHECKS_PASSED");
         }
-
         Vector2 SmokeMatchingDirection()
         {
             for (int step = -240; step <= 240; step++)
@@ -742,7 +836,7 @@ namespace EcoSphere
             test.cryosphere = mainAudio.cryosphere; test.heliosphere = mainAudio.heliosphere;
             test.ecosphere = mainAudio.ecosphere;
             test.voiceVolume = 0; test.Initialize();
-            test.AnnounceResources(15, 18);
+            test.AnnounceResources(ElementScoring.Inclusion, ElementScoring.Inclusion + 50);
             var source = test.transform.Find("Level result announcer").GetComponent<AudioSource>();
             if (source.clip != mainAudio.ecosphere)
                 throw new Exception("Two qualifying resource gains did not announce EcoSphere");
@@ -761,6 +855,9 @@ namespace EcoSphere
 
         void OnDestroy()
         {
+            if (tutorialPaused) Time.timeScale = tutorialPreviousScale;
+            if (tutorialBackingTexture) Destroy(tutorialBackingTexture);
+            if (tutorialSolidTexture) Destroy(tutorialSolidTexture);
             foreach (var material in materials) if (material) Destroy(material);
             foreach (var sprite in generatedSprites) if (sprite) Destroy(sprite);
         }

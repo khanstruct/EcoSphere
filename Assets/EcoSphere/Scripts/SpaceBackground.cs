@@ -41,6 +41,7 @@ namespace EcoSphere
         SpriteRenderer Create(string label, Sprite sprite, float depth, int order)
         {
             var item = new GameObject(label); item.transform.SetParent(transform, false);
+            item.layer = gameObject.layer;
             item.transform.localPosition = new Vector3(0, 0, depth);
             var renderer = item.AddComponent<SpriteRenderer>(); renderer.sprite = sprite;
             renderer.sortingOrder = order;

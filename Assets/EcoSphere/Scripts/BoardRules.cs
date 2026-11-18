@@ -20,6 +20,7 @@ namespace EcoSphere
         {
             var result = new HashSet<Vector2Int>();
             if (!Cells.TryGetValue(start, out int type)) return result;
+            if (type == 2) return result; // Laser powerups never form element matches.
             var queue = new Queue<Vector2Int>();
             queue.Enqueue(start); result.Add(start);
             while (queue.Count > 0)

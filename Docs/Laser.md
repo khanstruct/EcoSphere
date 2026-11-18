@@ -1,0 +1,9 @@
+# Laser prototype
+
+First Light starts with one laser loaded; subsequent ammunition is ordinary Ice/Sunlight. The laser attaches without matching. Its mechanism follows cluster rotation; its countdown stays upright. A fired sphere attaching in any neighboring hex slot turns the mechanism 60 degrees clockwise. Direct collision alone does not rotate it; attachment is the only trigger.
+
+Placement does not decrement its three-turn timer. Later turns, including lost shots, resolve matches, breakaways and cluster rotation before decrementing surviving lasers. Disconnected lasers are consumed without contributing elements. At zero, the laser pierces along its indicated direction, stops at the first wall or core surface without reflecting, consumes itself and resolves resulting breakaways. Pierced ordinary spheres contribute 50 points each, consistent with breakaway rewards. The beam starts at half a sphere diameter and thins/fades over 0.28 seconds. No new sounds were added.
+
+Artwork lives in Assets/EcoSphere/Art/Spheres/Laser. Surface is a repeating mipmapped texture; icon is a transparent clamped sprite. LaserTools.Setup assigns both to the existing FirstLight scene, preserving other scene settings. The test-level builder also includes these references.
+
+Validated using Unity 6000.6.7f1 in work/UnityValidation. Laser play-mode assertions passed: first loaded shot, placement grace, six-direction wrap, core/wall termination, three subsequent ticks, piercing, consumption and contribution scoring. Existing gameplay smoke checks passed for matching, breakaway scoring, bank shots, bottom loss, game-over and result voice. The initial loaded laser was visually inspected in Logs/Laser-preview.png. The validation editor logged its existing internal Unity SearchDatabase indexing exception; no laser script exceptions occurred.

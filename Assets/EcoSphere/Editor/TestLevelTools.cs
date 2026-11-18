@@ -1,3 +1,4 @@
+using TMPro;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,14 +31,14 @@ namespace EcoSphere.Editor
             {
                 string normalized = path.Replace('\\', '/');
                 var importer = (TextureImporter)AssetImporter.GetAtPath(normalized);
-                bool surface = normalized.Contains("surface");
+                bool surface = normalized.Contains("surface") || normalized.Contains("heightmap");
                 importer.textureType = surface ? TextureImporterType.Default : TextureImporterType.Sprite;
                 importer.alphaIsTransparency = !surface;
                 importer.mipmapEnabled = surface;
                 importer.wrapMode = surface ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
-                importer.maxTextureSize = 2048;
+                importer.maxTextureSize = normalized.Contains("/Backgrounds/starfield-") ? 2048 : 256;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
-                if (!surface) { importer.spriteImportMode = SpriteImportMode.Single; importer.spritePixelsPerUnit = 100; }
+                if (!surface) { importer.spriteImportMode = SpriteImportMode.Single; }
                 importer.SaveAndReimport();
             }
             var previous = SceneManager.GetActiveScene();
@@ -47,8 +48,17 @@ namespace EcoSphere.Editor
                 replaceEmpty ? NewSceneMode.Single : NewSceneMode.Additive);
             SceneManager.SetActiveScene(scene);
             var root = new GameObject("EcoSphere Test Level").AddComponent<EcoSpherePrototype>();
+            root.resourceGoal = 1000000; root.abundanceGoal = 3000000;
+            root.uiFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontTools.FontAssetPath);
             root.iceSurface = Texture("Spheres/Ice/ice-surface-v1.png");
+            root.receivingPlanetMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/EcoSphere/Art/Planets/barren-planet-v1.mat");
             root.sunlightSurface = Texture("Spheres/Sunlight/sunlight-surface-v1.png");
+            root.stoneSurface = Texture("Spheres/Stone/stone-surface-v1.png");
+            root.stoneIcon = Sprite("Spheres/Stone/stone-icon-v1.png");
+            root.tutorialFrame = Sprite("UI/Frames/panel-frame-v1.png");
+            root.tutorialButtonPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/EcoSphere/Prefabs/UI/CelestialButton.prefab");
+            root.laserSurface = Texture("Spheres/Laser/laser-surface-v1.png");
+            root.laserIcon = Sprite("Spheres/Laser/laser-icon-v1.png");
             root.coreSurface = Texture("Core/core-surface-v2.png");
             root.iceIcon = Sprite("Spheres/Ice/ice-icon-v1.png");
             root.sunlightIcon = Sprite("Spheres/Sunlight/sunlight-icon-v1.png");
@@ -61,6 +71,7 @@ namespace EcoSphere.Editor
             var audio = root.gameObject.AddComponent<LevelAudio>();
             audio.music = Audio("Deep Space Loop.mp3");
             audio.shoot = Audio("shoot.ogg");
+            audio.laser = Audio("laser-sphere.mp3");
             audio.ricochet = Audio("ricochet.ogg");
             audio.match = Audio("match.wav");
             audio.breakaway = Audio("breakaway.mp3");
@@ -111,7 +122,7 @@ namespace EcoSphere.Editor
                 importer.alphaIsTransparency = name.Contains("twinkle");
                 importer.mipmapEnabled = false;
                 importer.wrapMode = TextureWrapMode.Clamp;
-                importer.maxTextureSize = 2048;
+                importer.maxTextureSize = name.Contains("starfield") ? 2048 : 256;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.SaveAndReimport();
             }
@@ -222,12 +233,12 @@ namespace EcoSphere.Editor
             Expect(!BoardRules.CircleTouchesTriangle(new Vector2(2, 2), .1f, Vector2.zero, Vector2.right, Vector2.up),
                 "Empty space outside cannon geometry must not touch");
             Debug.Log("ECOSPHERE_CONTACT_CHECKS_PASSED 6");
-            Expect(LevelAudio.ResourceCallout(new[] { 14, 14 }) == -1, "Subthreshold gains must not announce");
-            Expect(LevelAudio.ResourceCallout(new[] { 15, 0 }) == 0, "Exactly 15 Ice must announce Cryosphere");
-            Expect(LevelAudio.ResourceCallout(new[] { 15, 18 }) == LevelAudio.MixedResourceCallout, "Two unequal qualifying gains must announce EcoSphere");
-            Expect(LevelAudio.ResourceCallout(new[] { 18, 18 }) == LevelAudio.MixedResourceCallout, "Equal qualifying gains must announce EcoSphere");
+            Expect(LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion - 1, ElementScoring.Inclusion - 1 }) == -1, "Subthreshold gains must not announce");
+            Expect(LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion, 0 }) == 0, "Exactly the inclusion threshold of Ice must announce Cryosphere");
+            Expect(LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion, ElementScoring.Inclusion + 50 }) == LevelAudio.MixedResourceCallout, "Two unequal qualifying gains must announce EcoSphere");
+            Expect(LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion + 50, ElementScoring.Inclusion + 50 }) == LevelAudio.MixedResourceCallout, "Equal qualifying gains must announce EcoSphere");
             Debug.Log("ECOSPHERE_RESOURCE_VOICE_CHECKS_PASSED 4");
-            int tied = LevelAudio.ResourceCallout(new[] { 14, 21, 21, 15 });
+            int tied = LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion - 1, ElementScoring.Inclusion + 100, ElementScoring.Inclusion + 100, ElementScoring.Inclusion });
             Expect(tied == LevelAudio.MixedResourceCallout, "Any two or more qualifying resources must announce EcoSphere");
             Expect(LevelAudio.ImpressiveChance(0, 5, false) == 0, "Bank shots without matches must never announce Impressive");
             Expect(LevelAudio.ImpressiveChance(3, 0, false) == 0, "Direct shots must never announce Impressive");

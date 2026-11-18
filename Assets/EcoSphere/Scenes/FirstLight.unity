@@ -152,6 +152,12 @@ MonoBehaviour:
   iceSurface: {fileID: 2800000, guid: 9d03bb50662350441bfb2078fe3f1a33, type: 3}
   sunlightSurface: {fileID: 2800000, guid: 3dd870bdce12bf14a8f2e5922547f857, type: 3}
   coreSurface: {fileID: 2800000, guid: ac6e8c9dde1fb404788d1c38352c7545, type: 3}
+  receivingPlanetMaterial: {fileID: 2100000, guid: 250cc250237f59b43b95df23022711df, type: 2}
+  stoneSurface: {fileID: 2800000, guid: ed42ee9d135b445aaa8136c13ec694a2, type: 3}
+  stoneIcon: {fileID: 21300000, guid: a39851ea559e45678279bc39888e3f57, type: 3}
+  laserSurface: {fileID: 2800000, guid: 2a1bcf4bb25269449a978cd1dfa474ce, type: 3}
+  laserIcon: {fileID: 21300000, guid: fecbb914c3d3042409190ba21966df8c, type: 3}
+  uiFont: {fileID: 11400000, guid: 0bb58ff850d4db84383aaa564c57f5ba, type: 2}
   iceIcon: {fileID: 21300000, guid: 8fc1162f8431282469482c39ac1f2e67, type: 3}
   sunlightIcon: {fileID: 21300000, guid: f2902546fd49dea40992a3187a2a504a, type: 3}
   coreHalo: {fileID: 21300000, guid: 4971804a3e15d024bb0ff71ff050ec66, type: 3}
@@ -162,10 +168,29 @@ MonoBehaviour:
   twinkleStar: {fileID: 21300000, guid: b5c498c88a6e0014886fdadcb565ffef, type: 3}
   iceColor: {r: 0.21568628, g: 0.7764706, b: 1, a: 1}
   sunlightColor: {r: 1, g: 0.7607843, b: 0.15686275, a: 1}
+  stoneColor: {r: 0.5882353, g: 0.39607844, b: 0.23137255, a: 1}
   shotSpeed: 13
   rotationDegrees: 24
   rotationDuration: 0.65
-  resourceGoal: 15
+  resourceGoal: 1000000
+  abundanceGoal: 3000000
+  tutorialFrame: {fileID: 21300000, guid: dfb41c8b962732f46affc4a0d1f4ae7a, type: 3}
+  tutorialButtonPrefab: {fileID: 222641970439823138, guid: 543a0177d55e1994da1a9fa38be28b55, type: 3}
+--- !u!4 &1310256984
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1310256982}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1310256985
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -183,30 +208,18 @@ MonoBehaviour:
   ricochet: {fileID: 8300000, guid: 80743dc602c057145a647049fe5efa6f, type: 3}
   match: {fileID: 8300000, guid: af4372f7f8954dd4fab12cb51187ce7c, type: 3}
   breakaway: {fileID: 8300000, guid: 0842a3e281c3ab5489fa20b4759e08cf, type: 3}
-  musicVolume: 0.18
-  effectsVolume: 0.85
+  laser: {fileID: 8300000, guid: 7373795f0f286f7478cd34aebc832652, type: 3}
   worldComplete: {fileID: 8300000, guid: b7a86650c1347fc4a9e349bdf02a3eb8, type: 3}
   creationFailed: {fileID: 8300000, guid: adc4e2f8a96d859428d7b15468a56e0f, type: 3}
-  voiceVolume: 1
   cryosphere: {fileID: 8300000, guid: a4b6b11909ea9274e95f55a36e031232, type: 3}
   heliosphere: {fileID: 8300000, guid: 24d12c4d6fe266c4195805bce8a895f9, type: 3}
   impressive: {fileID: 8300000, guid: 7ef2d9f814fe4934aacff235ad27bddf, type: 3}
   ecosphere: {fileID: 8300000, guid: 1b45dcaa78ecc074782a04caf3e292d6, type: 3}
---- !u!4 &1310256984
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1310256982}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  voiceVolume: 1
+  musicVolume: 0.18
+  effectsVolume: 0.85
+  shootVolume: 1
+  shootPitch: 0.9
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
