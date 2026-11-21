@@ -10,21 +10,13 @@ using UnityEngine.UI;
 
 namespace EcoSphere
 {
-    [Serializable] public sealed class DiscoveryArtwork
-    {
-        public int type;
-        public string displayName;
-        public Texture2D surface;
-        public Sprite icon;
-    }
-
-    public sealed class ResultsView : MonoBehaviour
+    public sealed partial class ResultsView : MonoBehaviour
     {
         public TMP_FontAsset font;
         public Sprite frame, line, arch, starfield;
         public GameObject buttonPrefab;
         public AudioClip elementDiscovered;
-        public DiscoveryArtwork[] elements;
+        public Material completedWorldMaterial;
         public Button ContinueButton { get; private set; }
         public Button OkButton { get; private set; }
         public bool Settled { get; private set; }
@@ -36,9 +28,11 @@ namespace EcoSphere
         readonly List<RectTransform> slots = new List<RectTransform>();
         readonly List<TMP_Text> names = new List<TMP_Text>();
         readonly List<TMP_Text> settledNames = new List<TMP_Text>();
-        RectTransform imageFrame, descriptionFrame, collectionFrame, overlay, modal, header, planetLabel, flightLayer;
+        RectTransform worldGlobe, descriptionFrame, collectionFrame, overlay, modal, header, planetLabel, flightLayer;
         CanvasGroup modalGroup;
         WorldResult result;
+        public TutorialPopup DiscoveryTutorial { get; private set; }
+        int tutorialDismissFrame=-1;
         Texture2D fillTexture;
         Sprite fillSprite;
         Vector2 previousSize;
@@ -115,37 +109,45 @@ namespace EcoSphere
             Image("Left ornament", header, line, new Vector2(170, 57), new Vector2(-adornmentOffset, 0), Color.white);
             Image("Right ornament", header, line, new Vector2(170, 57), new Vector2(adornmentOffset, 0), Color.white).transform.localScale = new Vector3(-1, 1, 1);
             Image("Arch", planetLabel, arch, new Vector2(500, 167), new Vector2(0, -47), Color.white);
-            imageFrame = Frame("World image placeholder", Root);
+            worldGlobe = Rect("Completed world globe", Root, Vector2.one * 480, Vector2.zero);
+            worldGlobe.gameObject.AddComponent<RawImage>().raycastTarget = false;
+            var worldPreview = worldGlobe.gameObject.AddComponent<SpherePreview>();
+            worldPreview.surfaceMaterial = completedWorldMaterial;
+            worldPreview.seaLevel = result.world.seaLevel;
+            worldPreview.initialRotation = result.world.rotation;
+            worldPreview.rotationSpeed = 2;
             descriptionFrame = Frame("World description placeholder", Root);
             collectionFrame = Frame("Discovered elements", Root);
-            Text("Collection heading", collectionFrame, "Elements Discovered", 28, new Vector2(700, 45), new Vector2(0, 85));
+            Text("Collection heading", collectionFrame, "Spheres Discovered", 28, new Vector2(700, 45), new Vector2(0, 85));
             ContinueButton = Button("Continue", Root, Continue);
             ContinueButton.interactable = result.discoveries.Count == 0;
             Settled = result.discoveries.Count == 0;
             BuildDiscovery();
             if (!FindAnyObjectByType<EventSystem>()) new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             Reflow();
+            if(recipeMode)StartCoroutine(RevealNextDiscovery());
         }
 
         void BuildDiscovery()
         {
-            int count = Mathf.Min(3, result.discoveries.Count);
+            int count = result.DisplayedDiscoveries.Count;
             if (count == 0) return;
+            if(!result.revisiting && result.discoveryDetails.Exists(item=>item.kind==DiscoveryKind.Recipe)) { BuildRecipeDiscoveries(); return; }
             overlay = Rect("Discovery overlay", LayoutCanvas.transform, Vector2.zero, Vector2.zero);
             overlay.anchorMin = Vector2.zero; overlay.anchorMax = Vector2.one;
             var shield = overlay.gameObject.AddComponent<Image>(); shield.sprite = fillSprite;
             shield.color = new Color(0, .005f, .015f, .85f); shield.raycastTarget = true;
             modal = Frame("Discovery panel", overlay);
             modalGroup = modal.gameObject.AddComponent<CanvasGroup>();
-            Text("Discovery title", modal, count == 1 ? "Element Discovered" : "Elements Discovered", 40,
+            Text("Discovery title", modal, count == 1 ? "Sphere Discovered" : "Spheres Discovered", 40,
                 new Vector2(740, 70), Vector2.zero);
             for (int i = 0; i < count; i++)
             {
-                var art = Array.Find(elements, e => e.type == result.discoveries[i]);
+                var art = SphereCatalog.Current.Get(result.DisplayedDiscoveries[i]);
                 if (art == null) throw new InvalidOperationException("Missing discovery artwork");
                 var sphere = Rect(art.displayName + " discovered sphere", modal, Vector2.one * 170, Vector2.zero);
                 sphere.gameObject.AddComponent<RawImage>().raycastTarget = false;
-                var preview = sphere.gameObject.AddComponent<SpherePreview>(); preview.surface = art.surface; preview.icon = art.icon;
+                var preview = sphere.gameObject.AddComponent<SpherePreview>(); preview.definition = art;
                 DiscoverySpheres.Add(sphere);
                 var name = Text(art.displayName + " name", modal, art.displayName, 36, new Vector2(430, 80), Vector2.zero);
                 name.alignment = TextAlignmentOptions.Left; names.Add(name);
@@ -153,6 +155,17 @@ namespace EcoSphere
                 slots.Add(slot);
                 var settledName = Text(art.displayName + " collected name", slot, art.displayName, 25, new Vector2(170, 40), new Vector2(0, -75));
                 settledName.gameObject.SetActive(false); settledNames.Add(settledName);
+            }
+            if (result.revisiting)
+            {
+                for (int i=0;i<DiscoverySpheres.Count;i++)
+                {
+                    var sphere = DiscoverySpheres[i]; sphere.SetParent(slots[i],false);
+                    sphere.anchoredPosition = Vector2.zero; sphere.sizeDelta = Vector2.one * 100;
+                    settledNames[i].gameObject.SetActive(true);
+                }
+                overlay.gameObject.SetActive(false);
+                return;
             }
             OkButton = Button("Ok", modal, () => StartCoroutine(SettleDiscoveries()));
             flightLayer = Rect("Discovery animation", overlay, Vector2.zero, Vector2.zero);
@@ -167,9 +180,10 @@ namespace EcoSphere
             if (!OkButton.interactable) yield break;
             OkButton.interactable = false;
             var starts = new List<Vector3>();
+            var startSizes = new List<float>();
             foreach (var sphere in DiscoverySpheres)
             {
-                starts.Add(sphere.position); sphere.SetParent(flightLayer, true);
+                starts.Add(sphere.position); startSizes.Add(sphere.sizeDelta.x); sphere.SetParent(flightLayer, true);
             }
             const float duration = .8f;
             for (float t = 0; t < duration; t += Time.unscaledDeltaTime)
@@ -179,7 +193,7 @@ namespace EcoSphere
                 for (int i = 0; i < DiscoverySpheres.Count; i++)
                 {
                     DiscoverySpheres[i].position = Vector3.Lerp(starts[i], slots[i].position, p);
-                    DiscoverySpheres[i].sizeDelta = Vector2.one * Mathf.Lerp(170, 100, p);
+                    DiscoverySpheres[i].sizeDelta = Vector2.one * Mathf.Lerp(startSizes[i], 100, p);
                 }
                 yield return null;
             }
@@ -191,11 +205,26 @@ namespace EcoSphere
             }
             overlay.gameObject.SetActive(false);
             Settled = true; ContinueButton.interactable = true;
+            ShowDiscoveryTutorial();
         }
 
+        void ShowDiscoveryTutorial()
+        {
+            if(DevelopmentMode.Enabled)return;
+            var authored=WorldProgress.TutorialDefinition(result.world);
+            if(result.revisiting || result.world.discoveryTutorialSeen || result.discoveries.Count==0 || !authored || string.IsNullOrWhiteSpace(authored.discoveryTutorialMessage))return;
+            DiscoveryTutorial=new GameObject("Discovery tutorial").AddComponent<TutorialPopup>();
+            DiscoveryTutorial.transform.SetParent(transform,false); DiscoveryTutorial.Initialize(frame,buttonPrefab,font);
+            DiscoveryTutorial.PreferLeft=true;
+            ContinueButton.interactable=false;
+            DiscoveryTutorial.Show(authored.discoveryTutorialMessage,null,()=> {
+                WorldProgress.FinishDiscoveryTutorial(result.world); tutorialDismissFrame=Time.frameCount;
+                ContinueButton.interactable=true;
+            });
+        }
         void Continue()
         {
-            if (!Settled) return;
+            if (!Settled || !ContinueButton.interactable || (DiscoveryTutorial && DiscoveryTutorial.IsOpen) || Time.frameCount<=tutorialDismissFrame) return;
             LevelPrepView.SystemNumber = result.world.system;
             LevelPrepView.ReturningToSystem = true;
             WorldProgress.ClearPending();
@@ -220,35 +249,52 @@ namespace EcoSphere
             if (m.wide)
             {
                 float width = (m.width - 140) * .5f;
-                PlaceFrame(imageFrame, new Vector2(width, 520), new Vector2(-m.width * .25f, 0));
+                ScreenLayout.Place(worldGlobe, Vector2.one * Mathf.Min(width, 520), new Vector2(-m.width * .25f, 0));
                 PlaceFrame(descriptionFrame, new Vector2(width, 260), new Vector2(m.width * .25f, 130));
                 PlaceFrame(collectionFrame, new Vector2(width, 260), new Vector2(m.width * .25f, -160));
             }
             else
             {
                 float width = Mathf.Min(m.width - 60, 950);
-                PlaceFrame(imageFrame, new Vector2(width, 480), new Vector2(0, 360));
+                ScreenLayout.Place(worldGlobe, Vector2.one * Mathf.Min(width, 480), new Vector2(0, 360));
                 PlaceFrame(descriptionFrame, new Vector2(width, 280), new Vector2(0, -80));
                 PlaceFrame(collectionFrame, new Vector2(width, 260), new Vector2(0, -420));
             }
             ScreenLayout.Place(ContinueButton.GetComponent<RectTransform>(), new Vector2(360, 120), new Vector2(m.width * .5f - 180, -m.height * .5f + 62));
+            if (slots.Count > 0)
+            {
+                float spacing = Mathf.Min(190,(collectionFrame.sizeDelta.x-90)/slots.Count);
+                for (int i=0;i<slots.Count;i++)
+                {
+                    slots[i].anchoredPosition = new Vector2((i-(slots.Count-1)*.5f)*spacing,-10);
+                    settledNames[i].rectTransform.sizeDelta = new Vector2(Mathf.Min(170,spacing-8),40);
+                    settledNames[i].fontSize = Mathf.Min(25,spacing*.16f);
+                }
+            }
+            if(recipeMode) { LayoutRecipeReveal(m); return; }
             if (modal)
             {
                 Canvas.ForceUpdateCanvases();
-                float height = 260 + DiscoverySpheres.Count * 180;
+                float height = Mathf.Min(260 + DiscoverySpheres.Count * 180,m.height-60);
+                float rowHeight = (height-260)/DiscoverySpheres.Count;
                 PlaceFrame(modal, new Vector2(Mathf.Min(820, m.width - 60), height), Vector2.zero);
                 var title = (RectTransform)modal.Find("Discovery title");
                 ScreenLayout.Place(title, new Vector2(modal.sizeDelta.x - 90, 70), new Vector2(0, height * .5f - 70));
                 for (int i = 0; i < names.Count; i++)
                 {
-                    float y = height * .5f - 180 - i * 180;
-                    if (DiscoverySpheres[i].parent == modal) DiscoverySpheres[i].anchoredPosition = new Vector2(-modal.sizeDelta.x * .28f, y);
+                    float y = height * .5f - 90 - (i+.5f) * rowHeight;
+                    if (DiscoverySpheres[i].parent == modal)
+                    {
+                        DiscoverySpheres[i].anchoredPosition = new Vector2(-modal.sizeDelta.x * .28f,y);
+                        DiscoverySpheres[i].sizeDelta = Vector2.one*Mathf.Min(170,rowHeight-10);
+                    }
                     ScreenLayout.Place(names[i].rectTransform, new Vector2(modal.sizeDelta.x * .5f, 80), new Vector2(modal.sizeDelta.x * .12f, y));
+                    names[i].fontSize = Mathf.Min(36,rowHeight*.23f);
                 }
-                ScreenLayout.Place(OkButton.GetComponent<RectTransform>(), new Vector2(360, 120), new Vector2(0, -height * .5f + 70));
+                if (OkButton) ScreenLayout.Place(OkButton.GetComponent<RectTransform>(), new Vector2(360, 120), new Vector2(0, -height * .5f + 70));
             }
         }
 
-        void OnDestroy() { if (fillSprite) Destroy(fillSprite); if (fillTexture) Destroy(fillTexture); }
+        void OnDestroy() { DisposeRecipeMaterials(); if (fillSprite) Destroy(fillSprite); if (fillTexture) Destroy(fillTexture); }
     }
 }

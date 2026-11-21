@@ -2,10 +2,23 @@ namespace EcoSphere
 {
     public static class WorldLevels
     {
-        public static string Name(int system, int planet) =>
-            system == 1 && planet == 0 ? "Tutorial 1" : "Planet " + (planet + 1);
+        public const string ProceduralSceneName="Procedural";
+        public static WorldRecord Get(int system, int planet)
+        {
+            var generated = WorldProgress.GetSystem(system);
+            if (planet < 0 || planet >= generated.worlds.Count) throw new System.ArgumentOutOfRangeException(nameof(planet));
+            return generated.worlds[planet];
+        }
 
-        public static string GameplayScene(int system, int planet) =>
-            system == 1 && planet == 0 ? "Tutorial1" : null;
+        public static string Name(int system, int planet) => Get(system, planet).displayName;
+
+        public static string GameplayScene(int system, int planet) => Get(system, planet).GameplayScene;
+
+        public static string SceneName(string scene)
+        {
+            foreach (var world in WorldCatalog.Current.predefinedWorlds)
+                if (world.gameplayScene == scene) return world.displayName;
+            return scene;
+        }
     }
 }

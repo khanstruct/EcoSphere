@@ -1663,6 +1663,8 @@ MonoBehaviour:
   - {fileID: 1742350668}
   selection: {fileID: 336619370}
   systemNumber: 1
+  tutorialFrame: {fileID: 21300000, guid: dfb41c8b962732f46affc4a0d1f4ae7a, type: 3}
+  tutorialButtonPrefab: {fileID: 222641970439823138, guid: 543a0177d55e1994da1a9fa38be28b55, type: 3}
   systemLabel: {fileID: 29125547}
   leftAdornment: {fileID: 964764562}
   rightAdornment: {fileID: 2119991081}

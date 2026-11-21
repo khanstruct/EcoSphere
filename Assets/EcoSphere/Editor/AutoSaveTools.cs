@@ -17,6 +17,10 @@ namespace EcoSphere.Editor
                 throw new Exception("Session progress or world appearance was lost");
             if (WorldProgress.Complete(4, 2, .37f, 123, true).discoveries.Count != 0)
                 throw new Exception("Stone should only unlock once within a session");
+            var serialized = JsonUtility.ToJson(world);
+            var restored = JsonUtility.FromJson<CompletedWorld>(serialized);
+            if (restored.discoveries.Count != 1 || restored.discoveries[0] != SphereIds.Stone)
+                throw new Exception("Serialized world lost its discovery history");
             Debug.Log("ECOSPHERE_SESSION_PROGRESS_PASSED");
         }
 

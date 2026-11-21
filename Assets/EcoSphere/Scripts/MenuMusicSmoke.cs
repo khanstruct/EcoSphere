@@ -14,14 +14,16 @@ namespace EcoSphere
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);
-            yield return new WaitForSeconds(.5f);
+            yield return new WaitForSecondsRealtime(.5f);
+            FindAnyObjectByType<SystemView>().DismissIntroductionForSmoke(); yield return null;
             var music=FindAnyObjectByType<MenuMusic>();
             if(!music || !music.Source.isPlaying || !music.Source.loop)throw new System.Exception("Menu music not looping");
             var originalSource=music.Source;
             music.Source.timeSamples=Mathf.Min(music.Source.clip.samples/2,music.Source.clip.frequency*3);
             int before=music.Source.timeSamples;
             FindAnyObjectByType<SystemView>().OpenPlanet(0);
-            yield return new WaitForSeconds(.4f);
+            yield return new WaitForSecondsRealtime(.4f);
+            FindAnyObjectByType<LevelPrepView>()?.DismissSetupTutorialForSmoke();
             if(!music || FindObjectsByType<MenuMusic>(FindObjectsSortMode.None).Length!=1 || music.Source!=originalSource || music.Source.timeSamples<before)
                 throw new System.Exception("Music restarted or duplicated entering prep");
             before=music.Source.timeSamples;

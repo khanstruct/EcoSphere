@@ -9,7 +9,7 @@ using UnityEngine.InputSystem.UI;
 
 namespace EcoSphere
 {
-    public sealed class LevelPrepView : MonoBehaviour
+    public sealed partial class LevelPrepView : MonoBehaviour
     {
         public static int SystemNumber = 1, PlanetIndex, RequiredSpheres = 2;
         public static bool ReturningToSystem;
@@ -18,12 +18,15 @@ namespace EcoSphere
         static void ResetSession()
         {
             SystemNumber = 1; PlanetIndex = 0; RequiredSpheres = 2;
-            ReturningToSystem = false; smokeStarted = false;
+            ReturningToSystem = false; smokeStarted = false; pendingLoadout = null;
         }
         public TMP_FontAsset font;
-        public Sprite frame, line, arch, starfield, sunModifier, rotationModifier;
-        public Texture2D iceSurface, sunlightSurface;
-        public Sprite iceIcon, sunlightIcon;
+        public Sprite frame, line, arch, starfield;
+        static int[] pendingLoadout;
+        readonly List<int> collectionTypes = new List<int>();
+        readonly List<WorldModifierDefinition> activeModifiers = new List<WorldModifierDefinition>();
+        WorldRecord world;
+        public static int[] TakeLoadout() { var result = pendingLoadout; pendingLoadout = null; return result; }
         public GameObject buttonPrefab;
         public TMP_Text Title { get; private set; }
         public Button Begin { get; private set; }
@@ -64,7 +67,14 @@ namespace EcoSphere
         }
         void Start()
         {
-            RequiredSpheres = Mathf.Clamp(RequiredSpheres,1,4);
+            if (WorldProgress.TryOpenCompletedResults(SystemNumber, PlanetIndex))
+            {
+                SceneManager.LoadScene("Results");
+                return;
+            }
+            world = WorldLevels.Get(SystemNumber, PlanetIndex);
+            RequiredSpheres = world.RequiredSpheres;
+            foreach (string id in world.modifiers) activeModifiers.Add(WorldCatalog.Current.Modifier(id));
             view = new GameObject("Prep Camera",typeof(Camera),typeof(AudioListener)).GetComponent<Camera>();
             view.transform.position = new Vector3(0,0,-10); view.orthographic = true;
             view.clearFlags = CameraClearFlags.SolidColor; view.backgroundColor = new Color(.01f,.02f,.04f);
@@ -112,8 +122,20 @@ namespace EcoSphere
             count=Text("Selection count",loadout.transform,"",24,new Vector2(245,60),new Vector2(0,-405));
             var conditions=Frame("World Conditions",root,new Vector2(880,270),new Vector2(0,-505));
             Text("Conditions heading",conditions.transform,"World Conditions",29,new Vector2(750,45),new Vector2(0,88));
-            Modifier(conditions.transform,sunModifier,"Close to the Sun","Sunlight and Fire are more effective.",25);
-            Modifier(conditions.transform,rotationModifier,"Continuous Rotation","The cluster rotates throughout play.",-65);
+            var modifierViewport = Rect("Modifier viewport", conditions.transform, new Vector2(780,170), new Vector2(0,-30));
+            modifierViewport.gameObject.AddComponent<RectMask2D>();
+            modifierViewport.gameObject.AddComponent<Image>().color = Color.clear;
+            var modifierContent = Rect("Modifier list", modifierViewport, new Vector2(780,170), Vector2.zero);
+            modifierContent.anchorMin = modifierContent.anchorMax = new Vector2(.5f,1); modifierContent.pivot = new Vector2(.5f,1);
+            var modifierScroll = conditions.gameObject.AddComponent<ScrollRect>();
+            modifierScroll.viewport = modifierViewport; modifierScroll.content = modifierContent;
+            modifierScroll.horizontal = false; modifierScroll.movementType = ScrollRect.MovementType.Clamped;
+            for (int i=0;i<activeModifiers.Count;i++)
+            {
+                var modifier = activeModifiers[i];
+                Modifier(modifierContent,modifier.icon,modifier.displayName,modifier.description,-50-i*82,modifier.id);
+            }
+            if (activeModifiers.Count == 0) Text("No modifiers",modifierContent,"No modifiers",23,new Vector2(650,50),new Vector2(0,-45));
             var back=Navigation("Back",new Vector2(-270,-738));
             back.onClick.AddListener(()=>{ReturningToSystem=true; SceneManager.LoadScene("System");});
             Begin=Navigation("Begin",new Vector2(270,-738));
@@ -121,6 +143,8 @@ namespace EcoSphere
             if (!FindAnyObjectByType<EventSystem>()) new GameObject("EventSystem",typeof(EventSystem),typeof(InputSystemUIInputModule));
             Refresh();
             Reflow();
+            InitializeSetupTutorial();
+            if(System.Array.IndexOf(System.Environment.GetCommandLineArgs(),"-setupTutorialSmoke")>=0) StartCoroutine(SetupTutorialSmoke());
             if(!smokeStarted && System.Array.IndexOf(System.Environment.GetCommandLineArgs(),"-prepSmoke")>=0)
             { smokeStarted=true; StartCoroutine(Smoke()); }
         }
@@ -161,7 +185,7 @@ namespace EcoSphere
             var content=(RectTransform)collection.Find("Collection viewport/Sphere list");
             int columns=Mathf.Max(2,Mathf.FloorToInt((leftWidth-65)/245));
             float tileWidth=Mathf.Min(245,(leftWidth-65)/columns-10);
-            content.sizeDelta=new Vector2(leftWidth-65,Mathf.Max(viewportHeight,410)); content.anchoredPosition=Vector2.zero;
+            content.sizeDelta=new Vector2(leftWidth-65,Mathf.Max(viewportHeight, Mathf.CeilToInt(tiles.Count / (float)columns) * 275 + 160)); content.anchoredPosition=Vector2.zero;
             for(int i=0;i<tiles.Count;i++)
             {
                 var rect=tiles[i].rectTransform; rect.anchorMin=rect.anchorMax=new Vector2(.5f,1);
@@ -170,21 +194,17 @@ namespace EcoSphere
                 In(rect,"Midnight backing",rect.sizeDelta-new Vector2(42,42),Vector2.zero);
                 In(rect,"Rotating sphere",new Vector2(Mathf.Min(185,tileWidth-35),Mathf.Min(185,tileWidth-35)),new Vector2(0,20));
             }
+            In(content,"Collection note",new Vector2(leftWidth-90,80),new Vector2(0,-Mathf.CeilToInt(tiles.Count/(float)columns)*275-90));
             In(loadout,"Midnight backing",new Vector2(rightWidth-42,loadoutHeight-42),Vector2.zero);
             In(loadout,"Loadout heading",new Vector2(rightWidth-35,60),new Vector2(0,loadoutHeight*.5f-55));
             for(int i=0;i<slots.Count;i++)
             {
-                if(m.wide)
-                {
-                    int cols=RequiredSpheres==1?1:2;
-                    float slotSize=RequiredSpheres>2?70:110;
-                    ScreenLayout.Place(slots[i],Vector2.one*slotSize,new Vector2((i%cols-(cols-1)*.5f)*145,RequiredSpheres>2?30-(i/cols)*80:-10));
-                }
-                else
-                {
-                    float spacing=Mathf.Min(180,(loadoutHeight-190)/RequiredSpheres);
-                    ScreenLayout.Place(slots[i],Vector2.one*Mathf.Min(140,spacing*.8f),new Vector2(0,(RequiredSpheres-1)*spacing*.5f-i*spacing));
-                }
+                int cols=m.wide?Mathf.Min(2,RequiredSpheres):1;
+                int rows=Mathf.CeilToInt(RequiredSpheres/(float)cols);
+                float horizontal=(rightWidth-45)/cols;
+                float vertical=Mathf.Min(180,Mathf.Max(30,loadoutHeight-180)/rows);
+                float slotSize=Mathf.Max(16,Mathf.Min(140,horizontal-18,vertical*.8f));
+                ScreenLayout.Place(slots[i],Vector2.one*slotSize,new Vector2((i%cols-(cols-1)*.5f)*horizontal,(rows-1)*vertical*.5f-(i/cols)*vertical));
                 var preview=slots[i].Find("Selected sphere") as RectTransform;
                 if(preview)preview.sizeDelta=slots[i].sizeDelta-Vector2.one*10;
             }
@@ -192,15 +212,21 @@ namespace EcoSphere
             In(conditions,"Midnight backing",new Vector2((m.wide?rightWidth:m.width-20)-42,conditionsHeight-42),Vector2.zero);
             In(conditions,"Conditions heading",new Vector2((m.wide?rightWidth:m.width)-60,40),new Vector2(0,conditionsHeight*.5f-40));
             float conditionWidth=m.wide?rightWidth:m.width-20;
-            for(int i=0;i<2;i++)
+            var modifierViewport=(RectTransform)conditions.Find("Modifier viewport");
+            ScreenLayout.Place(modifierViewport,new Vector2(conditionWidth-50,Mathf.Max(40,conditionsHeight-90)),new Vector2(0,-32));
+            var modifierContent=(RectTransform)modifierViewport.Find("Modifier list");
+            modifierContent.sizeDelta=new Vector2(conditionWidth-50,Mathf.Max(modifierViewport.sizeDelta.y,activeModifiers.Count*82+20));
+            modifierContent.anchoredPosition=Vector2.zero;
+            if (activeModifiers.Count==0) In(modifierContent,"No modifiers",new Vector2(conditionWidth-70,50),Vector2.zero);
+            for(int i=0;i<activeModifiers.Count;i++)
             {
-                string name=i==0?"Close to the Sun":"Continuous Rotation";
-                float y=conditionsHeight*.5f-(m.wide?95:105)-i*(m.wide?72:82);
-                In(conditions,name+" icon",new Vector2(62,62),new Vector2(-conditionWidth*.5f+70,y));
-                In(conditions,name,new Vector2(conditionWidth-150,32),new Vector2(42,y+17));
-                In(conditions,name+" description",new Vector2(conditionWidth-150,46),new Vector2(42,y-20));
-                conditions.Find(name).GetComponent<TMP_Text>().fontSize=m.wide?22:24;
-                conditions.Find(name+" description").GetComponent<TMP_Text>().fontSize=m.wide?18:21;
+                string name=activeModifiers[i].id;
+                float y=modifierContent.sizeDelta.y*.5f-45-i*82;
+                In(modifierContent,name+" icon",new Vector2(56,56),new Vector2(-conditionWidth*.5f+65,y));
+                In(modifierContent,name,new Vector2(conditionWidth-155,32),new Vector2(30,y+17));
+                In(modifierContent,name+" description",new Vector2(conditionWidth-155,46),new Vector2(30,y-20));
+                modifierContent.Find(name).GetComponent<TMP_Text>().fontSize=m.wide?20:22;
+                modifierContent.Find(name+" description").GetComponent<TMP_Text>().fontSize=m.wide?17:19;
             }
             Move("Back",new Vector2(360,120),new Vector2(-m.width*.5f+180,-m.height*.5f+62));
             Move("Begin",new Vector2(360,120),new Vector2(m.width*.5f-180,-m.height*.5f+62));
@@ -214,20 +240,29 @@ namespace EcoSphere
             content.anchorMin=content.anchorMax=new Vector2(.5f,1); content.pivot=new Vector2(.5f,1);
             var scroll=panel.gameObject.AddComponent<ScrollRect>(); scroll.viewport=viewport; scroll.content=content;
             scroll.horizontal=false; scroll.vertical=true; scroll.movementType=ScrollRect.MovementType.Clamped;
-            for(int i=0;i<2;i++)
+            foreach (var sphere in SphereCatalog.Current.spheres)
+                if (sphere.AmmoEligible && WorldProgress.IsSphereAvailable(sphere.id)) collectionTypes.Add(sphere.id);
+            // Put the opening pair first, regardless of asset-list ordering.
+            collectionTypes.Sort((a,b) => {
+                int Rank(int id) { int index = System.Array.IndexOf(SphereCatalog.Current.openingSpheres, id); return index >= 0 ? index : id + 100; }
+                return Rank(a).CompareTo(Rank(b));
+            });
+            for(int i=0;i<collectionTypes.Count;i++)
             {
-                var tile=Frame(i==0?"Ice":"Sunlight",content,new Vector2(245,260),new Vector2(i==0?-128:128,-145));
+                int type = collectionTypes[i];
+                var definition = SphereCatalog.Current.Get(type);
+                var tile=Frame(definition.displayName,content,new Vector2(245,260),new Vector2(i==0?-128:128,-145));
                 tile.rectTransform.anchorMin=tile.rectTransform.anchorMax=new Vector2(.5f,1);
                 tile.color=new Color(1,1,1,.35f); tiles.Add(tile);
                 var preview=Rect("Rotating sphere",tile.transform,new Vector2(185,185),new Vector2(0,20));
-                Preview(preview,i);
-                Text("Name",tile.transform,i==0?"Ice":"Sunlight",27,new Vector2(210,50),new Vector2(0,-85));
+                Preview(preview,type);
+                Text("Name",tile.transform,definition.displayName,27,new Vector2(210,50),new Vector2(0,-85));
                 tile.raycastTarget=true; var button=tile.gameObject.AddComponent<Button>(); button.targetGraphic=tile;
                 ButtonClickSound.Attach(button);
                 button.transition=Selectable.Transition.None;
-                int type=i; button.onClick.AddListener(()=>AddSphere(type));
+                button.onClick.AddListener(()=>AddSphere(type));
             }
-            var note=Text("Collection note",content,"More spheres await discovery",22,new Vector2(480,80),new Vector2(0,-365));
+            var note=Text("Collection note",content,"More spheres await discovery",22,new Vector2(480,80),new Vector2(0, -Mathf.CeilToInt(collectionTypes.Count / 2f) * 275 - 90));
             note.rectTransform.anchorMin=note.rectTransform.anchorMax=new Vector2(.5f,1);
             note.color=new Color(.6f,.66f,.74f);
         }
@@ -235,13 +270,13 @@ namespace EcoSphere
         {
             var raw=parent.gameObject.AddComponent<RawImage>(); raw.raycastTarget=false;
             var preview=parent.gameObject.AddComponent<SpherePreview>();
-            preview.surface=type==0?iceSurface:sunlightSurface; preview.icon=type==0?iceIcon:sunlightIcon;
+            preview.definition=SphereCatalog.Current.Get(type);
         }
-        void Modifier(Transform parent,Sprite icon,string heading,string detail,float y)
+        void Modifier(Transform parent,Sprite icon,string heading,string detail,float y,string key)
         {
-            Image(heading+" icon",parent,icon,new Vector2(70,70),new Vector2(-355,y));
-            var title=Text(heading,parent,heading,24,new Vector2(650,32),new Vector2(30,y+17)); title.alignment=TextAlignmentOptions.Left;
-            var description=Text(heading+" description",parent,detail,21,new Vector2(650,32),new Vector2(30,y-17));
+            Image(key+" icon",parent,icon,new Vector2(70,70),new Vector2(-355,y));
+            var title=Text(key,parent,heading,24,new Vector2(650,32),new Vector2(30,y+17)); title.alignment=TextAlignmentOptions.Left;
+            var description=Text(key+" description",parent,detail,21,new Vector2(650,32),new Vector2(30,y-17));
             description.alignment=TextAlignmentOptions.Left; description.color=new Color(.78f,.81f,.86f);
         }
         Button Navigation(string title,Vector2 position)
@@ -252,17 +287,25 @@ namespace EcoSphere
         }
         public void AddSphere(int type)
         {
-            if(type<0||type>1||Selected.Contains(type)||Selected.Count>=RequiredSpheres)return;
+            if(SetupInputBlocked)return;
+            if(!collectionTypes.Contains(type)||Selected.Contains(type)||Selected.Count>=RequiredSpheres)return;
             Selected.Add(type); Refresh();
         }
         void BeginLevel()
         {
+            if(SetupInputBlocked && !CanBeginDuringTutorial)return;
             if(!Begin.interactable || Selected.Count!=RequiredSpheres)return;
+            if (WorldProgress.TryOpenCompletedResults(SystemNumber, PlanetIndex))
+            {
+                SceneManager.LoadScene("Results");
+                return;
+            }
             string scene=WorldLevels.GameplayScene(SystemNumber,PlanetIndex);
-            if(!string.IsNullOrEmpty(scene))SceneManager.LoadScene(scene);
+            if(!string.IsNullOrEmpty(scene)) { FinishBeginTutorial(); pendingLoadout=Selected.ToArray(); SceneManager.LoadScene(scene); }
         }
         public void Remove(int index)
         {
+            if(SetupInputBlocked)return;
             if(index<0||index>=Selected.Count)return;
             Selected.RemoveAt(index); Refresh();
         }
@@ -273,23 +316,25 @@ namespace EcoSphere
                 var old=slots[i].Find("Selected sphere"); if(old) Destroy(old.gameObject);
                 if(i<Selected.Count) Preview(Rect("Selected sphere",slots[i],slots[i].sizeDelta-Vector2.one*10,Vector2.zero),Selected[i]);
             }
-            for(int i=0;i<tiles.Count;i++) tiles[i].color=new Color(1,1,1,Selected.Contains(i)?1:.35f);
+            for(int i=0;i<tiles.Count;i++) tiles[i].color=new Color(1,1,1,Selected.Contains(collectionTypes[i])?1:.35f);
             count.text=Selected.Count+" / "+RequiredSpheres+" selected";
-            Begin.interactable=Selected.Count==RequiredSpheres;
+            Begin.interactable=Selected.Count==RequiredSpheres&&!string.IsNullOrWhiteSpace(world.GameplayScene);
             if(layoutCanvas)Reflow();
+            UpdateSetupTutorial();
         }
         IEnumerator Smoke()
         {
+            DismissSetupTutorialForSmoke();
             yield return new WaitForSeconds(1);
             var animated=FindAnyObjectByType<SpherePreview>();
             Quaternion initial=animated.SurfaceRotation;
             yield return new WaitForSeconds(.3f);
             if(Quaternion.Angle(initial,animated.SurfaceRotation)<1)throw new System.Exception("Sphere surface must rotate");
             if(Title.text!=WorldLevels.Name(SystemNumber,PlanetIndex)||Begin.interactable)throw new System.Exception("Prep initial state");
-            AddSphere(0); AddSphere(0); AddSphere(1);
+            AddSphere(SphereIds.Fire); AddSphere(SphereIds.Fire); AddSphere(SphereIds.Void);
             if(Selected.Count!=2||Begin.interactable!=(RequiredSpheres==2))throw new System.Exception("Prep selection");
-            Remove(0); if(Selected.Count!=1||Selected[0]!=1)throw new System.Exception("Prep removal");
-            AddSphere(0); yield return new WaitForSeconds(.4f);
+            Remove(0); if(Selected.Count!=1||Selected[0]!=SphereIds.Void)throw new System.Exception("Prep removal");
+            AddSphere(SphereIds.Fire); yield return new WaitForSeconds(.4f);
             var target=new RenderTexture(900,1600,24); view.targetTexture=target; view.aspect=900f/1600;
             yield return null;
             yield return null;

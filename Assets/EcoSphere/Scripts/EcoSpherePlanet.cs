@@ -32,12 +32,26 @@ namespace EcoSphere
             var target = new RenderTexture(512, 512, 24);
             view.targetTexture = target; view.aspect = 1;
             int previousWater = -1;
-            foreach (float level in new[] { -.02f, .3f, .6f })
+            displayedElements.Clear(); displayedElements.Add(ElementId.Water); displayedElements.Add(ElementId.Fire);
+            var sampleTotals=new double[totals.Length];
+            sampleTotals[(int)ElementId.Water]=25; sampleTotals[(int)ElementId.Fire]=475;
+            float minor=PlanetSurface.Coverage(sampleTotals);
+            sampleTotals[(int)ElementId.Water]=400; sampleTotals[(int)ElementId.Fire]=100;
+            if(minor<=0 || minor>=.05f || PlanetSurface.Coverage(sampleTotals)<=.8f)
+                throw new Exception("Water composition did not preserve minor influence / boost dominant Water");
+            foreach (double waterPoints in new[] { 0d, 100d, 600d })
             {
-                surface.seaLevel = level;
+                Array.Clear(totals,0,totals.Length);
+                totals[(int)ElementId.Water]=waterPoints; totals[(int)ElementId.Fire]=300;
+                UpdateComposition();
+                float level=surface.TargetSeaLevel;
+                yield return new WaitForSeconds(2.5f);
+                if(Mathf.Abs(surface.seaLevel-level)>.001f)throw new Exception("Water did not settle to its composition target");
                 // Run the component update before capturing the material's new threshold.
                 var properties = new MaterialPropertyBlock();
                 renderer.GetPropertyBlock(properties); properties.SetFloat("_SeaLevel", level); renderer.SetPropertyBlock(properties);
+                view.transform.position = new Vector3(planet.position.x, planet.position.y, -25);
+                view.orthographicSize = 5.6f; view.aspect = 1;
                 view.Render();
                 var oldActive = RenderTexture.active;
                 RenderTexture.active = target;
@@ -54,7 +68,7 @@ namespace EcoSphere
                 if (level < 0 && waterPixels > 10 || previousWater >= 0 && waterPixels <= previousWater)
                     throw new Exception("Heightmap preview did not fill progressively with water: " + waterPixels);
                 previousWater = waterPixels;
-                string name = level < 0 ? "barren" : level < .5f ? "lakes" : "oceans";
+                string name = waterPoints==0 ? "barren" : waterPoints<200 ? "lakes" : "oceans";
                 System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.dataPath, "../Logs/planet-" + name + ".png"), pixels.EncodeToPNG());
                 Destroy(pixels);
                 Debug.Log($"ECOSPHERE_PLANET_PREVIEW {name} waterPixels={waterPixels}");

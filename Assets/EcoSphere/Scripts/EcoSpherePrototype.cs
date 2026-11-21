@@ -9,29 +9,21 @@ using UnityEngine.UI;
 
 namespace EcoSphere
 {
+    [RequireComponent(typeof(LevelAudio))]
     public sealed partial class EcoSpherePrototype : MonoBehaviour
     {
-        public enum LevelLayout { StoneTutorial, FirstTutorial }
+        public enum LevelLayout { StoneTutorial, FirstTutorial, Procedural }
         [Header("Level layout")]
         public LevelLayout levelLayout = LevelLayout.StoneTutorial;
+        bool ProceduralLayout => levelLayout==LevelLayout.Procedural;
         bool StoneTutorial => levelLayout == LevelLayout.StoneTutorial;
         [Header("Approved artwork")]
-        public Texture2D iceSurface, sunlightSurface, coreSurface;
         public Material receivingPlanetMaterial;
-        public Texture2D stoneSurface;
-        public Sprite stoneIcon;
         const int StoneType = 3;
-        Material stoneMaterial;
-        public Texture2D laserSurface;
-        public Sprite laserIcon;
         public TMP_FontAsset uiFont;
-        public Sprite iceIcon, sunlightIcon, coreHalo, leftArm, rightArm, foreground;
+        public Sprite leftArm, rightArm, foreground;
         [Header("Space backdrop")]
         public Sprite starfield, twinkleStar;
-        [Header("Element RGB colors")]
-        public Color iceColor = new Color32(55, 198, 255, 255);
-        public Color sunlightColor = new Color32(255, 194, 40, 255);
-        public Color stoneColor = new Color32(150, 101, 59, 255);
         [Header("Turn settings")]
         public float shotSpeed = 13;
         public float rotationDegrees = 24;
@@ -50,8 +42,8 @@ namespace EcoSphere
         readonly ShotSelector shotSelector = new ShotSelector();
         readonly Dictionary<Vector2Int, GameObject> visuals = new Dictionary<Vector2Int, GameObject>();
         readonly List<Vector2> aimObstacles = new List<Vector2>();
-        readonly int[] totals = new int[2];
-        readonly float[] shown = new float[2];
+        readonly double[] totals = new double[Enum.GetValues(typeof(ElementId)).Length];
+        readonly float[] shown = new float[Enum.GetValues(typeof(ElementId)).Length];
         readonly List<Material> materials = new List<Material>();
         readonly List<Sprite> generatedSprites = new List<Sprite>();
         Transform cluster, gun, gunArtwork, leftHinge, rightHinge, halo, planet;
@@ -59,7 +51,7 @@ namespace EcoSphere
         SpaceBackground spaceBackground;
         LevelAudio levelAudio;
         GameObject loaded, projectile;
-        Material iceMaterial, sunlightMaterial, coreMaterial, lineMaterial;
+        Material lineMaterial;
         LineRenderer aim;
         LineRenderer cannonBacking;
         Vector2 direction = Vector2.up, projectileDirection;
@@ -75,10 +67,7 @@ namespace EcoSphere
         }
         readonly List<CannonContactPart> cannonContacts = new List<CannonContactPart>();
         float spinAngle;
-        TMP_Text status, detail, iceLabel, sunLabel;
-        RectTransform goalLine, abundanceLine;
-        readonly List<RectTransform>[] bars = { new List<RectTransform>(), new List<RectTransform>() };
-        readonly List<Image>[] barImages = { new List<Image>(), new List<Image>() };
+        TMP_Text status, detail;
         TMP_FontAsset font;
         bool smoke;
         public int CellCount => board.Cells.Count;
@@ -86,15 +75,20 @@ namespace EcoSphere
         void Start()
         {
             bool planetTesting = Array.IndexOf(Environment.GetCommandLineArgs(), "-planetSmoke") >= 0;
-            smoke = Array.IndexOf(Environment.GetCommandLineArgs(), "-ecosphereSmoke") >= 0 || LaserTesting || TutorialTesting || planetTesting || FirstTutorialTesting;
+            smoke = Array.IndexOf(Environment.GetCommandLineArgs(), "-ecosphereSmoke") >= 0 || LaserTesting || TutorialTesting || planetTesting || FirstTutorialTesting || SphereDataTesting || CompositionTesting;
+            InitializeSphereData();
             BuildWorld();
             levelAudio = GetComponent<LevelAudio>();
-            if (levelAudio) levelAudio.Initialize();
+            if (!levelAudio) levelAudio = gameObject.AddComponent<LevelAudio>();
+            levelAudio.Initialize();
             BuildInterface();
             BuildBoard();
             LoadNext();
-            if (StoneTutorial && (!smoke || TutorialTesting)) ShowTutorial(0);
-            if (FirstTutorialTesting) StartCoroutine(FirstTutorialSmokeRun());
+            if (levelLayout==LevelLayout.FirstTutorial && (!smoke || FirstTutorialTesting)) ShowTutorial(0);
+            else if (StoneTutorial && (!smoke || TutorialTesting)) ShowTutorial(2);
+            if (CompositionTesting) StartCoroutine(CompositionSmokeRun());
+            else if (SphereDataTesting) StartCoroutine(SphereDataSmokeRun());
+            else if (FirstTutorialTesting) StartCoroutine(FirstTutorialSmokeRun());
             else if (planetTesting) StartCoroutine(PlanetSmokeRun());
             else if (TutorialTesting) StartCoroutine(TutorialSmokeRun());
             else if (LaserTesting) StartCoroutine(LaserSmokeRun());
@@ -160,10 +154,8 @@ namespace EcoSphere
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(.48f, .5f, .6f);
             lineMaterial = new Material(Shader.Find("Sprites/Default")); materials.Add(lineMaterial);
-            iceMaterial = Surface(iceSurface); sunlightMaterial = Surface(sunlightSurface);
-            laserMaterial = Surface(laserSurface);
-            stoneMaterial = Surface(stoneSurface);
-            coreMaterial = Surface(coreSurface, true);
+            foreach (var definition in Catalog.spheres)
+                sphereMaterials.Add(definition.id, Surface(definition.surface, definition.unlit));
             cluster = new GameObject("Rotating hex cluster").transform; cluster.position = center;
             MakeSphere("Black hole core", -1, cluster, Vector3.zero);
             halo = SpritePart("Pulsing core halo", coreHalo, cluster, new Vector3(0, 0, .6f), 1.8f * VisualScale, -1).transform;
@@ -211,7 +203,7 @@ namespace EcoSphere
             foreach (var part in gunArtwork.GetComponentsInChildren<SpriteRenderer>())
                 if (part.sprite) cannonContacts.Add(new CannonContactPart {
                     transform = part.transform, vertices = part.sprite.vertices, triangles = part.sprite.triangles });
-            aim = Line("Loaded element aiming line", transform, iceColor, .03f, 9);
+            aim = Line("Loaded element aiming line", transform, ColorFor(activeSphereTypes[0]), .03f, 9);
             aim.positionCount = 2;
         }
 
@@ -235,25 +227,33 @@ namespace EcoSphere
             var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere); mesh.name = "Rotating surface";
             mesh.transform.SetParent(root.transform, false); mesh.transform.localScale = Vector3.one * Radius * 2;
             Destroy(mesh.GetComponent<Collider>());
-            ApplySurface(mesh.GetComponent<Renderer>(), type == StoneType ? stoneMaterial : type == LaserType ? laserMaterial : type < 0 ? coreMaterial : type == 0 ? iceMaterial : sunlightMaterial,
-                type == StoneType ? stoneSurface : type == LaserType ? laserSurface : type < 0 ? coreSurface : type == 0 ? iceSurface : sunlightSurface, Color.white);
+            var definition = Definition(type);
+            ApplySurface(mesh.GetComponent<Renderer>(), sphereMaterials[type], definition.surface, Color.white);
             var appearance = root.AddComponent<SphereAppearance>(); appearance.surface = mesh.transform;
+            appearance.glow=SphereGlow.Create(root.transform,definition,Radius*2,root.layer);
             appearance.spin = type < 0 ? 8 : 12;
             if (type == LaserType) MakeLaserDisplay(root);
             else if (type >= 0)
-                appearance.icon = SpritePart("Camera-facing type icon", type == StoneType ? stoneIcon : type == 0 ? iceIcon : sunlightIcon,
+                appearance.icon = SpritePart("Camera-facing type icon", definition.icon,
                     root.transform, new Vector3(0, 0, -.47f * VisualScale), .5f * VisualScale, 4).transform;
             return root;
         }
 
         void BuildBoard()
         {
-            // Shuffle a balanced inner ring, leaving both ammo types for the final lesson.
-            var inner = new List<Vector2Int>(BoardRules.Directions);
-            for (int i = inner.Count - 1; i > 0; i--)
+            if(ProceduralLayout)
             {
-                int j = UnityEngine.Random.Range(0, i + 1);
-                var swap = inner[i]; inner[i] = inner[j]; inner[j] = swap;
+                ProceduralCluster.Populate(board,activeSphereTypes,InitialRings,preparedWorld.seed,preparedWorld.rules.clustering);
+                foreach(var cell in board.Cells)
+                    visuals.Add(cell.Key,MakeSphere(Definition(cell.Value).displayName+" "+cell.Key,cell.Value,cluster,BoardRules.Position(cell.Key)));
+                return;
+            }
+            if(StoneTutorial)
+            {
+                StoneTutorialLayout.Populate(board,activeSphereTypes,InitialRings);
+                foreach(var cell in board.Cells)
+                    visuals.Add(cell.Key,MakeSphere(Definition(cell.Value).displayName+" "+cell.Key,cell.Value,cluster,BoardRules.Position(cell.Key)));
+                return;
             }
             // Same-type groups intentionally exist at startup. Only the fired sphere seeds matching.
             for (int q = -InitialRings; q <= InitialRings; q++) for (int r = -InitialRings; r <= InitialRings; r++)
@@ -261,13 +261,9 @@ namespace EcoSphere
                 if (Mathf.Abs(q + r) > InitialRings || (q == 0 && r == 0)) continue;
                 var cell = new Vector2Int(q, r);
                 Vector2 p = BoardRules.Position(cell);
-                int ring = Mathf.Max(Mathf.Abs(q), Mathf.Abs(r), Mathf.Abs(q + r));
-                int type = ring == InitialRings ? 1 : ring >= 2 ? 0 : inner.IndexOf(cell) % 2;
-                if (!StoneTutorial)
-                    type = p.x < -.0001f || (Mathf.Abs(p.x) <= .0001f && p.y < 0) ? 0 : 1;
-                else if (cell == TutorialStoneCell) type = StoneType;
+                int type = p.x < -.0001f || (Mathf.Abs(p.x) <= .0001f && p.y < 0) ? activeSphereTypes[0] : activeSphereTypes[1];
                 board.Cells.Add(cell, type);
-                visuals.Add(cell, MakeSphere((type == StoneType ? "Stone " : type == 0 ? "Ice " : "Sunlight ") + cell, type, cluster, p));
+                visuals.Add(cell, MakeSphere(Definition(type).displayName + " " + cell, type, cluster, p));
             }
         }
 
@@ -275,10 +271,9 @@ namespace EcoSphere
         {
             if (complete || failed) return;
             if (shots == 0 && LaserTesting) loadedType = LaserType;
-            else if (StoneTutorial && !LaserTesting && tutorialStage <= 2) loadedType = 1;
-            else if (StoneTutorial && !LaserTesting && tutorialStage == 3) loadedType = 0;
+            else if (StoneTutorial && !LaserTesting && !stoneReleased) loadedType = TutorialOuterType;
             else if (!shotSelector.TryNext(ElementTypes(), out loadedType)) return;
-            loaded = MakeSphere("Loaded " + (loadedType == 0 ? "Ice" : "Sunlight"), loadedType, gun,
+            loaded = MakeSphere("Loaded " + Definition(loadedType).displayName, loadedType, gun,
                 new Vector3(0, .57f * VisualScale, -.1f));
             ready = true; status.text = "AIM · CLICK TO FIRE";
             if (StoneTutorial && (!smoke || TutorialTesting) && pendingTutorial >= 0) ShowTutorial(pendingTutorial);
@@ -322,7 +317,6 @@ namespace EcoSphere
             UpdateVisualizer();
         }
 
-        Color ColorFor(int type) => type == StoneType ? stoneColor : type == LaserType ? Color.red : type == 0 ? iceColor : sunlightColor;
 
         void Fire()
         {
@@ -386,6 +380,7 @@ namespace EcoSphere
                 if (sphereHit) { Attach(hitCell, projectileDirection); return; }
                 if (bottomHit)
                 {
+                    if (levelAudio) levelAudio.Miss();
                     Destroy(projectile); projectile = null; lost++; lastMatch = lastRelease = 0;
                     StartCoroutine(FinishTurn()); return;
                 }
@@ -442,15 +437,21 @@ namespace EcoSphere
             foreach (var offset in BoardRules.Directions) RotateLaserContact(chosen + offset);
             // Even a would-be match loses immediately if its attached position touches an obstacle.
             if (CheckGameOver()) return;
-            int iceBefore = totals[0], sunlightBefore = totals[1];
+            var resourcesBefore = (double[])totals.Clone();
             var matches = board.MatchFrom(chosen);
             lastMatch = matches.Count; matchedCount += matches.Count;
             RemoveCells(matches, ElementScoring.MatchRate(matches.Count));
             var released = board.Disconnected(); lastRelease = released.Count;
-            AdvanceTutorial(matches.Count, released);
+            AdvanceTutorial(released);
             RemoveCells(released, ElementScoring.Breakaway, true);
             if (levelAudio) levelAudio.Resolve(lastMatch, lastRelease);
-            if (levelAudio) shotHasElementCallout = levelAudio.AnnounceResources(totals[0] - iceBefore, totals[1] - sunlightBefore);
+            if (levelAudio)
+            {
+                var gains = new double[totals.Length];
+                for (int i = 0; i < gains.Length; i++) gains[i] = totals[i] - resourcesBefore[i];
+                // Match identity chooses the voice even if the sphere supplies several elements.
+                shotHasElementCallout = levelAudio.AnnounceMatch(loadedType, lastMatch) || levelAudio.AnnounceResources(gains);
+            }
             complete = board.Cells.Count == 0;
             // Resolve the callout in the impact frame, not after the rotation animation.
             if (levelAudio && !complete && !shotHasElementCallout && lastMatch >= 3 && shotRicochets > 0 &&
@@ -464,12 +465,16 @@ namespace EcoSphere
             foreach (var cell in cells)
             {
                 int type = board.Cells[cell];
-                if (released && type == StoneType) stoneReleased = true;
-                bool contributes = type >= 0 && type < totals.Length;
-                if (contributes) totals[type] += pointsPerSphere;
+                if (released && StoneTutorial && cell==TutorialStoneCell && type == StoneType) stoneReleased = true;
+                var definition = Definition(type);
+                bool contributes = definition.role != SphereRole.Core;
+                if (contributes)
+                {
+                    definition.AddContributions(totals, pointsPerSphere);
+                }
                 if (type != LaserType) score += pointsPerSphere;
                 var visual = visuals[cell]; visuals.Remove(cell); board.Cells.Remove(cell);
-                if (released && (contributes || type == StoneType)) StartCoroutine(Ascend(visual, type));
+                if (released && contributes) StartCoroutine(Ascend(visual, type));
                 else StartCoroutine(DissolveMatch(visual));
             }
         }
@@ -479,14 +484,16 @@ namespace EcoSphere
             visual.transform.SetParent(transform, true);
             Vector3 initialScale = visual.transform.localScale;
             var icons = visual.GetComponentsInChildren<SpriteRenderer>();
+            var originalAlpha=new float[icons.Length];
+            for(int i=0;i<icons.Length;i++)originalAlpha[i]=icons[i].color.a;
             const float duration = .24f;
             for (float t = 0; t < duration; t += Time.deltaTime)
             {
                 float p = Mathf.Clamp01(t / duration);
                 visual.transform.localScale = initialScale * (1 - Mathf.SmoothStep(0, 1, p));
-                foreach (var icon in icons)
+                for(int i=0;i<icons.Length;i++)
                 {
-                    Color color = icon.color; color.a = 1 - p; icon.color = color;
+                    Color color=icons[i].color; color.a=originalAlpha[i]*(1-p); icons[i].color=color;
                 }
                 yield return null;
             }
@@ -554,8 +561,9 @@ namespace EcoSphere
             else yield return new WaitForSecondsRealtime(1);
             yield return new WaitForSecondsRealtime(.15f);
             var appearance = planet.GetComponent<PlanetSurface>();
+            UpdateComposition();
             WorldProgress.Complete(LevelPrepView.SystemNumber, LevelPrepView.PlanetIndex,
-                appearance ? appearance.seaLevel : -.02f, planet.eulerAngles.y, stoneReleased);
+                appearance ? appearance.TargetSeaLevel : -.02f, planet.eulerAngles.y, stoneReleased, selectedElementTotals, resourceGoal, composition.Ranked);
             SceneManager.LoadScene("Results");
         }
 
@@ -586,8 +594,8 @@ namespace EcoSphere
                 if (!touches) continue;
                 if (previewOnly) return true;
                 failed = true; ready = false; complete = false;
-                totals[0] = totals[1] = score = matchedCount = lastMatch = lastRelease = 0;
-                shown[0] = shown[1] = 0;
+                Array.Clear(totals, 0, totals.Length); Array.Clear(shown, 0, shown.Length);
+                score = matchedCount = lastMatch = lastRelease = 0;
                 if (levelAudio) levelAudio.CancelResolution();
                 if (levelAudio) levelAudio.AnnounceResult(false);
                 aim.enabled = false;
@@ -629,47 +637,15 @@ namespace EcoSphere
             var hud = Panel("Portrait HUD", canvas.transform, new Vector2(.5f, .5f), Vector2.zero,
                 new Vector2(900, 1600), Color.clear);
             gameplayRoot = hud;
-            gameplayTitle = Label("Title", hud, new Vector2(.5f, 1), new Vector2(0, -45), new Vector2(850, 60), StoneTutorial ? "ECOSPHERE / TUTORIAL 2" : "ECOSPHERE / TUTORIAL 1", 29);
+            string worldName = preparedWorld != null ? preparedWorld.displayName : WorldLevels.SceneName(SceneManager.GetActiveScene().name);
+            gameplayTitle = Label("Title", hud, new Vector2(.5f, 1), new Vector2(0, -45), new Vector2(850, 60), "ECOSPHERE / " + worldName.ToUpperInvariant(), 29);
             status = Label("Turn", hud, new Vector2(.5f, 1), new Vector2(0, -100), new Vector2(850, 45), "", 21);
             detail = Label("Counters", hud, new Vector2(.5f, 0), new Vector2(0, 525), new Vector2(850, 42), "", 18);
-            var strip = Panel("Resource visualizer", hud, new Vector2(.5f, 0), new Vector2(0, 95), new Vector2(860, 180), new Color(.01f, .018f, .035f, .96f));
+            var strip = Panel("Resource visualizer", hud, new Vector2(.5f, 0), new Vector2(0, 110), new Vector2(860, 210), new Color(.01f, .018f, .035f, .96f));
             resourcePanel = strip;
-            for (int type = 0; type < 2; type++) for (int i = 0; i < 10; i++)
-            {
-                float x = -398 + type * 420 + i * 39;
-                var bar = Panel((type == 0 ? "Ice " : "Sunlight ") + i, strip, new Vector2(.5f, 0),
-                    new Vector2(x, 36), new Vector2(24, 2), ColorFor(type));
-                bar.pivot = new Vector2(.5f, 0); bars[type].Add(bar); barImages[type].Add(bar.GetComponent<Image>());
-            }
-            goalLine = Panel("Fixed resource goal", strip, new Vector2(.5f, 0), new Vector2(0, 36), new Vector2(825, 2), Color.white);
-            abundanceLine = Panel("Excess abundance", strip, new Vector2(.5f, 0), new Vector2(0, 36), new Vector2(825, 2), new Color(1, .76f, .24f));
-            iceLabel = Label("Ice total", strip, new Vector2(.25f, 0), new Vector2(0, 16), new Vector2(390, 30), "ICE 0", 18);
-            sunLabel = Label("Sunlight total", strip, new Vector2(.75f, 0), new Vector2(0, 16), new Vector2(390, 30), "SUNLIGHT 0", 18);
+            BuildResourceVisualizer(strip);
             instructions = Label("Instructions", hud, new Vector2(.5f, 0), new Vector2(0, 485), new Vector2(850, 35),
                 Application.isMobilePlatform ? "Tap the playfield to aim and fire" : "Mouse to aim · Click to fire · R to restart", 18);
-        }
-
-        void UpdateVisualizer()
-        {
-            int goal = Mathf.Max(1, resourceGoal);
-            // Fixed display range keeps the target line stationary as resources arrive.
-            int abundance = Mathf.Max(goal + 1, abundanceGoal);
-            float scale = abundance * 1.2f;
-            for (int type = 0; type < 2; type++)
-            {
-                shown[type] = Mathf.Lerp(shown[type], totals[type], 1 - Mathf.Exp(-Time.deltaTime * 7));
-                for (int i = 0; i < 10; i++)
-                {
-                    bars[type][i].sizeDelta = new Vector2(24, Mathf.Clamp(shown[type] / scale * 125, 2, 125));
-                    barImages[type][i].color = Color.Lerp(ColorFor(type) * .65f, ColorFor(type), .4f + .6f * i / 9);
-                }
-            }
-            goalLine.anchoredPosition = new Vector2(0, 36 + goal / scale * 125);
-            abundanceLine.anchoredPosition = new Vector2(0, 36 + abundance / scale * 125);
-            iceLabel.text = $"ICE {totals[0]}" + (totals[0] >= abundance ? " EXCESS" : totals[0] >= goal ? " READY" : "");
-            sunLabel.text = $"SUNLIGHT {totals[1]}" + (totals[1] >= abundance ? " EXCESS" : totals[1] >= goal ? " READY" : "");
-            detail.text = $"Score {score} · Matched {lastMatch} · Released {lastRelease}\nIncluded {goal} · Excess {abundance}";
-            PositionResourceGoals();
         }
 
         IEnumerator SmokeRun()
@@ -793,14 +769,13 @@ namespace EcoSphere
             RemoveCells(new HashSet<Vector2Int> { sun }, ElementScoring.Breakaway, true);
             if (totals[1] != 100 || LevelAudio.ResourceCallout(new[] { 0, totals[1] }) != -1)
                 throw new Exception("Two Sunlight breakaways must remain below the inclusion threshold");
-            UpdateVisualizer(); float initialLine = goalLine.anchoredPosition.y;
-            float initialExcess = abundanceLine.anchoredPosition.y;
-            totals[0] = totals[1] = abundanceGoal * 4;
+            UpdateVisualizer(); int initialGoal=resourceGoal, initialExcess=abundanceGoal;
+            for (int i = 0; i < totals.Length; i++) totals[i] = abundanceGoal * 4;
             UpdateVisualizer();
-            if (Mathf.Abs(initialLine - goalLine.anchoredPosition.y) > .001f || Mathf.Abs(initialExcess - abundanceLine.anchoredPosition.y) > .001f)
-                throw new Exception("Fixed threshold lines moved when totals increased");
-            if (!iceLabel.text.Contains("EXCESS") || !sunLabel.text.Contains("EXCESS"))
-                throw new Exception("Abundance threshold did not mark elements as excessive");
+            if (initialGoal!=resourceGoal || initialExcess!=abundanceGoal)
+                throw new Exception("Visualizer scaling changed the gameplay thresholds");
+            if (barTotals[0].text != (abundanceGoal*4).ToString() || barTotals[1].text != (abundanceGoal*4).ToString())
+                throw new Exception("Full point totals must remain readable above the visual scale");
             Debug.Log("ECOSPHERE_SCORING_CHECKS_PASSED");
         }
         Vector2 SmokeMatchingDirection()
@@ -815,6 +790,8 @@ namespace EcoSphere
                     if (BoardRules.Sweep(origin, candidate, cluster.TransformPoint(BoardRules.Position(entry.Key)),
                         Radius * 2, nearest, out float distance))
                     { nearest = distance; hitType = entry.Value; hitCenter = cluster.TransformPoint(BoardRules.Position(entry.Key)); }
+                // The test shot must reach its matching target before contacting the Core.
+                if (BoardRules.Sweep(origin, candidate, center, Radius * 2, nearest, out _)) continue;
                 Vector2 offset = hitCenter - origin;
                 float perpendicular = Mathf.Abs(offset.x * candidate.y - offset.y * candidate.x);
                 if (hitType == loadedType && perpendicular < .12f) return candidate;
@@ -825,17 +802,14 @@ namespace EcoSphere
         IEnumerator SmokeVoiceChecks()
         {
             if (!levelAudio || !levelAudio.worldComplete || !levelAudio.creationFailed ||
-                !levelAudio.cryosphere || !levelAudio.heliosphere || !levelAudio.ecosphere)
+                !Catalog.ElementVoice(ElementId.Ice) || !Catalog.ElementVoice(ElementId.Sunlight) || !levelAudio.ecosphere)
                 throw new Exception("Level result voice clips are missing");
             var mainAudio = levelAudio;
             var lossSource = mainAudio.transform.Find("Level result announcer").GetComponent<AudioSource>();
             if (lossSource.clip != mainAudio.creationFailed)
                 throw new Exception("Actual game-over checkpoint did not announce Creation Failed");
             var test = new GameObject("Win announcement test").AddComponent<LevelAudio>();
-            test.worldComplete = mainAudio.worldComplete; test.creationFailed = mainAudio.creationFailed;
-            test.cryosphere = mainAudio.cryosphere; test.heliosphere = mainAudio.heliosphere;
-            test.ecosphere = mainAudio.ecosphere;
-            test.voiceVolume = 0; test.Initialize();
+            test.voiceVolume = 0; test.musicVolume = 0; test.Initialize();
             test.AnnounceResources(ElementScoring.Inclusion, ElementScoring.Inclusion + 50);
             var source = test.transform.Find("Level result announcer").GetComponent<AudioSource>();
             if (source.clip != mainAudio.ecosphere)

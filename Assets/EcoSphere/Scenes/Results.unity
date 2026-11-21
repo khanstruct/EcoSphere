@@ -154,6 +154,7 @@ MonoBehaviour:
   arch: {fileID: 21300000, guid: 707cb239f18ff6a42a12c449bc085e42, type: 3}
   starfield: {fileID: 21300000, guid: 47efd25fd762cf342bd410f8ffe7e60f, type: 3}
   buttonPrefab: {fileID: 222641970439823138, guid: 543a0177d55e1994da1a9fa38be28b55, type: 3}
+  completedWorldMaterial: {fileID: 2100000, guid: 250cc250237f59b43b95df23022711df, type: 2}
   elementDiscovered: {fileID: 8300000, guid: a8de6605c5434cc4ea197433d55a3e77, type: 3}
   elements:
   - type: 0

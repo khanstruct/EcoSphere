@@ -13,7 +13,7 @@ namespace EcoSphere
         internal void CompleteForResultsSmoke()
         {
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "-resultsSmoke") < 0) throw new InvalidOperationException();
-            for (int i = 0; i < 2; i++) tutorialContinue.onClick.Invoke();
+            if(tutorialPaused) ContinueTutorial();
             RemoveCells(new HashSet<Vector2Int>(board.Cells.Keys), ElementScoring.Breakaway, true);
             complete = true; ready = false;
             if (loaded) { Destroy(loaded); loaded = null; }
@@ -53,9 +53,7 @@ namespace EcoSphere
                 throw new Exception("Stone discovery overlay missing after a successful level");
             if (results.DiscoveryPlayCount != 1 || results.ContinueButton.interactable || results.Settled)
                 throw new Exception("Discovery sound or Continue gating incorrect");
-            if (results.Root.Find("World image placeholder").GetComponentsInChildren<RawImage>().Length != 0 ||
-                results.Root.Find("World description placeholder").GetComponentsInChildren<TMPro.TMP_Text>().Length != 0)
-                throw new Exception("World placeholders must remain empty");
+            CheckGlobe(results, expectedMaterial);
             Capture(results, "stone-overlay", 900, 1600);
             Capture(results, "stone-overlay-wide", 1600, 900);
             int clicks = UIClickAudio.PlayCount;
@@ -84,6 +82,18 @@ namespace EcoSphere
             if (Quaternion.Angle(rotation, preview.SurfaceRotation) < .1f) throw new Exception("Completed planet is not rotating");
             if (system.planets[0].transform.Find("Completed world")) throw new Exception("Unplayed planet was marked complete");
 
+            if (!WorldProgress.TryOpenCompletedResults(stored.system,stored.planet) ||
+                WorldProgress.Pending.discoveries.Count != 0 || WorldProgress.Pending.DisplayedDiscoveries.Count != 1 ||
+                WorldProgress.Pending.DisplayedDiscoveries[0] != SphereIds.Stone)
+                throw new Exception("Completed world lost its original discovery history or repeated a reward");
+            SceneManager.LoadScene("Results");
+            yield return new WaitForSecondsRealtime(.4f);
+            results = FindAnyObjectByType<ResultsView>();
+            CheckGlobe(results, expectedMaterial);
+            if (results.DiscoverySpheres.Count != 1 || results.DiscoverySpheres[0].name != "Stone discovered sphere" ||
+                !results.Settled || !results.ContinueButton.interactable || results.DiscoveryPlayCount != 0 || results.OkButton)
+                throw new Exception("Revisited results must show saved Stone without rediscovery audio or animation");
+            Capture(results,"revisited-stone",900,1600);
             // Exercise the layout/animation capacity with three sample discoveries, without changing player saves.
             var three = WorldProgress.Complete(3, 2, -.02f, 30, false);
             three.discoveries.AddRange(new[] { 0, 1, 3 });
@@ -100,6 +110,18 @@ namespace EcoSphere
             if (!results.Settled || results.DiscoverySpheres.Exists(s => !s.parent.name.EndsWith("collected")))
                 throw new Exception("Multiple discoveries did not settle");
             Capture(results, "three-collected-wide", 1600, 900);
+            var four = WorldProgress.Complete(3,3,-.02f,45,false);
+            four.discoveries.AddRange(new[] { SphereIds.Ice,SphereIds.Sunlight,SphereIds.Stone,SphereIds.Fire });
+            SceneManager.LoadScene("Results"); yield return new WaitForSecondsRealtime(.4f);
+            results = FindAnyObjectByType<ResultsView>();
+            if (results.DiscoverySpheres.Count != 4) throw new Exception("Fourth discovery was omitted");
+            Capture(results,"four-overlay",900,1600); Capture(results,"four-overlay-wide",1600,900);
+            results.OkButton.onClick.Invoke();
+            deadline = Time.realtimeSinceStartup+5;
+            while (!results.Settled && Time.realtimeSinceStartup < deadline) yield return null;
+            if (!results.Settled || results.DiscoverySpheres.Exists(s => !s.parent.name.EndsWith("collected")))
+                throw new Exception("Four discoveries did not settle");
+            Capture(results,"four-collected-wide",1600,900);
             var repeat = WorldProgress.Complete(3, 2, -.02f, 60, true);
             if (repeat.discoveries.Count != 0) throw new Exception("Stone was awarded more than once");
             SceneManager.LoadScene("Results");
@@ -107,10 +129,21 @@ namespace EcoSphere
             results = FindAnyObjectByType<ResultsView>();
             if (!results.Settled || !results.ContinueButton.interactable || results.DiscoveryPlayCount != 0 || results.OkButton)
                 throw new Exception("No-discovery results should allow immediate Continue without discovery audio");
-            Debug.Log("ECOSPHERE_RESULTS_SMOKE_PASSED: actual win transition, Stone sound, Ok animation, Continue, rotating saved map world, 0/1/3 discoveries, responsive renders");
+            Debug.Log("ECOSPHERE_RESULTS_SMOKE_PASSED: actual win transition, Stone sound, Ok animation, Continue, rotating saved map world, 0/1/3/4 discoveries, responsive renders");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif
+        }
+
+        static void CheckGlobe(ResultsView results, Material expectedMaterial)
+        {
+            var globe=results.Root.Find("Completed world globe");
+            var preview=globe ? globe.GetComponent<SpherePreview>() : null;
+            var stored=WorldProgress.Pending.world;
+            if(!preview || preview.surfaceMaterial!=expectedMaterial || preview.seaLevel!=stored.seaLevel ||
+                preview.initialRotation!=stored.rotation || !globe.GetComponent<RawImage>().texture ||
+                globe.GetComponent<Image>() || globe.Find("Backing") || results.Root.Find("World image placeholder"))
+                throw new Exception("Results globe must show saved appearance without an image frame");
         }
 
         static void Capture(ResultsView results, string name, int width, int height)

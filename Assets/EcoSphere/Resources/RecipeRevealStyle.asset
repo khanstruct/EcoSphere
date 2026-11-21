@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fc493f498574474eb9772a727a65d01, type: 3}
+  m_Name: RecipeRevealStyle
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.RecipeRevealStyle
+  sphereMaterial: {fileID: 2100000, guid: 5ef6c43e8d6d2e647993ebf5eaf5de62, type: 2}
+  flareMaterial: {fileID: 2100000, guid: bcb2b5dd360ef9a488819e957844e85a, type: 2}
+  ingredientHold: 0.5
+  mergeDuration: 0.9
+  volatileDuration: 0.65
+  flashDuration: 0.22
+  revealDuration: 0.5
+  revealHold: 0.35
+  collectDuration: 0.8
+  screenWash: 0.16
+  shakeDistance: 3

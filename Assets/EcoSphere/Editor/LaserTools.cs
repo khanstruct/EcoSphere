@@ -9,6 +9,7 @@ namespace EcoSphere.Editor
     {
         public static void Setup()
         {
+            SphereCatalogTools.Configure();
             const string folder = "Assets/EcoSphere/Art/Spheres/Laser/";
             foreach (string filename in new[] { "laser-surface-v1.png", "laser-icon-v1.png" })
             {
@@ -25,9 +26,8 @@ namespace EcoSphere.Editor
             }
             EditorSceneManager.OpenScene(TestLevelTools.ScenePath);
             var game = UnityEngine.Object.FindAnyObjectByType<EcoSpherePrototype>();
-            game.laserSurface = AssetDatabase.LoadAssetAtPath<Texture2D>(folder + "laser-surface-v1.png");
-            game.laserIcon = AssetDatabase.LoadAssetAtPath<Sprite>(folder + "laser-icon-v1.png");
-            if (!game.laserSurface || !game.laserIcon) throw new Exception("Laser artwork missing");
+            var definition = SphereCatalog.Current.Get(SphereIds.Laser);
+            if (!definition.surface || !definition.icon) throw new Exception("Laser artwork missing");
             EditorUtility.SetDirty(game);
             EditorSceneManager.SaveScene(game.gameObject.scene);
             TestLevelTools.Validate();
@@ -42,13 +42,8 @@ namespace EcoSphere.Editor
 
         public static void SetupAudio()
         {
-            var scene = EditorSceneManager.OpenScene(TestLevelTools.ScenePath);
-            var audio = UnityEngine.Object.FindAnyObjectByType<LevelAudio>();
-            audio.laser = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/laser-sphere.mp3");
-            if (!audio.laser) throw new Exception("Missing laser-sphere sound");
-            EditorUtility.SetDirty(audio);
-            EditorSceneManager.SaveScene(scene);
-            Debug.Log("ECOSPHERE_LASER_AUDIO_ASSIGNED");
+            GameAudioTools.Configure();
+            Debug.Log("ECOSPHERE_LASER_AUDIO_ASSIGNED: shared audio settings, no scene assignments");
         }
     }
 }

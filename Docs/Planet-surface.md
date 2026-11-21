@@ -9,8 +9,10 @@ Runtime textures are both 256 × 128:
 
 Both textures use horizontal repeat, vertical clamp, bilinear filtering, and mipmaps. The material references the custom URP shader directly, so the shader is included in builds. Source images and generation prompts are preserved in `SourceArt/Planets`, outside runtime Assets.
 
-The world starts barren with Sea Level at -0.02. During Play Mode, select the runtime **Receiving planet** object and adjust **Planet Surface → Sea Level** to preview flooding: dark terrain fills first, lighter regions remain exposed. This is a developer preview; element contributions are not connected yet. Clouds, ice coverage, atmospheric glow, and visual response to received elements remain later work.
+The world starts barren with Sea Level at -0.02. During Play Mode, select the runtime **Receiving planet** object and adjust **Planet Surface → Sea Level** to preview flooding: dark terrain fills first, lighter regions remain exposed. Water is now connected to gameplay as described below; composition updates override manual sea-level changes.
 
 `EcoSphere.Editor.PlanetTools.Setup` imports the pair, creates/updates the material, and patches First Light without rebuilding its scene. The test-level builder also preserves these assignments.
 
 Run `EcoSphere.Editor.TestLevelTools.RunSmoke` with `-planetSmoke` to check texture assignment, rotation, pause behavior, and increasing water coverage. Full-sphere previews are written to `Logs/planet-barren.png`, `planet-lakes.png`, and `planet-oceans.png` within the validation project.
+
+Water contributions now drive sea level through the selected-element totals used by the visualizer. Coverage equals the Water share multiplied by buildup toward 250 Water points, with up to 25 percentage points of extra coverage as Water rises from 50% to 100%. These PlanetSurface settings are independent of recipe thresholds. An area-weighted heightmap distribution converts coverage into elevation; transitions are smooth. Shallow water is lighter than deep water, with a subtle specular highlight. Completed worlds save the target level for System previews. Naturally occurring-only elements are excluded. Clouds, ice and atmosphere remain later work.

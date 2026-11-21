@@ -4,6 +4,7 @@ namespace EcoSphere
 {
     public static class ElementScoring
     {
+        public const int StandardMatch = 10;
         public const int Breakaway = 50;
         public const int Inclusion = 500;
         public const int Abundance = 1500;

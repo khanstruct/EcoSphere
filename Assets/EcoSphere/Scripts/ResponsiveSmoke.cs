@@ -29,13 +29,9 @@ namespace EcoSphere
             {
                 if(SceneManager.GetActiveScene().name!=scene)SceneManager.LoadScene(scene);
                 yield return null; yield return null;
-                if(scene=="FirstLight")
-                {
-                    // Dismiss the welcome/cannon modals before inspecting the gameplay HUD.
-                    for(int i=0;i<2;i++)GameObject.Find("Continue").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
-                }
-                yield return new WaitForSeconds(.3f);
-                if(scene=="LevelPrep") {var prep=FindAnyObjectByType<LevelPrepView>();prep.AddSphere(0);prep.AddSphere(1);yield return null;yield return null;}
+                if(scene=="System") { FindAnyObjectByType<SystemView>().DismissIntroductionForSmoke(); yield return null; }
+                yield return new WaitForSecondsRealtime(.3f);
+                if(scene=="LevelPrep") {var prep=FindAnyObjectByType<LevelPrepView>();prep.DismissSetupTutorialForSmoke();prep.AddSphere(0);prep.AddSphere(1);yield return null;yield return null;}
                 foreach(var size in new[]{new Vector2Int(900,1600),new Vector2Int(1200,1600),new Vector2Int(1600,900)})
                 {
                     var target=new RenderTexture(size.x,size.y,24);target.Create();

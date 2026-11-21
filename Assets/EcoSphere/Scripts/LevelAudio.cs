@@ -4,15 +4,21 @@ using UnityEngine;
 
 namespace EcoSphere
 {
+    [DisallowMultipleComponent]
     public sealed class LevelAudio : MonoBehaviour
     {
-        public AudioClip music, shoot, ricochet, match, breakaway;
-        public AudioClip laser;
-        [Header("Announcer")]
-        public AudioClip worldComplete, creationFailed;
-        public AudioClip cryosphere, heliosphere;
-        public AudioClip impressive;
-        public AudioClip ecosphere;
+        public GameAudioSettings Settings => GameAudioSettings.Current;
+        public AudioClip music => Settings.music;
+        public AudioClip shoot => Settings.shoot;
+        public AudioClip ricochet => Settings.ricochet;
+        public AudioClip match => Settings.match;
+        public AudioClip breakaway => Settings.breakaway;
+        public AudioClip miss => Settings.miss;
+        public AudioClip laser => Settings.laser;
+        public AudioClip worldComplete => Settings.worldComplete;
+        public AudioClip creationFailed => Settings.creationFailed;
+        public AudioClip impressive => Settings.impressive;
+        public AudioClip ecosphere => Settings.ecosphere;
         public const int MixedResourceCallout = -2;
         [Range(0, 1)] public float voiceVolume = 1f;
         [Range(0, 1)] public float musicVolume = .18f;
@@ -21,6 +27,7 @@ namespace EcoSphere
         [Range(.5f, 1.5f)] public float shootPitch = .9f;
         AudioSource musicSource, effectsSource, resolutionSource, shootSource, voiceSource;
         bool resultAnnounced;
+        bool initialized;
         static readonly System.Random calloutRandom = new System.Random();
         readonly Queue<AudioClip> voiceQueue = new Queue<AudioClip>();
         Coroutine voiceRoutine;
@@ -29,6 +36,9 @@ namespace EcoSphere
 
         public void Initialize()
         {
+            if (initialized) return;
+            Settings.Validate();
+            initialized = true;
             musicSource = CreateSource("Background music", musicVolume);
             effectsSource = CreateSource("Shot and ricochet effects", effectsVolume);
             resolutionSource = CreateSource("Match and breakaway effects", effectsVolume);
@@ -37,14 +47,15 @@ namespace EcoSphere
             voiceSource.priority = 0;
             if (worldComplete) worldComplete.LoadAudioData();
             if (creationFailed) creationFailed.LoadAudioData();
-            if (cryosphere) cryosphere.LoadAudioData();
-            if (heliosphere) heliosphere.LoadAudioData();
+            foreach (var definition in SphereCatalog.Current.spheres)
+                if (definition.resourceVoice) definition.resourceVoice.LoadAudioData();
             if (impressive) impressive.LoadAudioData();
             if (ecosphere) ecosphere.LoadAudioData();
             shootSource.priority = 32;
             shootSource.pitch = shootPitch;
             if (shoot) shoot.LoadAudioData();
             if (laser) laser.LoadAudioData();
+            if (miss) miss.LoadAudioData();
             musicSource.clip = music;
             musicSource.loop = true;
             musicSource.priority = 160;
@@ -74,6 +85,7 @@ namespace EcoSphere
             shootSource.PlayOneShot(shoot);
         }
         public void Ricochet() { if (ricochet) effectsSource.PlayOneShot(ricochet); }
+        public void Miss() { if (miss && effectsSource) effectsSource.PlayOneShot(miss); }
 
         public void FireLaser()
         {
@@ -107,6 +119,13 @@ namespace EcoSphere
 
         public static int ResourceCallout(IReadOnlyList<int> gains)
         {
+            var precise = new double[gains.Count];
+            for (int i=0;i<precise.Length;i++) precise[i]=gains[i];
+            return ResourceCallout(precise);
+        }
+
+        public static int ResourceCallout(IReadOnlyList<double> gains)
+        {
             int selected = -1;
             for (int i = 0; i < gains.Count; i++)
             {
@@ -118,11 +137,29 @@ namespace EcoSphere
         }
 
         public bool AnnounceResources(int iceAdded, int sunlightAdded)
+            => AnnounceResources(new double[] { iceAdded, sunlightAdded });
+
+        public static AudioClip MatchVoice(int sphereType, int matchedCount) =>
+            matchedCount * ElementScoring.MatchRate(matchedCount) >= ElementScoring.Inclusion
+                ? SphereCatalog.Current.Get(sphereType).resourceVoice : null;
+
+        public bool AnnounceMatch(int sphereType, int matchedCount)
         {
             if (resultAnnounced) return false;
-            int selected = ResourceCallout(new[] { iceAdded, sunlightAdded });
+            var clip = MatchVoice(sphereType, matchedCount);
+            if (!clip) return false;
+            QueueVoice(clip);
+            return true;
+        }
+
+        public bool AnnounceResources(IReadOnlyList<double> gains)
+        {
+            if (resultAnnounced) return false;
+            int selected = ResourceCallout(gains);
             if (selected == -1) return false;
-            QueueVoice(selected == MixedResourceCallout ? ecosphere : selected == 0 ? cryosphere : heliosphere);
+            AudioClip clip = selected == MixedResourceCallout ? ecosphere : SphereCatalog.Current.ElementVoice((ElementId)selected);
+            if (!clip) return false;
+            QueueVoice(clip);
             return true;
         }
 

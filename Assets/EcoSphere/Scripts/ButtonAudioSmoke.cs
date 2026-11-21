@@ -20,13 +20,16 @@ namespace EcoSphere
             DontDestroyOnLoad(gameObject);
             yield return new WaitForSecondsRealtime(.4f);
             var system = FindAnyObjectByType<SystemView>();
+            system.DismissIntroductionForSmoke(); yield return null;
+            int initialClicks = UIClickAudio.PlayCount;
             system.planets[0].onClick.Invoke();
             var source = UIClickAudio.Source;
-            if (!source || !source.clip || source.clip.name != "button-click" || UIClickAudio.PlayCount != 1)
+            if (!source || !source.clip || source.clip.name != "button-click" || UIClickAudio.PlayCount != initialClicks + 1)
                 throw new Exception("Planet click did not play the button sound");
             yield return new WaitForSecondsRealtime(.4f);
             if (UIClickAudio.Source != source) throw new Exception("Click source was lost during scene navigation");
             var prep = FindAnyObjectByType<LevelPrepView>();
+            prep.DismissSetupTutorialForSmoke();
             int count = UIClickAudio.PlayCount;
             prep.Begin.onClick.Invoke();
             if (UIClickAudio.PlayCount != count) throw new Exception("Disabled button played a sound");
@@ -36,7 +39,7 @@ namespace EcoSphere
             if (UIClickAudio.PlayCount != count + 1) throw new Exception("Back click did not play exactly once");
             yield return new WaitForSecondsRealtime(.3f);
             if (UIClickAudio.Source != source) throw new Exception("Back navigation replaced click source");
-            SceneManager.LoadScene("FirstLight");
+            SceneManager.LoadScene("Tutorial1");
             yield return new WaitForSecondsRealtime(.4f);
             if (Time.timeScale != 0) throw new Exception("Tutorial is not paused for the click test");
             count = UIClickAudio.PlayCount;

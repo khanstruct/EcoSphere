@@ -13,6 +13,12 @@ namespace EcoSphere
         public TMP_Text systemLabel;
         public RectTransform leftAdornment, rightAdornment;
         public Material completedWorldMaterial;
+        [Min(0), Tooltip("Completed planet rotation in degrees per second.")]
+        public float completedPlanetRotationSpeed = 8f;
+        public Sprite tutorialFrame;
+        public GameObject tutorialButtonPrefab;
+        public SystemDialog Dialog { get; private set; }
+        int dialogDismissFrame = -1;
         int displayedSystem = -1;
         public Color orbitColor = new Color(1, .76f, .24f);
         public int SelectedPlanet { get; private set; } = -1;
@@ -32,7 +38,30 @@ namespace EcoSphere
             }
         }
 
-        void Start() { RefreshCompletedWorlds(); }
+        void Start()
+        {
+            RefreshCompletedWorlds();
+            if (systemNumber == 1 && !WorldProgress.SystemIntroductionSeen && WorldProgress.Find(1,0) == null && WorldProgress.AvailableSphereCount == 2)
+                EnsureDialog().ShowIntroduction();
+            else if(WorldProgress.TryGetNextWorldTutorial(systemNumber,out var source,out var definition,out int target) && target<planets.Length)
+                EnsureDialog().ShowNextWorld(source,planets[target].transform,definition.nextWorldTutorialMessage);
+        }
+
+        SystemDialog EnsureDialog()
+        {
+            if (!Dialog)
+            {
+                Dialog = new GameObject("System dialog overlay").AddComponent<SystemDialog>();
+                Dialog.Initialize(this, tutorialFrame, tutorialButtonPrefab, selection.font);
+            }
+            return Dialog;
+        }
+        internal void DialogDismissed() { dialogDismissFrame = Time.frameCount; }
+        internal void DismissIntroductionForSmoke()
+        {
+            while (Dialog && Dialog.IsOpen && Dialog.IsIntroduction) Dialog.ContinueButton.onClick.Invoke();
+        }
+        void OnDestroy() { if (Dialog) Destroy(Dialog.gameObject); }
 
         void RefreshCompletedWorlds()
         {
@@ -50,7 +79,7 @@ namespace EcoSphere
                 image.GetComponent<RawImage>().raycastTarget = false;
                 var preview = image.AddComponent<SpherePreview>();
                 preview.surfaceMaterial = completedWorldMaterial;
-                preview.rotationSpeed = 2; preview.seaLevel = world.seaLevel; preview.initialRotation = world.rotation;
+                preview.rotationSpeed = completedPlanetRotationSpeed; preview.seaLevel = world.seaLevel; preview.initialRotation = world.rotation;
             }
             if (any && !GameObject.Find("Completed world light"))
             {
@@ -64,11 +93,18 @@ namespace EcoSphere
 
         public void OpenPlanet(int index)
         {
+            if (index < 0 || index >= planets.Length || (Dialog && Dialog.IsOpen) || Time.frameCount <= dialogDismissFrame) return;
             SelectPlanet(index);
+            var world = WorldLevels.Get(systemNumber,index);
+            if (WorldProgress.Find(systemNumber,index) == null && WorldProgress.AvailableSphereCount < world.RequiredSpheres)
+            {
+                EnsureDialog().ShowInsufficientSpheres();
+                return;
+            }
             LevelPrepView.SystemNumber = systemNumber;
             LevelPrepView.PlanetIndex = index;
-            LevelPrepView.RequiredSpheres = index == 0 ? 2 : index == 1 ? 3 : 4;
-            SceneManager.LoadScene("LevelPrep");
+            LevelPrepView.RequiredSpheres = world.RequiredSpheres;
+            SceneManager.LoadScene(WorldProgress.TryOpenCompletedResults(systemNumber, index) ? "Results" : "LevelPrep");
         }
 
         void LateUpdate()
@@ -93,7 +129,18 @@ namespace EcoSphere
         {
             systemNumber = Mathf.Max(1, systemNumber);
             displayedSystem = systemNumber;
-            for (int i = 0; i < planets.Length; i++) planets[i].name = WorldLevels.Name(systemNumber, i);
+            var generated = WorldProgress.GetSystem(systemNumber);
+            for (int i = 0; i < planets.Length; i++)
+            {
+                planets[i].gameObject.SetActive(i < generated.worlds.Count);
+                if (i >= generated.worlds.Count) continue;
+                var world = generated.worlds[i];
+                planets[i].name = world.displayName;
+                var count = planets[i].transform.Find("Sphere Requirement/Sphere Count");
+                if (count) count.GetComponent<TMP_Text>().text = world.RequiredSpheres.ToString();
+            }
+            if (selection && SelectedPlanet >= 0 && SelectedPlanet < generated.worlds.Count)
+                selection.text = generated.worlds[SelectedPlanet].displayName;
             if (!systemLabel) return;
             systemLabel.text = "SYSTEM " + systemNumber.ToString("D2");
             float offset = systemLabel.preferredWidth * .5f + 68;

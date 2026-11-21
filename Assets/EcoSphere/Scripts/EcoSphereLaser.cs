@@ -8,7 +8,6 @@ namespace EcoSphere
     public sealed partial class EcoSpherePrototype
     {
         const int LaserType = 2;
-        Material laserMaterial;
 
         void RotateLaserContact(Vector2Int cell)
         {
@@ -63,7 +62,7 @@ namespace EcoSphere
             Expect(board.MatchFrom(cell).Count == 0, "Laser must not match");
             shots++; yield return ResolveLasers(); Expect(laser.turns == 2, "First subsequent turn");
             shots++; yield return ResolveLasers(); Expect(laser.turns == 1, "Second subsequent turn");
-            int before = totals[0];
+            double before = totals[0];
             shots++; yield return ResolveLasers();
             Expect(board.Cells.Count == 0 && totals[0] == before + 150, "Beam consumes laser, pierces all targets and scores");
             Debug.Log("ECOSPHERE_LASER_SMOKE_PASSED: first shot, placement grace, six aiming steps, core/wall stop, countdown, piercing, consumption, scoring.");
@@ -76,15 +75,15 @@ namespace EcoSphere
         {
             bool found = false;
             foreach (int type in board.Cells.Values)
-                if (type == 0 || type == 1) { found = true; yield return type; }
+                if (Definition(type).AmmoEligible) { found = true; yield return type; }
             // A lone armed laser still needs ordinary turns to finish counting down.
-            if (!found && board.Cells.Count > 0) { yield return 0; yield return 1; }
+            if (!found && board.Cells.Count > 0) { foreach (int type in activeSphereTypes) yield return type; }
         }
 
         void MakeLaserDisplay(GameObject root)
         {
             var laser = root.AddComponent<LaserSphere>();
-            Sprite icon = laserIcon;
+            Sprite icon = Definition(LaserType).icon;
             if (icon)
             {
                 // Pivot is the socket center, rather than the asymmetric artwork bounds.

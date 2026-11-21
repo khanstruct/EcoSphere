@@ -11,15 +11,17 @@ namespace EcoSphere
 
         IEnumerator FirstTutorialSmokeRun()
         {
-            yield return new WaitForSeconds(.3f);
-            if (StoneTutorial || tutorialPaused || tutorialCanvas || Time.timeScale != 1)
-                throw new Exception("Tutorial 1 must start without the Stone tutorial's message windows");
+            yield return new WaitForSecondsRealtime(.3f);
+            if (StoneTutorial) throw new Exception("Genesis Alpha must use its introductory layout");
+            yield return IntroTutorialSmokeRun();
+            int first = activeSphereTypes[0], second = activeSphereTypes[1];
+            int firstElement = (int)Definition(first).contributions[0].element, secondElement = (int)Definition(second).contributions[0].element;
             int ice = 0, sunlight = 0;
             foreach (var cell in board.Cells)
             {
-                if (cell.Value == 0) ice++;
-                else if (cell.Value == 1) sunlight++;
-                else throw new Exception("Tutorial 1 must contain only Ice and Sunlight");
+                if (cell.Value == first) ice++;
+                else if (cell.Value == second) sunlight++;
+                else throw new Exception("Tutorial 1 must contain only the configured opening pair");
                 if (!board.Cells.TryGetValue(-cell.Key, out int opposite) || opposite == cell.Value)
                     throw new Exception("Tutorial 1 halves are not balanced about the core");
             }
@@ -33,15 +35,15 @@ namespace EcoSphere
             direction = SmokeMatchingDirection(); gun.up = direction; Fire();
             float deadline = Time.realtimeSinceStartup + 15;
             while (!ready && !complete && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!ready || complete || board.Cells.Count != 30 || loadedType == firstAmmo || totals[firstAmmo] != 620 || tutorialPaused)
+            if (!ready || complete || board.Cells.Count != 30 || loadedType == firstAmmo || totals[(int)Definition(firstAmmo).contributions[0].element] != 620 || tutorialPaused)
                 throw new Exception("First tutorial shot did not clear its half and load the remaining element");
             direction = SmokeMatchingDirection(); gun.up = direction; Fire();
             deadline = Time.realtimeSinceStartup + 15;
             while (!complete && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!complete || board.Cells.Count != 0 || totals[0] != 620 || totals[1] != 620 ||
-                totals[0] < resourceGoal || totals[1] < resourceGoal || totals[0] >= abundanceGoal || stoneReleased)
-                throw new Exception("Both tutorial elements must reach inclusion without reaching excess or releasing Stone");
-            Debug.Log("ECOSPHERE_TUTORIAL_ONE_SMOKE_PASSED: 30 Ice / 30 Sunlight, no messages or Stone, two actual shots, both elements 620/500, below 1500 excess");
+            if (!complete || board.Cells.Count != 0 || totals[firstElement] != 620 || totals[secondElement] != 620 ||
+                totals[firstElement] < resourceGoal || totals[secondElement] < resourceGoal || totals[firstElement] >= abundanceGoal || stoneReleased)
+                throw new Exception($"Both tutorial elements must reach inclusion without reaching excess or releasing Stone: complete={complete}, cells={board.Cells.Count}, first={totals[firstElement]}, second={totals[secondElement]}, goal={resourceGoal}, abundance={abundanceGoal}, stone={stoneReleased}, failed={failed}");
+            Debug.Log("ECOSPHERE_TUTORIAL_ONE_SMOKE_PASSED: welcome and cannon lessons, pause/input shield, 30 Fire / 30 Void, two actual shots, both elements 620/500");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

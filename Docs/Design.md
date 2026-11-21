@@ -1,5 +1,9 @@
 # EcoSphere — working design
 
+Shared gameplay rules and defaults belong in common components and reusable data assets. New levels should inherit those behaviors automatically. Use world data for deliberate differences; avoid per-level copies of universal rules, clip assignments, or checks against world names. See [Audio.md](Audio.md) for the shared audio pattern.
+
+Current sphere attributes, opening pair, contribution rules and discovery behavior are documented in [Spheres.md](Spheres.md). Those implementation notes supersede the earlier exploratory contribution and progression rules below.
+
 ## First milestone
 Assemble approved cannon sprites; aim left/right; independently open arms on release; load an Ice or Sunlight sphere behind the foreground. Then implement one playable rotating bubble-shooter board. Use temporary backing/track if needed: those final assets are not yet approved.
 

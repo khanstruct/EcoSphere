@@ -25,6 +25,8 @@ namespace EcoSphere.Editor
         [MenuItem("EcoSphere/Rebuild Test Level")]
         public static void Build()
         {
+            SphereCatalogTools.Configure();
+            GameAudioTools.Configure();
             Directory.CreateDirectory("Assets/EcoSphere/Scenes");
             AssetDatabase.Refresh();
             foreach (string path in Directory.GetFiles(Art, "*.png", SearchOption.AllDirectories))
@@ -50,46 +52,26 @@ namespace EcoSphere.Editor
             var root = new GameObject("EcoSphere Test Level").AddComponent<EcoSpherePrototype>();
             root.resourceGoal = 1000000; root.abundanceGoal = 3000000;
             root.uiFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontTools.FontAssetPath);
-            root.iceSurface = Texture("Spheres/Ice/ice-surface-v1.png");
             root.receivingPlanetMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/EcoSphere/Art/Planets/barren-planet-v1.mat");
-            root.sunlightSurface = Texture("Spheres/Sunlight/sunlight-surface-v1.png");
-            root.stoneSurface = Texture("Spheres/Stone/stone-surface-v1.png");
-            root.stoneIcon = Sprite("Spheres/Stone/stone-icon-v1.png");
             root.tutorialFrame = Sprite("UI/Frames/panel-frame-v1.png");
             root.tutorialButtonPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/EcoSphere/Prefabs/UI/CelestialButton.prefab");
-            root.laserSurface = Texture("Spheres/Laser/laser-surface-v1.png");
-            root.laserIcon = Sprite("Spheres/Laser/laser-icon-v1.png");
-            root.coreSurface = Texture("Core/core-surface-v2.png");
-            root.iceIcon = Sprite("Spheres/Ice/ice-icon-v1.png");
-            root.sunlightIcon = Sprite("Spheres/Sunlight/sunlight-icon-v1.png");
-            root.coreHalo = Sprite("Core/core-halo-v1.png");
             root.leftArm = Sprite("Cannon/left-arm-v1.png");
             root.rightArm = Sprite("Cannon/right-arm-v1.png");
             root.foreground = Sprite("Cannon/main-foreground-v1.png");
             root.starfield = Sprite("Backgrounds/starfield-v2.png");
             root.twinkleStar = Sprite("Backgrounds/twinkle-star-v1.png");
-            var audio = root.gameObject.AddComponent<LevelAudio>();
-            audio.music = Audio("Deep Space Loop.mp3");
-            audio.shoot = Audio("shoot.ogg");
-            audio.laser = Audio("laser-sphere.mp3");
-            audio.ricochet = Audio("ricochet.ogg");
-            audio.match = Audio("match.wav");
-            audio.breakaway = Audio("breakaway.mp3");
-            audio.worldComplete = Audio("Voice/world-complete.mp3");
-            audio.creationFailed = Audio("Voice/creation-failed.mp3");
-            audio.cryosphere = Audio("Voice/cryosphere.mp3");
-            audio.heliosphere = Audio("Voice/heliosphere.mp3");
-            audio.impressive = Audio("Voice/impressive.mp3");
-            audio.ecosphere = Audio("Voice/ecosphere.mp3");
             EditorSceneManager.SaveScene(scene, ScenePath);
             if (!replaceEmpty)
             {
                 EditorSceneManager.CloseScene(scene, true);
                 if (previous.IsValid()) SceneManager.SetActiveScene(previous);
             }
-            var scenes = new List<EditorBuildSettingsScene> { new EditorBuildSettingsScene(ScenePath, true) };
-            foreach (var existing in EditorBuildSettings.scenes)
-                if (existing.path != ScenePath) scenes.Add(existing);
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            var levelEntry = scenes.Find(entry => entry.path == ScenePath);
+            if (levelEntry == null) scenes.Add(new EditorBuildSettingsScene(ScenePath,true));
+            else levelEntry.enabled = true;
+            var systemEntry = scenes.Find(entry => entry.path == SystemSceneTools.ScenePath);
+            if (systemEntry != null) { scenes.Remove(systemEntry); scenes.Insert(0,systemEntry); }
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
             Debug.Log("ECOSPHERE_SCENE_CREATED " + ScenePath);
@@ -133,13 +115,6 @@ namespace EcoSphere.Editor
             EditorUtility.SetDirty(root);
             EditorSceneManager.SaveScene(root.gameObject.scene);
             RunSmoke();
-        }
-
-        static AudioClip Audio(string filename)
-        {
-            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/" + filename);
-            if (!clip) throw new Exception("Missing audio: " + filename);
-            return clip;
         }
 
         public static void RunSmoke()

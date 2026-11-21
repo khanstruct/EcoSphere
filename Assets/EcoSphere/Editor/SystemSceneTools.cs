@@ -81,6 +81,8 @@ namespace EcoSphere.Editor
             scaler.matchWidthOrHeight = .5f;
             var root = canvas.GetComponent<RectTransform>();
             var controller = canvas.AddComponent<SystemView>();
+            controller.tutorialFrame = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "UI/Frames/panel-frame-v1.png");
+            controller.tutorialButtonPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/EcoSphere/Prefabs/UI/CelestialButton.prefab");
             controller.completedWorldMaterial = AssetDatabase.LoadAssetAtPath<Material>(Art + "Planets/barren-planet-v1.mat");
             var backdrop = Rect("Starfield", root, Vector2.zero, Vector2.one, Vector2.zero);
             var bg = backdrop.gameObject.AddComponent<Image>();
@@ -139,7 +141,7 @@ namespace EcoSphere.Editor
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
                 var count = Label("Sphere Count", requirement, new Vector2(.5f, .5f),
-                    (i == 0 ? 2 : i == 1 ? 3 : 4).ToString(), 30);
+                    WorldLevels.Get(controller.systemNumber,i).RequiredSpheres.ToString(), 30);
                 count.rectTransform.sizeDelta = new Vector2(35, 50);
                 count.rectTransform.anchoredPosition = new Vector2(28, 0);
                 count.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontTools.NumberAssetPath);
@@ -160,6 +162,8 @@ namespace EcoSphere.Editor
             }
             var scenes = EditorBuildSettings.scenes.ToList();
             if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
+            var firstSystem = scenes.Find(s => s.path == ScenePath);
+            scenes.Remove(firstSystem); scenes.Insert(0,firstSystem);
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
             Debug.Log("ECOSPHERE_SYSTEM_CREATED: 5 clickable planets; all sun sprites configured.");

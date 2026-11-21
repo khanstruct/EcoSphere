@@ -13,8 +13,9 @@ namespace EcoSphere
     {
         public Sprite tutorialFrame;
         public GameObject tutorialButtonPrefab;
-        static readonly Vector2Int TutorialStoneCell = new Vector2Int(0, -3);
-        // 2: Sunlight matching; 3: Ice and Stone release; 4: finish normally.
+        static Vector2Int TutorialStoneCell => StoneTutorialLayout.StoneCell(InitialRings);
+        int TutorialOuterType => StoneTutorialLayout.HolderType(activeSphereTypes);
+        // 2: release Stone by clearing its outer support; 4: finish normally.
         int tutorialStage = 2, pendingTutorial = -1, tutorialMessage;
         bool tutorialPaused;
         float tutorialPreviousScale;
@@ -24,23 +25,18 @@ namespace EcoSphere
         TMP_Text tutorialText;
         Button tutorialContinue;
         Texture2D tutorialBackingTexture, tutorialSolidTexture;
-        bool TutorialTesting => Array.IndexOf(Environment.GetCommandLineArgs(), "-tutorialSmoke") >= 0;
+        bool TutorialTesting => StoneTutorial && Array.IndexOf(Environment.GetCommandLineArgs(), "-tutorialSmoke") >= 0;
         readonly string[] tutorialMessages = {
-            "Welcome to EcoSphere. Your goal is to release elements to form new planets.",
-            "This shows which sphere you have loaded in your cannon. Aim the cannon and launch the sphere at the center cluster. Connect 3 or more matching spheres to clear them.",
+            "Your goal is to match and release elements to create a new planet.",
+            "In the center of the cannon, you can see the sphere that is currently loaded. Aim, then tap to shoot. Connect 3 or more matching spheres to clear them.",
             "Some levels contain naturally occurring elements. Clear the spheres around them to release them.",
             "Clear the rest of the spheres from the core to complete the level."
         };
 
-        void AdvanceTutorial(int matchCount, HashSet<Vector2Int> released)
+        void AdvanceTutorial(HashSet<Vector2Int> released)
         {
             if (!StoneTutorial || LaserTesting) return;
-            if (tutorialStage == 2 && matchCount >= 3)
-            {
-                tutorialStage = 3;
-                pendingTutorial = 2;
-            }
-            if (tutorialStage == 3 && released.Contains(TutorialStoneCell))
+            if (tutorialStage == 2 && released.Contains(TutorialStoneCell))
             {
                 tutorialStage = 4;
                 pendingTutorial = 3;
@@ -118,6 +114,7 @@ namespace EcoSphere
 
         void ShowTutorial(int message)
         {
+            if(DevelopmentMode.Enabled) { pendingTutorial=-1; return; }
             if (!tutorialCanvas) BuildTutorialInterface();
             pendingTutorial = -1;
             tutorialMessage = message;
@@ -162,6 +159,8 @@ namespace EcoSphere
             if (!target) return;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(tutorialRoot,
                 view.WorldToScreenPoint(target.position), view, out var end);
+            if(tutorialMessage==1)
+                tutorialBox.anchoredPosition=new Vector2(x,Mathf.Clamp(end.y+450,-tutorialRoot.rect.height*.5f+250,tutorialRoot.rect.height*.5f-250));
             Vector2 delta = end - tutorialBox.anchoredPosition;
             // The frame artwork has transparent padding inside the box rectangle.
             float edge = Mathf.Min(306 / Mathf.Max(.001f, Mathf.Abs(delta.x)),
@@ -176,15 +175,69 @@ namespace EcoSphere
         IEnumerator TutorialSmokeRun()
         {
             yield return new WaitForSecondsRealtime(.3f);
-            if (!tutorialFrame || !tutorialButtonPrefab || !stoneSurface || !stoneIcon)
+            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-tutorialTwoNavigationSmoke") >= 0 &&
+                (activeSphereTypes[0] != SphereIds.Sunlight || activeSphereTypes[1] != SphereIds.Fire || activeSphereTypes[2] != SphereIds.Void))
+                throw new Exception("Tutorial 2 discarded the actual setup selection order");
+            if (!tutorialFrame || !tutorialButtonPrefab || !Definition(StoneType).surface || !Definition(StoneType).icon)
                 throw new Exception("Tutorial artwork is missing");
             foreach (var cell in board.Cells)
             {
                 int ring = Mathf.Max(Mathf.Abs(cell.Key.x), Mathf.Abs(cell.Key.y), Mathf.Abs(cell.Key.x + cell.Key.y));
-                int expected = cell.Key == TutorialStoneCell ? StoneType : ring == 4 ? 1 : ring >= 2 ? 0 : cell.Value;
+                int expected = cell.Key == TutorialStoneCell ? StoneType : ring == InitialRings || cell.Key==StoneTutorialLayout.SupportCell(InitialRings) ? TutorialOuterType : cell.Value;
                 if (cell.Value != expected) throw new Exception("Incorrect tutorial ring arrangement");
+                if (cell.Key != TutorialStoneCell && Array.IndexOf(activeSphereTypes, cell.Value) < 0)
+                    throw new Exception("Tutorial used a sphere outside the selected loadout");
             }
-            if (!tutorialPaused || Time.timeScale != 0 || loadedType != 1) throw new Exception("Welcome did not pause with Sunlight loaded");
+            foreach (int type in activeSphereTypes)
+                if (!board.Cells.ContainsValue(type)) throw new Exception("Selected type missing from tutorial cluster");
+            foreach(var direction in BoardRules.Directions)
+                if(board.Cells.TryGetValue(TutorialStoneCell+direction,out int neighbor) && neighbor!=TutorialOuterType)
+                    throw new Exception("Stone has a connection outside its guided support match");
+            if (!tutorialPaused || !tutorialCanvas || tutorialMessage!=2 || Time.timeScale!=0 || loadedType!=TutorialOuterType)
+                throw new Exception("Genesis Beta must open with the natural-element lesson and supporting ammo");
+            CaptureTutorialPreview("stone-opening");
+            int beforeShots=shots; Fire();
+            if(shots!=beforeShots)throw new Exception("Opening Stone modal allowed firing");
+            if(displayedElements.Contains(ElementId.Stone) || channelSphereTypes.Contains(StoneType))
+                throw new Exception("Naturally occurring Stone added a visualizer channel");
+            ClickTutorialForSmoke(); yield return null;
+            for(int miss=0;miss<2;miss++)
+            {
+                direction=Vector2.down; Fire();
+                float missedDeadline=Time.realtimeSinceStartup+10;
+                while(!ready && Time.realtimeSinceStartup<missedDeadline)yield return null;
+                if(!ready || loadedType!=TutorialOuterType || tutorialStage!=2 || !board.Cells.ContainsKey(TutorialStoneCell))
+                    throw new Exception("Miss failed to retain the supporting ammo until Stone clears");
+            }
+            direction=SmokeMatchingDirection(); gun.up=direction; Fire();
+            float deadline=Time.realtimeSinceStartup+15;
+            while(!tutorialPaused && Time.realtimeSinceStartup<deadline)yield return null;
+            if(!tutorialPaused || tutorialMessage!=3 || board.Cells.ContainsKey(TutorialStoneCell) || !stoneReleased || tutorialStage!=4 || board.Cells.Count==0)
+                throw new Exception("One outer-ring match must release Stone and leave a mixed interior");
+            CaptureTutorialPreview("stone-released");
+            ClickTutorialForSmoke();
+            if(Time.timeScale!=1)throw new Exception("Final lesson did not resume");
+            // On the final stage, use the ordinary board-aware selection and its repeat cap.
+            var remaining = new HashSet<int>(ElementTypes());
+            int previous = -1, consecutive = 0;
+            for (int i = 0; i < 30; i++)
+            {
+                if (loaded) Destroy(loaded);
+                LoadNext();
+                if (!remaining.Contains(loadedType)) throw new Exception("Post-lesson ammo used an absent type");
+                consecutive = loadedType == previous ? consecutive + 1 : 1; previous = loadedType;
+                if (remaining.Count > 1 && consecutive > 3) throw new Exception("Post-lesson ammo bypassed normal repeat cap");
+            }
+            Debug.Log("ECOSPHERE_TUTORIAL_SMOKE_PASSED: opening natural-element lesson, outer Stone/support topology, selected mixed interior, repeated supporting ammo after two misses, single-match release and normal remaining ammo");
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.Exit(0);
+#endif
+        }
+
+        IEnumerator IntroTutorialSmokeRun()
+        {
+            if (!tutorialPaused || !tutorialCanvas || tutorialMessage != 0 || Time.timeScale != 0 ||
+                tutorialText.text != tutorialMessages[0]) throw new Exception("Genesis Alpha did not open with the welcome lesson");
             Canvas.ForceUpdateCanvases();
             var pointer = new PointerEventData(EventSystem.current) {
                 position = RectTransformUtility.WorldToScreenPoint(view, tutorialContinue.transform.position)
@@ -199,44 +252,16 @@ namespace EcoSphere
             Fire();
             if (shots != beforeShots) throw new Exception("Modal allowed firing");
             ClickTutorialForSmoke();
-            if (!tutorialPaused || tutorialMessage != 1) throw new Exception("Cannon lesson missing");
+            if (!tutorialPaused || tutorialMessage != 1 || tutorialText.text != tutorialMessages[1] ||
+                !tutorialLeader.gameObject.activeSelf || !tutorialTip.gameObject.activeSelf)
+                throw new Exception("Cannon lesson or its loaded-ammo pointer is missing");
+            if(tutorialLeader.sizeDelta.x<160)throw new Exception("Cannon lesson needs a clearly visible pointer line");
             yield return new WaitForSecondsRealtime(.1f);
             CaptureTutorialPreview("cannon");
             yield return new WaitForSecondsRealtime(.2f);
             ClickTutorialForSmoke();
             if (tutorialPaused || Time.timeScale != 1) throw new Exception("Continue did not resume gameplay");
             yield return null;
-            // A lost shot must retain Sunlight and must not advance the lesson.
-            direction = Vector2.down; Fire();
-            float deadline = Time.realtimeSinceStartup + 10;
-            while (!ready && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!ready || loadedType != 1 || tutorialStage != 2) throw new Exception("Miss did not reload Sunlight");
-            direction = SmokeMatchingDirection(); gun.up = direction; Fire();
-            deadline = Time.realtimeSinceStartup + 15;
-            while (!tutorialPaused && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!tutorialPaused || tutorialMessage != 2 || loadedType != 0 || !visuals.ContainsKey(TutorialStoneCell))
-                throw new Exception("First match did not show Stone lesson with Ice loaded");
-            CaptureTutorialPreview("stone");
-            yield return new WaitForSecondsRealtime(.2f);
-            ClickTutorialForSmoke();
-            yield return null;
-            direction = Vector2.down; Fire();
-            deadline = Time.realtimeSinceStartup + 10;
-            while (!ready && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!ready || loadedType != 0 || tutorialStage != 3) throw new Exception("Ice lesson did not retain Ice after a miss");
-            int iceBefore = totals[0], sunBefore = totals[1];
-            direction = SmokeMatchingDirection(); gun.up = direction; Fire();
-            deadline = Time.realtimeSinceStartup + 15;
-            while (!tutorialPaused && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!tutorialPaused || tutorialMessage != 3 || board.Cells.ContainsValue(StoneType) || tutorialStage != 4)
-                throw new Exception("Stone release did not trigger final lesson");
-            if (totals[0] < iceBefore || totals[1] < sunBefore) throw new Exception("Release damaged resource totals");
-            ClickTutorialForSmoke();
-            if (Time.timeScale != 1) throw new Exception("Final lesson did not resume");
-            Debug.Log("ECOSPHERE_TUTORIAL_SMOKE_PASSED: pause, Continue, missed shot, Sunlight match, Ice layers, Stone release, final lesson");
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.Exit(0);
-#endif
         }
 
         void ClickTutorialForSmoke()

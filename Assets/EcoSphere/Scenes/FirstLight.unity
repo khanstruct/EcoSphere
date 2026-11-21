@@ -203,18 +203,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1917ef8194d32864785b5f55a5b955e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.LevelAudio
-  music: {fileID: 8300000, guid: ef7c0a662fd416c40b0f6e6117144062, type: 3}
-  shoot: {fileID: 8300000, guid: 497075226ebe93c4badf44ca86db6f4e, type: 3}
-  ricochet: {fileID: 8300000, guid: 80743dc602c057145a647049fe5efa6f, type: 3}
-  match: {fileID: 8300000, guid: af4372f7f8954dd4fab12cb51187ce7c, type: 3}
-  breakaway: {fileID: 8300000, guid: 0842a3e281c3ab5489fa20b4759e08cf, type: 3}
-  laser: {fileID: 8300000, guid: 7373795f0f286f7478cd34aebc832652, type: 3}
-  worldComplete: {fileID: 8300000, guid: b7a86650c1347fc4a9e349bdf02a3eb8, type: 3}
-  creationFailed: {fileID: 8300000, guid: adc4e2f8a96d859428d7b15468a56e0f, type: 3}
-  cryosphere: {fileID: 8300000, guid: a4b6b11909ea9274e95f55a36e031232, type: 3}
-  heliosphere: {fileID: 8300000, guid: 24d12c4d6fe266c4195805bce8a895f9, type: 3}
-  impressive: {fileID: 8300000, guid: 7ef2d9f814fe4934aacff235ad27bddf, type: 3}
-  ecosphere: {fileID: 8300000, guid: 1b45dcaa78ecc074782a04caf3e292d6, type: 3}
   voiceVolume: 1
   musicVolume: 0.18
   effectsVolume: 0.85

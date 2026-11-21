@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6221ada88df1f8f4b92be8060335312f, type: 3}
+  m_Name: Water
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereDefinition
+  id: 6
+  displayName: Water
+  surface: {fileID: 2800000, guid: 29e37275ab254a72a1fbf87240b14c93, type: 3}
+  icon: {fileID: 21300000, guid: 298d902cc2fc42c081b98d4677329cf4, type: 3}
+  color: {r: 0.078431375, g: 0.39215687, b: 0.88235295, a: 1}
+  glowColor: {r: 1, g: 1, b: 1, a: 1}
+  glowStrength: 0
+  resourceVoice: {fileID: 8300000, guid: 33be30691f03e3148817a8369a25ad8b, type: 3}
+  role: 0
+  availableAtStart: 0
+  selectable: 1
+  unlit: 0
+  contributions:
+  - element: 5
+    amount: 1
+  unallocatedWeight: 0

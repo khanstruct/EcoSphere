@@ -87,7 +87,7 @@ namespace EcoSphere.Editor
             for (int i = 0; i < system.planets.Length; i++)
             {
                 system.SelectPlanet(i);
-                if (system.selection.text != "Planet " + (i + 1)) throw new System.Exception("Planet title update failed");
+                if (system.selection.text != WorldLevels.Name(system.systemNumber,i)) throw new System.Exception("Planet title update failed");
             }
             Debug.Log("ECOSPHERE_HEADINGS_PASSED: dynamic system number and all five planet titles.");
         }

@@ -6,6 +6,7 @@ namespace EcoSphere
     {
         public Transform surface;
         public Transform icon;
+        public Transform glow;
         public float spin = 12;
         float longitude;
         void LateUpdate()
@@ -14,6 +15,7 @@ namespace EcoSphere
             longitude += spin * Time.deltaTime;
             if (surface) surface.rotation = Quaternion.Euler(0, longitude, 0);
             if (icon) icon.rotation = Quaternion.identity;
+            if (glow) glow.rotation = Quaternion.identity;
         }
     }
 }

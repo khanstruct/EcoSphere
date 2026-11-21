@@ -12,6 +12,7 @@ namespace EcoSphere.Editor
         const string Art="Assets/EcoSphere/Art/";
         public static void Build()
         {
+            SphereCatalogTools.Configure();
             foreach(var path in new[]{Art+"UI/Frames/panel-frame-v1.png",Art+"UI/Modifiers/close-to-sun-v1.png",Art+"UI/Modifiers/continuous-rotation-v1.png"})
             {
                 var importer=(TextureImporter)AssetImporter.GetAtPath(path);
@@ -32,10 +33,6 @@ namespace EcoSphere.Editor
             prep.frame=Sprite("UI/Frames/panel-frame-v1.png");
             prep.line=Sprite("UI/Headings/heading-line-v1.png"); prep.arch=Sprite("UI/Headings/heading-arch-v1.png");
             prep.starfield=Sprite("Backgrounds/starfield-v2.png");
-            prep.sunModifier=Sprite("UI/Modifiers/close-to-sun-v1.png"); prep.rotationModifier=Sprite("UI/Modifiers/continuous-rotation-v1.png");
-            prep.iceSurface=AssetDatabase.LoadAssetAtPath<Texture2D>(Art+"Spheres/Ice/ice-surface-v1.png");
-            prep.sunlightSurface=AssetDatabase.LoadAssetAtPath<Texture2D>(Art+"Spheres/Sunlight/sunlight-surface-v1.png");
-            prep.iceIcon=Sprite("Spheres/Ice/ice-icon-v1.png"); prep.sunlightIcon=Sprite("Spheres/Sunlight/sunlight-icon-v1.png");
             prep.buttonPrefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/EcoSphere/Prefabs/UI/CelestialButton.prefab");
             MenuMusicTools.Configure();
             EditorSceneManager.SaveScene(scene,ScenePath);
@@ -45,6 +42,12 @@ namespace EcoSphere.Editor
             Debug.Log("ECOSPHERE_PREP_SCENE_CREATED");
         }
         static Sprite Sprite(string path)=>AssetDatabase.LoadAssetAtPath<Sprite>(Art+path);
+        public static void TutorialSmoke()
+        {
+            EditorSceneManager.OpenScene(ScenePath);
+            LevelPrepView.SystemNumber=1; LevelPrepView.PlanetIndex=0;
+            EditorApplication.isPlaying=true;
+        }
         public static void Smoke()
         {
             EditorSceneManager.OpenScene(ScenePath);

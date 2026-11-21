@@ -4,6 +4,7 @@ namespace EcoSphere
 {
     public sealed class SpherePreview : MonoBehaviour
     {
+        public SphereDefinition definition;
         public Texture2D surface;
         public Sprite icon;
         public Material surfaceMaterial;
@@ -17,6 +18,7 @@ namespace EcoSphere
         public Quaternion SurfaceRotation => globe ? globe.localRotation : Quaternion.identity;
         void Start()
         {
+            if (definition) { surface = definition.surface; icon = definition.icon; }
             int layer = 30;
             stage = new GameObject("Sphere preview stage");
             stage.transform.position = new Vector3((serial++ % 100) * 10, -1000, 0);
@@ -25,7 +27,7 @@ namespace EcoSphere
             sphere.transform.SetParent(stage.transform, false); sphere.layer = layer;
             globe = sphere.transform; globe.localScale = Vector3.one * 1.65f;
             globe.localRotation = Quaternion.Euler(0, initialRotation, 0);
-            material = surfaceMaterial ? new Material(surfaceMaterial) : new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            material = surfaceMaterial ? new Material(surfaceMaterial) : new Material(Shader.Find(definition && definition.unlit ? "Universal Render Pipeline/Unlit" : "Universal Render Pipeline/Lit"));
             if (surfaceMaterial) material.SetFloat("_SeaLevel", seaLevel);
             else
             {
@@ -33,6 +35,7 @@ namespace EcoSphere
                 material.SetFloat("_Smoothness", .35f);
             }
             sphere.GetComponent<Renderer>().sharedMaterial = material;
+            SphereGlow.Create(stage.transform,definition,1.65f,layer);
             var symbol = new GameObject("Sphere icon"); symbol.layer = layer;
             symbol.transform.SetParent(stage.transform, false); symbol.transform.localPosition = new Vector3(0, 0, -.85f);
             var renderer = symbol.AddComponent<SpriteRenderer>(); renderer.sprite = icon;

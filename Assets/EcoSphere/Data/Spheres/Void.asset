@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6221ada88df1f8f4b92be8060335312f, type: 3}
+  m_Name: Void
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereDefinition
+  id: 5
+  displayName: Void
+  surface: {fileID: 2800000, guid: f4629aa10b5a4766aef4bfcecbe31f8b, type: 3}
+  icon: {fileID: 21300000, guid: b0fe10f7aea543de8b47e683a17b5383, type: 3}
+  color: {r: 0.9098039, g: 0.93333334, b: 1, a: 1}
+  resourceVoice: {fileID: 8300000, guid: 3778a0535f8a33a41b97fd99efdf5f42, type: 3}
+  role: 0
+  availableAtStart: 1
+  selectable: 1
+  unlit: 1
+  glowColor: {r: 1, g: 1, b: 1, a: 1}
+  glowStrength: 0.42
+  contributions:
+  - element: 4
+    amount: 1

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1425d62eca7fed46a99cb4edf8edabd, type: 3}
+  m_Name: SphereCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereCatalog
+  spheres:
+  - {fileID: 11400000, guid: 998be6a5911d5724d90443f17e2b356d, type: 2}
+  - {fileID: 11400000, guid: f4399428a8a82894a8f1d16a603abda1, type: 2}
+  - {fileID: 11400000, guid: 35918888ab6502b499e07c922ece8adf, type: 2}
+  - {fileID: 11400000, guid: d63110edd4d81de41a7c26faa0f8c9db, type: 2}
+  - {fileID: 11400000, guid: e2974e1b59d87fb45840d1bfa316e97e, type: 2}
+  - {fileID: 11400000, guid: a953415035f26174aa69de5205507197, type: 2}
+  - {fileID: 11400000, guid: 1ff8e98d0beab35419b61fa408c91fb5, type: 2}
+  - {fileID: 11400000, guid: 7f90093a3559b6440942958d8dea13f4, type: 2}
+  recipeBook: {fileID: 11400000, guid: 0caf164c424b4d94b9bf93f2f6829a4e, type: 2}
+  openingSpheres: 0400000005000000i
