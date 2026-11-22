@@ -11,6 +11,7 @@ namespace EcoSphere
         {
             var cells=new List<Vector2Int>();foreach(var cell in board.Cells)if(cell.Value==SphereIds.Plant)cells.Add(cell.Key);
             if(cells.Count!=15 || !displayedElements.Contains(ElementId.Life) || !displayedElements.Contains(ElementId.Plant))throw new Exception("Plant sphere did not enter generated board/composition");
+            cells.RemoveAll(cell=>board.Infested.Contains(cell));
             int scoreBefore=score;
             RemoveCells(new HashSet<Vector2Int>{cells[0]},12);
             var visual=visuals[cells[1]];

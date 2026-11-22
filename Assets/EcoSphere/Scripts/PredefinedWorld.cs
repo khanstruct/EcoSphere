@@ -12,8 +12,11 @@ namespace EcoSphere
         [Range(0,1)] public float clustering=.5f;
         public float rotationDegrees = 24;
         [Min(.01f)] public float rotationDuration = .65f;
+        [Min(0)] public int oneStarScore = 1000, twoStarScore = 2000, threeStarScore = 5000;
+        public int StarsForScore(double score) => score >= threeStarScore ? 3 : score >= twoStarScore ? 2 : score >= oneStarScore ? 1 : 0;
         public WorldRules Copy() => new WorldRules { requiredSpheres = requiredSpheres, inclusionGoal = inclusionGoal,
-            abundanceGoal = abundanceGoal, clustering=clustering, rotationDegrees = rotationDegrees, rotationDuration = rotationDuration };
+            abundanceGoal = abundanceGoal, clustering=clustering, rotationDegrees = rotationDegrees, rotationDuration = rotationDuration,
+            oneStarScore=oneStarScore, twoStarScore=twoStarScore, threeStarScore=threeStarScore };
     }
 
     [CreateAssetMenu(menuName = "EcoSphere/Predefined World")]

@@ -10,6 +10,7 @@ namespace EcoSphere
         {
             var cells=new List<Vector2Int>();foreach(var cell in board.Cells)if(cell.Value==SphereIds.Life)cells.Add(cell.Key);
             if(cells.Count!=15 || !displayedElements.Contains(ElementId.Life))throw new Exception("Life missing from generated board/composition");
+            cells.RemoveAll(cell=>board.Infested.Contains(cell));
             int scoreBefore=score;
             RemoveCells(new HashSet<Vector2Int>{cells[0]},12);
             var visual=visuals[cells[1]];RemoveCells(new HashSet<Vector2Int>{cells[1]},50,true);UpdateVisualizer();

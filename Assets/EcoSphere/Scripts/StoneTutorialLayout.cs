@@ -19,6 +19,7 @@ namespace EcoSphere
         {
             if(rings<3 || types.Count<2) throw new InvalidOperationException("Stone tutorial needs an outer ring and a mixed interior");
             board.Cells.Clear();
+            board.Infested.Clear();
             int holder=HolderType(types);
             var interior=new List<Vector2Int>();
             var coreNeighbors=new List<Vector2Int>(BoardRules.Directions);

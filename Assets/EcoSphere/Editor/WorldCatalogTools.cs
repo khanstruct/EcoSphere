@@ -27,6 +27,8 @@ namespace EcoSphere.Editor
             AddWorld(catalog, "genesis-beta", "Genesis Beta", "FirstLight", 1, 3, 1000000, 3000000);
             AddModifier(catalog, "close-to-sun", "Close to the Sun", "Sunlight and Fire are more effective.", "close-to-sun-v1.png");
             AddModifier(catalog, "continuous-rotation", "Continuous Rotation", "The cluster rotates throughout play.", "continuous-rotation-v1.png");
+            InfestationTools.EnsureModifier(catalog);
+            catalog.ratingStar=AssetDatabase.LoadAssetAtPath<Sprite>("Assets/EcoSphere/Art/UI/world-rating-star-v1.png");
             if(string.IsNullOrWhiteSpace(catalog.proceduralGameplayScene))catalog.proceduralGameplayScene=WorldLevels.ProceduralSceneName;
             EditorUtility.SetDirty(catalog); AssetDatabase.SaveAssets();
             catalog.Validate();

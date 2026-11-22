@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f14246a1d39ac9a48a85e9cb23e71efc, type: 3}
+  m_Name: alien-infestation
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.InfestationModifierDefinition
+  id: alien-infestation
+  displayName: Alien Infestation
+  description: Attach beside aliens to remove them. Infested spheres block matches.
+  icon: {fileID: 21300000, guid: 383aba1beb51450f889857f54fb2aff8, type: 3}
+  proceduralChance: 0
+  guaranteedSystem: 1
+  guaranteedSlot: 2
+  minimumInfested: 8
+  maximumInfested: 12
+  alienScale: 1.25
+  showHostMarker: 0
+  alienSprite: {fileID: 21300000, guid: 5128342e46bd4643b7769a69aa169bf6, type: 3}
+  alienAlternateSprite: {fileID: 21300000, guid: 58e1e55799b241b89b35d2f051a9219b, type: 3}
+  animationFramesPerSecond: 2
+  animationSpeedVariation: 0.15
+  overlayMaterial: {fileID: 2100000, guid: 2003dde0451ff914aab2ab5cbd10442d, type: 2}
+  hitAudio: {fileID: 8300000, guid: c6b067d85f3eb1d4eb34237e3b733e8f, type: 3}

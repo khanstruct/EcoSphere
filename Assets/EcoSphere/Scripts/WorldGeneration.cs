@@ -9,11 +9,17 @@ namespace EcoSphere
     {
         public string id, predefinedId, displayName, gameplayScene;
         public int seed;
+        public double highestScore;
+        public int EarnedStars => rules.StarsForScore(highestScore);
         public WorldRules rules = new WorldRules();
         public List<string> modifiers = new List<string>();
         public bool IsProcedural => string.IsNullOrEmpty(predefinedId);
         public string GameplayScene => IsProcedural && string.IsNullOrWhiteSpace(gameplayScene) ? WorldCatalog.Current.proceduralGameplayScene : gameplayScene;
         public int RequiredSpheres => IsProcedural ? Mathf.Max(4, rules.requiredSpheres) : rules.requiredSpheres;
+        public IEnumerable<WorldModifierDefinition> ModifierDefinitions
+        {
+            get{foreach(string id in modifiers)yield return WorldCatalog.Current.Modifier(id);}
+        }
     }
 
     [Serializable]
@@ -79,9 +85,12 @@ namespace EcoSphere
                 var world = new WorldRecord { id = number + ":" + slot, seed = random.Next(), rules = rules,
                     displayName = GenerateName(random, catalog, names), gameplayScene = catalog.proceduralGameplayScene };
                 foreach (var modifier in catalog.proceduralModifiers)
-                    if (random.NextDouble() < modifier.proceduralChance) world.modifiers.Add(modifier.id);
+                    if (modifier.proceduralChance>0 && random.NextDouble() < modifier.proceduralChance) world.modifiers.Add(modifier.id);
                 slots[slot] = world;
             }
+            foreach(var modifier in catalog.proceduralModifiers)
+                if(modifier.guaranteedSystem==number && !slots[modifier.guaranteedSlot].modifiers.Contains(modifier.id))
+                    slots[modifier.guaranteedSlot].modifiers.Add(modifier.id);
             system.worlds.AddRange(slots);
             // Commit placement and the finished system together; no reservation is made for incomplete generation.
             save.systems.Add(system); save.placedPredefinedWorlds.AddRange(newlyPlaced);

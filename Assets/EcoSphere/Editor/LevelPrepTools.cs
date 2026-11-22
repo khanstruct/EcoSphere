@@ -51,7 +51,7 @@ namespace EcoSphere.Editor
         public static void Smoke()
         {
             EditorSceneManager.OpenScene(ScenePath);
-            LevelPrepView.SystemNumber=1; LevelPrepView.PlanetIndex=0; LevelPrepView.RequiredSpheres=2;
+            LevelPrepView.SystemNumber=1; LevelPrepView.PlanetIndex=0;
             EditorApplication.isPlaying=true;
         }
     }

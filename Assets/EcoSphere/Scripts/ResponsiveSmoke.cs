@@ -29,7 +29,12 @@ namespace EcoSphere
             {
                 if(SceneManager.GetActiveScene().name!=scene)SceneManager.LoadScene(scene);
                 yield return null; yield return null;
-                if(scene=="System") { FindAnyObjectByType<SystemView>().DismissIntroductionForSmoke(); yield return null; }
+                if(scene=="System")
+                {
+                    var system=FindAnyObjectByType<SystemView>();system.DismissIntroductionForSmoke();yield return null;
+                    int original=system.systemNumber;system.SetSystemNumber(original+1);CheckWorldBadges(system);
+                    system.SetSystemNumber(original);CheckWorldBadges(system);system.RefreshSystemHeading();CheckWorldBadges(system);
+                }
                 yield return new WaitForSecondsRealtime(.3f);
                 if(scene=="LevelPrep") {var prep=FindAnyObjectByType<LevelPrepView>();prep.DismissSetupTutorialForSmoke();prep.AddSphere(0);prep.AddSphere(1);yield return null;yield return null;}
                 foreach(var size in new[]{new Vector2Int(900,1600),new Vector2Int(1200,1600),new Vector2Int(1600,900)})
@@ -74,12 +79,33 @@ namespace EcoSphere
                     if(scene=="FirstLight")FindAnyObjectByType<EcoSpherePrototype>().SetPreviewTarget(null);else camera.targetTexture=null;
                     target.Release();Destroy(target);Destroy(image);
                 }
-                if(scene=="System") {LevelPrepView.RequiredSpheres=4;LevelPrepView.PlanetIndex=2;}
+                if(scene=="System") {LevelPrepView.PlanetIndex=2;}
             }
             Debug.Log("ECOSPHERE_RESPONSIVE_PASSED: 9 renders, safe areas, fixed gameplay proportions and pointer projection.");
             #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
             #endif
+        }
+        static void CheckWorldBadges(SystemView system)
+        {
+            for(int i=0;i<system.planets.Length;i++)
+            {
+                var world=WorldLevels.Get(system.systemNumber,i);
+                var requirement=(RectTransform)system.planets[i].transform.Find("Sphere Requirement");
+                var number=requirement.Find("Sphere Count").GetComponent<TMP_Text>();
+                var circle=(RectTransform)requirement.Find("Sphere Icon");
+                if(number.text!=world.RequiredSpheres.ToString() || number.rectTransform.anchoredPosition!=circle.anchoredPosition)throw new System.Exception("Requirement number must stay inside its circle");
+                int active=0;var ids=new System.Collections.Generic.HashSet<string>();
+                foreach(Transform badge in requirement.Find("World Modifiers"))
+                {
+                    if(!badge.gameObject.activeSelf)continue;
+                    active++;var image=badge.GetComponent<UnityEngine.UI.Image>();
+                    if(!ids.Add(badge.name) || !world.modifiers.Contains(badge.name) || image.sprite!=WorldCatalog.Current.Modifier(badge.name).icon || image.raycastTarget)
+                        throw new System.Exception("World modifier badge must use current world data and leave planet clicks unblocked");
+                }
+                if(active!=world.modifiers.Count)throw new System.Exception("Missing or stale world modifier badges");
+            }
+            Debug.Log("ECOSPHERE_WORLD_BADGES_PASSED system="+system.systemNumber);
         }
     }
 }

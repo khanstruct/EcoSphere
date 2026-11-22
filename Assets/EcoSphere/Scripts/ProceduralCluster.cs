@@ -20,7 +20,7 @@ namespace EcoSphere
             for(int i=0;i<types.Count;i++)remaining[i]=total/types.Count+(i<total%types.Count ? 1 : 0);
             var frontier=new List<Vector2Int> {BoardRules.Directions[random.Next(BoardRules.Directions.Length)]};
             var queued=new HashSet<Vector2Int>(frontier);
-            board.Cells.Clear(); clustering=Mathf.Clamp01(clustering);
+            board.Cells.Clear();board.Infested.Clear(); clustering=Mathf.Clamp01(clustering);
             while(frontier.Count>0)
             {
                 int index=random.Next(frontier.Count); var cell=frontier[index]; frontier.RemoveAt(index);

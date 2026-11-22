@@ -37,6 +37,9 @@ MonoBehaviour:
     abundanceGoal: 1000000
     rotationDegrees: 24
     rotationDuration: 0.65
+    oneStarScore: 1000
+    twoStarScore: 2000
+    threeStarScore: 5000
   modifiers: []
   guaranteedSystem: 1
   guaranteedSlot: 0

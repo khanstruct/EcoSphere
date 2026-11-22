@@ -12,6 +12,7 @@ namespace EcoSphere
         public bool persistProgressBetweenSessions;
         public List<PredefinedWorld> predefinedWorlds = new List<PredefinedWorld>();
         public List<WorldModifierDefinition> proceduralModifiers = new List<WorldModifierDefinition>();
+        public Sprite ratingStar;
         [Min(4)] public int minimumProceduralSpheres = 4, maximumProceduralSpheres = 4;
         public WorldRules proceduralRules = new WorldRules();
         [Range(0,1)] public float minimumClustering=.1f, maximumClustering=.9f;
@@ -71,21 +72,28 @@ namespace EcoSphere
                 var modifiers = new HashSet<string>();
                 foreach (var modifier in world.modifiers)
                     if (!modifier || string.IsNullOrWhiteSpace(modifier.id) || !modifiers.Add(modifier.id)) throw new InvalidOperationException("Invalid modifiers on " + world.name);
+                    else modifier.Validate();
                 foreach (int sphere in world.requiredUnlockedSpheres) SphereCatalog.Current.Get(sphere);
                 foreach (string required in world.requiredCompletedWorlds)
                     if (!predefinedWorlds.Exists(other => other && other.id == required)) throw new InvalidOperationException("Unknown prerequisite world: " + required);
             }
             ids.Clear();
             foreach (var modifier in proceduralModifiers)
+            {
                 if (!modifier || string.IsNullOrWhiteSpace(modifier.id) || string.IsNullOrWhiteSpace(modifier.displayName) ||
                     float.IsNaN(modifier.proceduralChance) || modifier.proceduralChance < 0 || modifier.proceduralChance > 1 || !ids.Add(modifier.id))
                     throw new InvalidOperationException("Invalid procedural modifier pool");
+                modifier.Validate();
+                if(modifier.guaranteedSlot>=planetsPerSystem)throw new InvalidOperationException("Modifier guaranteed slot outside system");
+            }
         }
 
         static void ValidateRules(WorldRules rules)
         {
             if (rules == null || rules.requiredSpheres < 1 || rules.inclusionGoal < 1 || rules.abundanceGoal <= rules.inclusionGoal || rules.rotationDuration <= 0 || float.IsNaN(rules.clustering) || rules.clustering<0 || rules.clustering>1)
                 throw new InvalidOperationException("Invalid world rules");
+            if(rules.oneStarScore<0 || rules.twoStarScore<=rules.oneStarScore || rules.threeStarScore<=rules.twoStarScore)
+                throw new InvalidOperationException("World star thresholds must increase from one to three stars");
         }
     }
 }

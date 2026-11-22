@@ -11,6 +11,7 @@ namespace EcoSphere
         {
             var cells=new List<Vector2Int>();foreach(var cell in board.Cells)if(cell.Value==SphereIds.Mud)cells.Add(cell.Key);
             if(cells.Count!=15 || !displayedElements.Contains(ElementId.Mud) || !displayedElements.Contains(ElementId.Water) || !displayedElements.Contains(ElementId.Stone))throw new Exception("Mud missing from board/composition");
+            cells.RemoveAll(cell=>board.Infested.Contains(cell));
             int before=score;RemoveCells(new HashSet<Vector2Int>{cells[0]},12);
             var visual=visuals[cells[1]];RemoveCells(new HashSet<Vector2Int>{cells[1]},50,true);UpdateVisualizer();
             if(totals[(int)ElementId.Mud]!=31 || totals[(int)ElementId.Water]!=15.5 || totals[(int)ElementId.Stone]!=15.5 || score!=before+62)throw new Exception("Mud weighted scoring incorrect");

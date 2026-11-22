@@ -59,7 +59,8 @@ namespace EcoSphere
                 resourceGoal = preparedWorld.rules.inclusionGoal; abundanceGoal = preparedWorld.rules.abundanceGoal;
                 rotationDegrees = preparedWorld.rules.rotationDegrees; rotationDuration = preparedWorld.rules.rotationDuration;
             }
-            int required=ProceduralLayout ? preparedWorld.RequiredSpheres : StoneTutorial ? 3 : 2;
+            if(preparedWorld==null)throw new InvalidOperationException("Gameplay must be initialized from a world record");
+            int required=preparedWorld.RequiredSpheres;
             int[] defaultLoadout=null;
             if(ProceduralLayout && selected==null && (startingSphereTypes==null || startingSphereTypes.Length==0))
             {
@@ -71,7 +72,6 @@ namespace EcoSphere
             activeSphereTypes = selected ??
                 (startingSphereTypes != null && startingSphereTypes.Length > 0 ? startingSphereTypes :
                     ProceduralLayout ? defaultLoadout : StoneTutorial ? new[] { SphereIds.Fire, SphereIds.Void, SphereIds.Sunlight } : Catalog.openingSpheres);
-            LevelPrepView.RequiredSpheres=required;
             if (activeSphereTypes.Length != required || new HashSet<int>(activeSphereTypes).Count != required)
                 throw new InvalidOperationException("This level layout needs " + required + " distinct sphere types");
             foreach (int type in activeSphereTypes)

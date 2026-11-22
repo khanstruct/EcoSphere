@@ -11,7 +11,7 @@ namespace EcoSphere
     {
         internal void CheckProceduralBoard(WorldRecord expected,int[] selected)
         {
-            if(levelLayout!=LevelLayout.Procedural || preparedWorld!=expected || activeSphereTypes.Length!=4 || board.Cells.Count!=60 || tutorialPaused)
+            if(levelLayout!=LevelLayout.Procedural || preparedWorld!=expected || activeSphereTypes.Length!=expected.RequiredSpheres || board.Cells.Count!=60 || tutorialPaused)
                 throw new Exception("Procedural gameplay did not apply its world or four-sphere loadout");
             var repeated=new BoardRules(); ProceduralCluster.Populate(repeated,selected,InitialRings,expected.seed,expected.rules.clustering);
             foreach(var cell in board.Cells)
@@ -47,13 +47,16 @@ namespace EcoSphere
         {
             DontDestroyOnLoad(gameObject); yield return null; yield return null;
             var world=WorldLevels.Get(1,2); world.rules.clustering=.9f;
-            var system=FindAnyObjectByType<SystemView>(); system.OpenPlanet(2); yield return null; yield return null;
+            world.rules.requiredSpheres=5; world.displayName="Shared world record check";
+            var system=FindAnyObjectByType<SystemView>(); system.RefreshSystemHeading();
+            Expect(system.planets[2].name==world.displayName && system.planets[2].transform.Find("Sphere Requirement/Sphere Count").GetComponent<TMPro.TMP_Text>().text=="5","System did not read edited world traits");
+            system.OpenPlanet(2); yield return null; yield return null;
             var prep=FindAnyObjectByType<LevelPrepView>();
-            Expect(prep && prep.Title.text==world.displayName && LevelPrepView.RequiredSpheres==4 && !prep.Begin.interactable,"procedural setup context or requirement");
-            int[] selected={SphereIds.Fire,SphereIds.Ice,SphereIds.Water,SphereIds.Stone};
-            for(int i=0;i<3;i++)prep.AddSphere(selected[i]);
-            Expect(!prep.Begin.interactable,"Begin allowed fewer than four selected spheres");
-            prep.AddSphere(selected[3]); Expect(prep.Begin.interactable,"four-sphere procedural Begin stayed disabled");
+            Expect(prep && prep.Title.text==world.displayName && LevelPrepView.RequiredSpheres==5 && !prep.Begin.interactable,"procedural setup context or requirement");
+            int[] selected={SphereIds.Fire,SphereIds.Ice,SphereIds.Water,SphereIds.Stone,SphereIds.Void};
+            for(int i=0;i<4;i++)prep.AddSphere(selected[i]);
+            Expect(!prep.Begin.interactable,"Begin allowed fewer than the world's required spheres");
+            prep.AddSphere(selected[4]); Expect(prep.Begin.interactable,"world-defined five-sphere Begin stayed disabled");
             prep.Begin.onClick.Invoke(); yield return null; yield return null;
             var game=FindAnyObjectByType<EcoSpherePrototype>();
             Expect(SceneManager.GetActiveScene().name==WorldLevels.ProceduralSceneName && game && Time.timeScale==1,"shared procedural scene did not open");
@@ -69,7 +72,7 @@ namespace EcoSphere
             Expect(book.TryCombine(ElementId.Ice,ElementId.Fire,out var water) && water.id==SphereIds.Water,"Water recipe missing");
             var amounts=new double[Enum.GetValues(typeof(ElementId)).Length]; amounts[(int)ElementId.Fire]=amounts[(int)ElementId.Ice]=620;
             Expect(WorldProgress.Complete(9,0,0,0,false,amounts).discoveries.Contains(SphereIds.Water),"Ice and Fire did not actually award Water");
-            Debug.Log("ECOSPHERE_PROCEDURAL_GAMEPLAY_PASSED: System/setup/four-slot gate/shared scene, selected seeded board, real shot, results/save, scripted-only natural unlocks and actual Ice+Fire Water award");
+            Debug.Log("ECOSPHERE_PROCEDURAL_GAMEPLAY_PASSED: shared world name and five-sphere requirement across System/setup/gameplay, selected seeded board, real shot, results/save, scripted-only natural unlocks and actual Ice+Fire Water award");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

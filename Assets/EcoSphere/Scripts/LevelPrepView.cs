@@ -11,13 +11,14 @@ namespace EcoSphere
 {
     public sealed partial class LevelPrepView : MonoBehaviour
     {
-        public static int SystemNumber = 1, PlanetIndex, RequiredSpheres = 2;
+        public static int SystemNumber = 1, PlanetIndex;
+        public static int RequiredSpheres => WorldLevels.Get(SystemNumber,PlanetIndex).RequiredSpheres;
         public static bool ReturningToSystem;
         static bool smokeStarted;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetSession()
         {
-            SystemNumber = 1; PlanetIndex = 0; RequiredSpheres = 2;
+            SystemNumber = 1; PlanetIndex = 0;
             ReturningToSystem = false; smokeStarted = false; pendingLoadout = null;
         }
         public TMP_FontAsset font;
@@ -73,8 +74,7 @@ namespace EcoSphere
                 return;
             }
             world = WorldLevels.Get(SystemNumber, PlanetIndex);
-            RequiredSpheres = world.RequiredSpheres;
-            foreach (string id in world.modifiers) activeModifiers.Add(WorldCatalog.Current.Modifier(id));
+            foreach (var modifier in world.ModifierDefinitions) activeModifiers.Add(modifier);
             view = new GameObject("Prep Camera",typeof(Camera),typeof(AudioListener)).GetComponent<Camera>();
             view.transform.position = new Vector3(0,0,-10); view.orthographic = true;
             view.clearFlags = CameraClearFlags.SolidColor; view.backgroundColor = new Color(.01f,.02f,.04f);
@@ -102,7 +102,7 @@ namespace EcoSphere
             float offset = system.preferredWidth*.5f+68;
             Image("Left ornament",root,line,new Vector2(170,57),new Vector2(-offset,750));
             Image("Right ornament",root,line,new Vector2(170,57),new Vector2(offset,750)).transform.localScale = new Vector3(-1,1,1);
-            Title = Text("Planet",root,WorldLevels.Name(SystemNumber,PlanetIndex),44,new Vector2(760,65),new Vector2(0,700));
+            Title = Text("Planet",root,world.displayName,44,new Vector2(760,65),new Vector2(0,700));
             Image("Arch",root,arch,new Vector2(500,167),new Vector2(0,653));
             var collection = Frame("Discovered Spheres",root,new Vector2(570,940),new Vector2(-140,120));
             Text("Collection heading",collection.transform,"Discovered Spheres",29,new Vector2(510,60),new Vector2(0,405));
@@ -303,7 +303,7 @@ namespace EcoSphere
                 SceneManager.LoadScene("Results");
                 return;
             }
-            string scene=WorldLevels.GameplayScene(SystemNumber,PlanetIndex);
+            string scene=world.GameplayScene;
             if(!string.IsNullOrEmpty(scene)) { FinishBeginTutorial(); pendingLoadout=Selected.ToArray(); SceneManager.LoadScene(scene); }
         }
         public void Remove(int index)

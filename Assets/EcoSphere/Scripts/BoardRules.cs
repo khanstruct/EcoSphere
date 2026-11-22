@@ -12,14 +12,15 @@ namespace EcoSphere
             new Vector2Int(-1, 0), new Vector2Int(0, -1), new Vector2Int(1, -1)
         };
         public readonly Dictionary<Vector2Int, int> Cells = new Dictionary<Vector2Int, int>();
+        public readonly HashSet<Vector2Int> Infested = new HashSet<Vector2Int>();
         public const float Spacing = .9f * .6f;
         public static Vector2 Position(Vector2Int c) =>
             new Vector2(Spacing * (c.x + c.y * .5f), Spacing * .8660254f * c.y);
 
-        public HashSet<Vector2Int> MatchFrom(Vector2Int start)
+        public HashSet<Vector2Int> MatchFrom(Vector2Int start,ISet<Vector2Int> excludedThisShot=null)
         {
             var result = new HashSet<Vector2Int>();
-            if (!Cells.TryGetValue(start, out int type)) return result;
+            if (Infested.Contains(start) || (excludedThisShot!=null && excludedThisShot.Contains(start)) || !Cells.TryGetValue(start, out int type)) return result;
             if (!SphereCatalog.Current.Get(type).Matchable) return result;
             var queue = new Queue<Vector2Int>();
             queue.Enqueue(start); result.Add(start);
@@ -29,7 +30,7 @@ namespace EcoSphere
                 foreach (var d in Directions)
                 {
                     var next = cell + d;
-                    if (Cells.TryGetValue(next, out int other) && other == type && result.Add(next))
+                    if (!Infested.Contains(next) && (excludedThisShot==null || !excludedThisShot.Contains(next)) && Cells.TryGetValue(next, out int other) && other == type && result.Add(next))
                         queue.Enqueue(next);
                 }
             }

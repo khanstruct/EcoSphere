@@ -19,6 +19,8 @@ MonoBehaviour:
   proceduralModifiers:
   - {fileID: 11400000, guid: d852c3dfe8e39ae458a3af4ab6d09179, type: 2}
   - {fileID: 11400000, guid: 28aec6b1e0f1252468eea1a96ebc3f34, type: 2}
+  - {fileID: 11400000, guid: a077c671175e0d24ea5120f1afa5fe64, type: 2}
+  ratingStar: {fileID: 21300000, guid: ca6f1238cc9e45cd9cb6d4970e383018, type: 3}
   minimumProceduralSpheres: 4
   maximumProceduralSpheres: 4
   proceduralRules:
@@ -28,6 +30,9 @@ MonoBehaviour:
     clustering: 0.5
     rotationDegrees: 24
     rotationDuration: 0.65
+    oneStarScore: 1000
+    twoStarScore: 2000
+    threeStarScore: 5000
   minimumClustering: 0.1
   maximumClustering: 0.9
   proceduralGameplayScene: Procedural

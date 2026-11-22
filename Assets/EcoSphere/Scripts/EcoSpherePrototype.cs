@@ -84,6 +84,7 @@ namespace EcoSphere
             levelAudio.Initialize();
             BuildInterface();
             BuildBoard();
+            ApplyInfestation();
             LoadNext();
             if (levelLayout==LevelLayout.FirstTutorial && (!smoke || FirstTutorialTesting)) ShowTutorial(0);
             else if (StoneTutorial && (!smoke || TutorialTesting)) ShowTutorial(2);
@@ -436,10 +437,11 @@ namespace EcoSphere
                 visuals[chosen].GetComponent<LaserSphere>().placedTurn = shots;
             }
             foreach (var offset in BoardRules.Directions) RotateLaserContact(chosen + offset);
+            var cleansedInfestation=ClearAdjacentInfestations(chosen);
             // Even a would-be match loses immediately if its attached position touches an obstacle.
             if (CheckGameOver()) return;
             resolutionSpherePoints.Clear();
-            var matches = board.MatchFrom(chosen);
+            var matches = board.MatchFrom(chosen,cleansedInfestation);
             lastMatch = matches.Count; matchedCount += matches.Count;
             RemoveCells(matches, ElementScoring.MatchRate(matches.Count),matchOrigin:chosen,voicePoints:resolutionSpherePoints);
             var released = board.Disconnected(); lastRelease = released.Count;
@@ -462,6 +464,8 @@ namespace EcoSphere
             Vector2Int representative=delays!=null ? MatchWave.LastCell(delays) : default;
             foreach (var cell in cells)
             {
+                if(!released && board.Infested.Contains(cell))continue;
+                if(board.Infested.Contains(cell))KnockOffAlien(cell,false);
                 int type = board.Cells[cell];
                 if (released && StoneTutorial && cell==TutorialStoneCell && type == StoneType) stoneReleased = true;
                 var definition = Definition(type);
@@ -564,7 +568,7 @@ namespace EcoSphere
             if (levelAudio) yield return levelAudio.WaitForAnnouncements();
             else yield return new WaitForSecondsRealtime(1);
             yield return new WaitForSecondsRealtime(.15f);
-            while(activeStreaks>0)yield return null;
+            while(activeStreaks>0 || activeAlienStreaks>0)yield return null;
             var appearance = planet.GetComponent<PlanetSurface>();
             UpdateComposition();
             WorldProgress.Complete(LevelPrepView.SystemNumber, LevelPrepView.PlanetIndex,

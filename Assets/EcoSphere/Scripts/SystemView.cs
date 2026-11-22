@@ -1,4 +1,5 @@
 using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -102,7 +103,6 @@ namespace EcoSphere
             }
             LevelPrepView.SystemNumber = systemNumber;
             LevelPrepView.PlanetIndex = index;
-            LevelPrepView.RequiredSpheres = world.RequiredSpheres;
             SceneManager.LoadScene(WorldProgress.TryOpenCompletedResults(systemNumber, index) ? "Results" : "LevelPrep");
         }
 
@@ -137,6 +137,7 @@ namespace EcoSphere
                 planets[i].name = world.displayName;
                 var count = planets[i].transform.Find("Sphere Requirement/Sphere Count");
                 if (count) count.GetComponent<TMP_Text>().text = world.RequiredSpheres.ToString();
+                RefreshWorldBadges(planets[i].transform,world,WorldProgress.Find(systemNumber,i)!=null);
             }
             if (selection && SelectedPlanet >= 0 && SelectedPlanet < generated.worlds.Count)
                 selection.text = generated.worlds[SelectedPlanet].displayName;
@@ -145,6 +146,77 @@ namespace EcoSphere
             float offset = systemLabel.preferredWidth * .5f + 68;
             if (leftAdornment) leftAdornment.anchoredPosition = new Vector2(-offset, 50);
             if (rightAdornment) rightAdornment.anchoredPosition = new Vector2(offset, 50);
+        }
+
+        void RefreshWorldBadges(Transform planet,WorldRecord world,bool completed)
+        {
+            var requirement=planet.Find("Sphere Requirement") as RectTransform;
+            if(!requirement)return;
+            requirement.Find("Sphere Icon").gameObject.SetActive(!completed);
+            requirement.Find("Sphere Count").gameObject.SetActive(!completed);
+            var stars=requirement.Find("World Stars") as RectTransform;
+            if(!stars)
+            {
+                stars=new GameObject("World Stars",typeof(RectTransform)).GetComponent<RectTransform>();
+                stars.SetParent(requirement,false);stars.anchorMin=stars.anchorMax=new Vector2(.5f,.5f);stars.sizeDelta=Vector2.zero;
+            }
+            stars.gameObject.SetActive(completed);
+            if(completed)
+            {
+                int count=world.EarnedStars;
+                requirement.sizeDelta=new Vector2(Mathf.Max(1,count)*72-8,64);
+                requirement.anchoredPosition=new Vector2(0,-62);
+                var oldModifiers=requirement.Find("World Modifiers");if(oldModifiers)oldModifiers.gameObject.SetActive(false);
+                for(int i=0;i<Mathf.Max(count,stars.childCount);i++)
+                {
+                    Image star;
+                    if(i<stars.childCount)star=stars.GetChild(i).GetComponent<Image>();
+                    else
+                    {
+                        star=new GameObject("Star "+(i+1),typeof(RectTransform),typeof(Image)).GetComponent<Image>();
+                        star.transform.SetParent(stars,false);
+                    }
+                    star.gameObject.SetActive(i<count);star.sprite=WorldCatalog.Current.ratingStar;
+                    star.color=Color.white;star.preserveAspect=true;star.raycastTarget=false;
+                    star.rectTransform.sizeDelta=Vector2.one*64;
+                    star.rectTransform.anchoredPosition=new Vector2((i-(count-1)*.5f)*72,0);
+                }
+                return;
+            }
+            var modifiers=requirement.Find("World Modifiers") as RectTransform;
+            if(!modifiers)
+            {
+                modifiers=new GameObject("World Modifiers",typeof(RectTransform)).GetComponent<RectTransform>();
+                modifiers.SetParent(requirement,false);modifiers.anchorMin=modifiers.anchorMax=new Vector2(.5f,.5f);modifiers.sizeDelta=Vector2.zero;
+            }
+            modifiers.gameObject.SetActive(true);
+            var definitions=new List<WorldModifierDefinition>();var seen=new HashSet<string>();
+            foreach(var definition in world.ModifierDefinitions)if(seen.Add(definition.id))definitions.Add(definition);
+            for(int i=0;i<modifiers.childCount;i++)modifiers.GetChild(i).gameObject.SetActive(i<definitions.Count);
+            const float size=64,step=72;const int maximumColumns=4;
+            int total=definitions.Count+1,columns=Mathf.Min(maximumColumns,total),rows=Mathf.CeilToInt(total/(float)maximumColumns);
+            requirement.sizeDelta=new Vector2(columns*step-8,rows*step-8);
+            requirement.anchoredPosition=new Vector2(0,-62-(rows-1)*step*.5f);
+            Vector2 Position(int index)
+            {
+                int row=index/maximumColumns,rowCount=Mathf.Min(maximumColumns,total-row*maximumColumns);
+                return new Vector2((index%maximumColumns-(rowCount-1)*.5f)*step,(rows-1)*step*.5f-row*step);
+            }
+            ((RectTransform)requirement.Find("Sphere Icon")).anchoredPosition=Position(0);
+            ((RectTransform)requirement.Find("Sphere Count")).anchoredPosition=Position(0);
+            for(int i=0;i<definitions.Count;i++)
+            {
+                Image image;
+                if(i<modifiers.childCount)image=modifiers.GetChild(i).GetComponent<Image>();
+                else
+                {
+                    image=new GameObject("Modifier",typeof(RectTransform),typeof(Image)).GetComponent<Image>();
+                    image.transform.SetParent(modifiers,false);image.rectTransform.anchorMin=image.rectTransform.anchorMax=new Vector2(.5f,.5f);
+                }
+                image.gameObject.name=definitions[i].id;image.sprite=definitions[i].icon;image.color=Color.white;
+                image.preserveAspect=true;image.raycastTarget=false;image.rectTransform.sizeDelta=Vector2.one*size;
+                image.rectTransform.anchoredPosition=Position(i+1);
+            }
         }
 
         public void SelectPlanet(int index)

@@ -170,7 +170,8 @@ namespace EcoSphere
         public static WorldResult Complete(int system, int planet, float seaLevel, float rotation, bool releasedStone, IReadOnlyList<double> elements = null, int inclusionGoal = ElementScoring.Inclusion, IReadOnlyList<ElementId> leaderOrder = null)
         {
             if (TryOpenCompletedResults(system, planet)) return Pending;
-            GetSystem(system);
+            var record = WorldLevels.Get(system,planet);
+            record.highestScore = Math.Max(record.highestScore,new ElementComposition(elements).Total);
             var world = new CompletedWorld { system = system, planet = planet, seaLevel = seaLevel, rotation = rotation };
             if(elements!=null)
             {

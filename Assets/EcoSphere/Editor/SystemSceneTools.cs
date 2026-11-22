@@ -28,7 +28,7 @@ namespace EcoSphere.Editor
         [MenuItem("EcoSphere/Rebuild System Scene")]
         public static void Build()
         {
-            const string requirementPath = Art + "UI/sphere-requirement-v1.png";
+            const string requirementPath = Art + "UI/sphere-requirement-v2.png";
             var requirementImporter = (TextureImporter)AssetImporter.GetAtPath(requirementPath);
             requirementImporter.textureType = TextureImporterType.Sprite;
             requirementImporter.spriteImportMode = SpriteImportMode.Single;
@@ -149,6 +149,7 @@ namespace EcoSphere.Editor
                 count.color = Color.white;
                 count.outlineColor = new Color32(0, 0, 6, 255);
                 count.outlineWidth = .15f;
+                StyleRequirement(requirement,requirementIcon);
             }
             controller.selection = Label("Selection", root, new Vector2(.5f, .96f), "Choose a planet", 30);
             SystemHeadingTools.Add(controller);
@@ -261,6 +262,32 @@ namespace EcoSphere.Editor
             RenderTexture.active = null; camera.targetTexture = null;
             UnityEngine.Object.DestroyImmediate(image); UnityEngine.Object.DestroyImmediate(target);
             Debug.Log("ECOSPHERE_SYSTEM_VALIDATED: five button callbacks passed; portrait preview rendered.");
+        }
+
+        [MenuItem("EcoSphere/Update Sphere Requirement Badges")]
+        public static void ConfigureRequirements()
+        {
+            AssetDatabase.Refresh();
+            var icon=AssetDatabase.LoadAssetAtPath<Sprite>(Art+"UI/sphere-requirement-v2.png");
+            if(!icon || icon.texture.width>256 || icon.texture.height>256)throw new Exception("Missing or oversized sphere requirement circle");
+            var scene=EditorSceneManager.OpenScene(ScenePath);
+            var controller=UnityEngine.Object.FindAnyObjectByType<SystemView>();
+            foreach(var planet in controller.planets)StyleRequirement((RectTransform)planet.transform.Find("Sphere Requirement"),icon);
+            EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);
+            Debug.Log("ECOSPHERE_REQUIREMENT_BADGES_CONFIGURED: gold circle and centered gold dynamic count on every world");
+        }
+        static void StyleRequirement(RectTransform requirement,Sprite icon)
+        {
+            requirement.sizeDelta=Vector2.one*64;
+            var image=requirement.Find("Sphere Icon").GetComponent<Image>();
+            image.sprite=icon;image.color=Color.white;image.preserveAspect=true;image.raycastTarget=false;
+            image.rectTransform.sizeDelta=Vector2.one*64;image.rectTransform.anchoredPosition=Vector2.zero;
+            var count=requirement.Find("Sphere Count").GetComponent<TMP_Text>();
+            count.rectTransform.sizeDelta=new Vector2(38,44);count.rectTransform.anchoredPosition=Vector2.zero;
+            count.alignment=TextAlignmentOptions.Center;count.margin=Vector4.zero;
+            count.color=new Color32(255,211,97,255);count.raycastTarget=false;
+            count.enableAutoSizing=true;count.fontSizeMin=16;count.fontSizeMax=30;
+            count.transform.SetAsLastSibling();
         }
 
         public static void BuildValidateAndRender() { Build(); ValidateAndRender(); }
