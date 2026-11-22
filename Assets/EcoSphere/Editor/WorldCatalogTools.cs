@@ -23,7 +23,7 @@ namespace EcoSphere.Editor
                 catalog = ScriptableObject.CreateInstance<WorldCatalog>();
                 AssetDatabase.CreateAsset(catalog, CatalogPath);
             }
-            AddWorld(catalog, "genesis-alpha", "Genesis Alpha", "Tutorial1", 0, 2, 500, 1500);
+            AddWorld(catalog, "genesis-alpha", "Genesis Alpha", "Tutorial1", 0, 2, 300, 1000000);
             AddWorld(catalog, "genesis-beta", "Genesis Beta", "FirstLight", 1, 3, 1000000, 3000000);
             AddModifier(catalog, "close-to-sun", "Close to the Sun", "Sunlight and Fire are more effective.", "close-to-sun-v1.png");
             AddModifier(catalog, "continuous-rotation", "Continuous Rotation", "The cluster rotates throughout play.", "continuous-rotation-v1.png");

@@ -7,11 +7,18 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9;
     }
 
-    public enum ElementId { Ice, Sunlight, Stone, Fire, Void, Water, Laser, Core }
+    // Append new IDs only: existing sphere assets and saves serialize these numeric values.
+    public enum ElementId { Ice, Sunlight, Stone, Fire, Void, Water, Laser, Core,
+        Air, Soil, Sand, Life, Steam, Cloud, Rain, Snow, Wind, Lightning, Lava, Smoke,
+        Ash, Dust, Poison, Clay, Salt, Metal, Crystal, Glass, Coal, Oil, Wood, Gravity,
+        Plant, Algae, Moss, Fungus, Flower, Tree, Bacteria, Insect, Fish, Bird, Reptile,
+        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud }
     public enum SphereRole { Element, Laser, Core }
+    // Append categories only: sphere definitions serialize these values. All is a UI filter, not a category.
+    public enum SphereCategory { Materials, Forces, Nature, Life, Technology, Beyond }
 
     [Serializable]
     public struct ElementContribution
@@ -24,8 +31,14 @@ namespace EcoSphere
     [CreateAssetMenu(menuName = "EcoSphere/Sphere Definition")]
     public sealed class SphereDefinition : ScriptableObject
     {
+        internal static int IdentityRevision {get;private set;}
+        void OnEnable()=>IdentityRevision++;
+        void OnValidate()=>IdentityRevision++;
         public int id;
+        [Tooltip("The element this sphere represents. Independent of the elements it contributes.")]
+        public ElementId namesakeElement=(ElementId)(-1);
         public string displayName;
+        public SphereCategory category;
         public Texture2D surface;
         public Sprite icon;
         public Color color = Color.white;
@@ -41,11 +54,13 @@ namespace EcoSphere
         [InspectorName("Unallocated Units"), Range(0,3), Tooltip("Unused units consume part of the four-unit budget, reducing elemental yield without reducing earned score.")]
         public int unallocatedWeight;
         public int ContributionUnits { get { int sum=0; foreach(var entry in contributions) sum+=entry.amount; return sum; } }
+        public int TotalContributionUnits => ContributionUnits+unallocatedWeight;
         public bool Matchable => role == SphereRole.Element;
         public bool AmmoEligible => selectable && Matchable;
 
         public void Validate()
         {
+            if(!Enum.IsDefined(typeof(SphereCategory),category))throw new InvalidOperationException(name+": invalid sphere category");
             if (string.IsNullOrWhiteSpace(displayName) || !surface || !icon)
                 throw new InvalidOperationException(name + ": name, texture and icon are required");
             if (contributions == null || contributions.Count < 1 || contributions.Count > 4)
@@ -63,8 +78,7 @@ namespace EcoSphere
         {
             // Core is structural; Laser is collected when consumed but still never forms matches.
             if (role == SphereRole.Core) return;
-            double weight = unallocatedWeight;
-            foreach (var entry in contributions) weight += entry.amount;
+            double weight = TotalContributionUnits;
             if (weight <= 0) return;
             foreach (var entry in contributions)
                 totals[(int)entry.element] += rate * (entry.amount / weight);

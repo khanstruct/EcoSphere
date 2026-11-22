@@ -42,6 +42,7 @@ namespace EcoSphere
         readonly ShotSelector shotSelector = new ShotSelector();
         readonly Dictionary<Vector2Int, GameObject> visuals = new Dictionary<Vector2Int, GameObject>();
         readonly List<Vector2> aimObstacles = new List<Vector2>();
+        readonly List<Vector2> aimPoints = new List<Vector2>(13);
         readonly double[] totals = new double[Enum.GetValues(typeof(ElementId)).Length];
         readonly float[] shown = new float[Enum.GetValues(typeof(ElementId)).Length];
         readonly List<Material> materials = new List<Material>();
@@ -307,8 +308,8 @@ namespace EcoSphere
                 aimObstacles.Add(center);
                 foreach (var cell in board.Cells.Keys)
                     aimObstacles.Add(cluster.TransformPoint(BoardRules.Position(cell)));
-                var path = BoardRules.AimPath(muzzle, direction, (Right - Left) * .75f,
-                    Left + Radius, Right - Radius, Top - Radius, Bottom, aimObstacles, Radius * 2);
+                var path = BoardRules.TraceAimPath(muzzle, direction, (Right - Left) * .75f,
+                    Left + Radius, Right - Radius, Top - Radius, Bottom, aimPoints, aimObstacles, Radius * 2);
                 aim.positionCount = path.Count;
                 for (int i = 0; i < path.Count; i++) aim.SetPosition(i, new Vector3(path[i].x, path[i].y, -2));
                 aim.startColor = aim.endColor = ColorFor(loadedType);
@@ -437,21 +438,15 @@ namespace EcoSphere
             foreach (var offset in BoardRules.Directions) RotateLaserContact(chosen + offset);
             // Even a would-be match loses immediately if its attached position touches an obstacle.
             if (CheckGameOver()) return;
-            var resourcesBefore = (double[])totals.Clone();
+            resolutionSpherePoints.Clear();
             var matches = board.MatchFrom(chosen);
             lastMatch = matches.Count; matchedCount += matches.Count;
-            RemoveCells(matches, ElementScoring.MatchRate(matches.Count));
+            RemoveCells(matches, ElementScoring.MatchRate(matches.Count),matchOrigin:chosen,voicePoints:resolutionSpherePoints);
             var released = board.Disconnected(); lastRelease = released.Count;
             AdvanceTutorial(released);
-            RemoveCells(released, ElementScoring.Breakaway, true);
+            RemoveCells(released, ElementScoring.Breakaway, true,voicePoints:resolutionSpherePoints);
             if (levelAudio) levelAudio.Resolve(lastMatch, lastRelease);
-            if (levelAudio)
-            {
-                var gains = new double[totals.Length];
-                for (int i = 0; i < gains.Length; i++) gains[i] = totals[i] - resourcesBefore[i];
-                // Match identity chooses the voice even if the sphere supplies several elements.
-                shotHasElementCallout = levelAudio.AnnounceMatch(loadedType, lastMatch) || levelAudio.AnnounceResources(gains);
-            }
+            if (levelAudio)shotHasElementCallout=levelAudio.AnnounceResolution(resolutionSpherePoints);
             complete = board.Cells.Count == 0;
             // Resolve the callout in the impact frame, not after the rotation animation.
             if (levelAudio && !complete && !shotHasElementCallout && lastMatch >= 3 && shotRicochets > 0 &&
@@ -460,13 +455,20 @@ namespace EcoSphere
             StartCoroutine(FinishTurn());
         }
 
-        void RemoveCells(HashSet<Vector2Int> cells, int pointsPerSphere, bool released = false)
+        readonly Dictionary<int,int> resolutionSpherePoints=new Dictionary<int,int>();
+        void RemoveCells(HashSet<Vector2Int> cells, int pointsPerSphere, bool released = false,Vector2Int? matchOrigin=null,Dictionary<int,int> voicePoints=null)
         {
+            var delays=!released && matchOrigin.HasValue ? MatchWave.Delays(cells,matchOrigin.Value) : null;
+            Vector2Int representative=delays!=null ? MatchWave.LastCell(delays) : default;
             foreach (var cell in cells)
             {
                 int type = board.Cells[cell];
                 if (released && StoneTutorial && cell==TutorialStoneCell && type == StoneType) stoneReleased = true;
                 var definition = Definition(type);
+                if(voicePoints!=null && definition.Matchable)
+                {
+                    voicePoints.TryGetValue(type,out int previousPoints);voicePoints[type]=previousPoints+pointsPerSphere;
+                }
                 bool contributes = definition.role != SphereRole.Core;
                 if (contributes)
                 {
@@ -475,48 +477,50 @@ namespace EcoSphere
                 if (type != LaserType) score += pointsPerSphere;
                 var visual = visuals[cell]; visuals.Remove(cell); board.Cells.Remove(cell);
                 if (released && contributes) StartCoroutine(Ascend(visual, type));
-                else StartCoroutine(DissolveMatch(visual));
+                else StartCoroutine(DissolveMatch(visual,delays!=null && delays.TryGetValue(cell,out var delay) ? delay : 0,
+                    delays!=null && cell==representative ? type : (int?)null));
             }
         }
 
-        IEnumerator DissolveMatch(GameObject visual)
+        Material matchFlareMaterial;
+        IEnumerator DissolveMatch(GameObject visual,float delay=0,int? streakType=null)
         {
+            float begins=Time.time+delay;
+            while(Time.time<begins)yield return null;
+            if(!visual)yield break;
             visual.transform.SetParent(transform, true);
             Vector3 initialScale = visual.transform.localScale;
             var icons = visual.GetComponentsInChildren<SpriteRenderer>();
             var originalAlpha=new float[icons.Length];
             for(int i=0;i<icons.Length;i++)originalAlpha[i]=icons[i].color.a;
-            const float duration = .24f;
+            // Shared additive mesh overlay also flashes black/unlit spheres such as Void.
+            Renderer flare=null;MaterialPropertyBlock flareProperties=null;
+            var mesh=visual.GetComponentInChildren<MeshFilter>();
+            if(!matchFlareMaterial)matchFlareMaterial=Resources.Load<Material>("MatchFlare");
+            if(mesh && matchFlareMaterial)
+            {
+                var go=new GameObject("Match flash");go.layer=mesh.gameObject.layer;go.transform.SetParent(mesh.transform,false);
+                go.AddComponent<MeshFilter>().sharedMesh=mesh.sharedMesh;
+                flare=go.AddComponent<MeshRenderer>();flare.sharedMaterial=matchFlareMaterial;
+                flare.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;flare.receiveShadows=false;
+                flareProperties=new MaterialPropertyBlock();
+            }
+            const float duration = MatchWave.DissolveDuration;
             for (float t = 0; t < duration; t += Time.deltaTime)
             {
                 float p = Mathf.Clamp01(t / duration);
-                visual.transform.localScale = initialScale * (1 - Mathf.SmoothStep(0, 1, p));
+                // A very short bright pulse precedes the collapse, with no added turn wait.
+                float pulse=1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.025f,.075f,t));
+                if(flare){flareProperties.SetFloat("_Strength",pulse*2);flare.SetPropertyBlock(flareProperties);}
+                float collapse=Mathf.SmoothStep(0,1,Mathf.InverseLerp(.025f,duration,t));
+                visual.transform.localScale = initialScale * (1-collapse)*(1+.07f*pulse);
                 for(int i=0;i<icons.Length;i++)
                 {
                     Color color=icons[i].color; color.a=originalAlpha[i]*(1-p); icons[i].color=color;
                 }
                 yield return null;
             }
-            Destroy(visual);
-        }
-
-        IEnumerator Ascend(GameObject visual, int type)
-        {
-            visual.transform.SetParent(transform, true);
-            Vector3 start = visual.transform.position;
-            Vector3 destination = new Vector3(start.x * .3f, 7.6f, 0);
-            var streak = visual.AddComponent<TrailRenderer>(); streak.sharedMaterial = lineMaterial;
-            streak.time = .32f; streak.startWidth = .16f; streak.endWidth = 0;
-            streak.startColor = ColorFor(type); streak.endColor = new Color(ColorFor(type).r, ColorFor(type).g, ColorFor(type).b, 0);
-            streak.sortingOrder = 8;
-            float duration = .65f + Mathf.Abs(start.x) * .04f;
-            for (float t = 0; t < duration; t += Time.deltaTime)
-            {
-                float p = t / duration, eased = p * p;
-                visual.transform.position = Vector3.Lerp(start, destination, eased);
-                visual.transform.localScale = Vector3.one * Mathf.Lerp(1, .07f, Mathf.Min(1, p * 2));
-                yield return null;
-            }
+            if(streakType.HasValue)StartMatchedStreak(visual.transform.position,streakType.Value);
             Destroy(visual);
         }
 
@@ -560,6 +564,7 @@ namespace EcoSphere
             if (levelAudio) yield return levelAudio.WaitForAnnouncements();
             else yield return new WaitForSecondsRealtime(1);
             yield return new WaitForSecondsRealtime(.15f);
+            while(activeStreaks>0)yield return null;
             var appearance = planet.GetComponent<PlanetSurface>();
             UpdateComposition();
             WorldProgress.Complete(LevelPrepView.SystemNumber, LevelPrepView.PlanetIndex,
@@ -640,191 +645,13 @@ namespace EcoSphere
             string worldName = preparedWorld != null ? preparedWorld.displayName : WorldLevels.SceneName(SceneManager.GetActiveScene().name);
             gameplayTitle = Label("Title", hud, new Vector2(.5f, 1), new Vector2(0, -45), new Vector2(850, 60), "ECOSPHERE / " + worldName.ToUpperInvariant(), 29);
             status = Label("Turn", hud, new Vector2(.5f, 1), new Vector2(0, -100), new Vector2(850, 45), "", 21);
+            TemperatureLabel=Label("Average temperature",hud,new Vector2(.5f,1),new Vector2(0,-185),new Vector2(850,35),PlanetTemperatureDisplay.Average(59),22);
             detail = Label("Counters", hud, new Vector2(.5f, 0), new Vector2(0, 525), new Vector2(850, 42), "", 18);
             var strip = Panel("Resource visualizer", hud, new Vector2(.5f, 0), new Vector2(0, 110), new Vector2(860, 210), new Color(.01f, .018f, .035f, .96f));
             resourcePanel = strip;
             BuildResourceVisualizer(strip);
             instructions = Label("Instructions", hud, new Vector2(.5f, 0), new Vector2(0, 485), new Vector2(850, 35),
                 Application.isMobilePlatform ? "Tap the playfield to aim and fire" : "Mouse to aim · Click to fire · R to restart", 18);
-        }
-
-        IEnumerator SmokeRun()
-        {
-            yield return new WaitForSeconds(.6f);
-            if (CellCount != 3 * InitialRings * (InitialRings + 1))
-                throw new Exception("Initial pre-existing groups were incorrectly resolved");
-            direction = SmokeMatchingDirection(); gun.up = direction; Fire();
-            float deadline = Time.time + 15;
-            while (!ready && !complete && Time.time < deadline) yield return null;
-            if (Time.time >= deadline) throw new Exception("Smoke shot did not resolve in time");
-            if (lastMatch < 3) throw new Exception("Known matching shot failed to clear its initial group");
-            if (!complete && Mathf.Abs(Mathf.DeltaAngle(cluster.eulerAngles.z, rotationDegrees)) > .1f)
-                throw new Exception("Next sphere loaded before cluster rotation completed");
-            Debug.Log($"ECOSPHERE_SMOKE resolved: board={CellCount}, matched={lastMatch}, released={lastRelease}, lost={lost}");
-            if (!complete)
-            {
-                int before = ricochets;
-                direction = new Vector2(.97f, .26f).normalized; gun.up = direction; Fire();
-                deadline = Time.time + 20;
-                while (!ready && !complete && Time.time < deadline) yield return null;
-                if (Time.time >= deadline || ricochets <= before) throw new Exception("Bank shot failed to ricochet and resolve");
-                Debug.Log($"ECOSPHERE_SMOKE bank shot: ricochets={ricochets - before}, board={CellCount}");
-            }
-            if (!complete)
-            {
-                int previousLost = lost;
-                // Exercise the bottom-return path directly, without depending on a particular board gap.
-                direction = Vector2.down; Fire();
-                deadline = Time.time + 5;
-                while (!ready && Time.time < deadline) yield return null;
-                if (lost != previousLost + 1 || !ready) throw new Exception("Bottom loss did not advance and reload the turn");
-                Debug.Log("ECOSPHERE_SMOKE bottom loss passed");
-                gun.rotation = Quaternion.identity; direction = Vector2.up;
-            }
-            yield return new WaitForSeconds(.3f);
-            string output = System.IO.Path.Combine(Application.dataPath, "../Logs/EcoSphere-test-level.png");
-            ScreenCapture.CaptureScreenshot(output);
-            yield return new WaitForSeconds(1);
-            Debug.Log("ECOSPHERE_SMOKE_COMPLETE");
-            CapturePreview();
-            SmokeScoringChecks();
-            SmokeLossChecks();
-            yield return SmokeVoiceChecks();
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.Exit(0);
-#else
-            Application.Quit(0);
-#endif
-        }
-
-        void CapturePreview()
-        {
-            var target = new RenderTexture(900, 1600, 24);
-            var previousTarget = view.targetTexture;
-            var previousActive = RenderTexture.active;
-            view.targetTexture = target; view.aspect = 900f / 1600; FitCamera();
-            if (spaceBackground) spaceBackground.RefreshLayout();
-            Canvas.ForceUpdateCanvases();
-            view.Render();
-            RenderTexture.active = target;
-            var pixels = new Texture2D(900, 1600, TextureFormat.RGB24, false);
-            pixels.ReadPixels(new Rect(0, 0, 900, 1600), 0, 0); pixels.Apply();
-            System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.dataPath, "../Logs/EcoSphere-test-level.png"), pixels.EncodeToPNG());
-            view.targetTexture = previousTarget; RenderTexture.active = previousActive;
-            target.Release(); Destroy(target); Destroy(pixels);
-        }
-
-        void SmokeLossChecks()
-        {
-            // A matching attachment beyond the boundary must lose before it can clear or score.
-            board.Cells.Clear(); cluster.rotation = Quaternion.identity;
-            var hitCell = new Vector2Int(6, 2);
-            board.Cells[hitCell] = board.Cells[new Vector2Int(6, 1)] = board.Cells[new Vector2Int(5, 2)] = 0;
-            projectile = new GameObject("Boundary attachment test");
-            projectile.transform.position = cluster.TransformPoint(BoardRules.Position(new Vector2Int(7, 2)));
-            loadedType = 0; totals[0] = 8;
-            Attach(hitCell, Vector2.left);
-            if (!failed || board.Cells.Count != 4 || lastMatch != 0 || totals[0] != 0)
-                throw new Exception("Boundary attachment was allowed to match before losing");
-            failed = false;
-            board.Cells.Clear();
-            var cell = new Vector2Int(6, 3);
-            board.Cells[cell] = 0;
-            cluster.rotation = Quaternion.identity;
-            if (CheckGameOver()) throw new Exception("Safe pre-rotation cluster incorrectly lost");
-            Vector2 offset = BoardRules.Position(cell);
-            float losingAngle = -Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg;
-            if (!CheckGameOver(true, losingAngle) || failed)
-                throw new Exception("Rotation preview must detect loss without ending the level early");
-            cluster.rotation = Quaternion.Euler(0, 0, losingAngle);
-            totals[0] = 8; matchedCount = 6;
-            if (!CheckGameOver() || ready || totals[0] != 0 || matchedCount != 0)
-                throw new Exception("Rotation-edge contact must end level and discard all rewards");
-            Debug.Log("ECOSPHERE_LOSS_CHECKS_PASSED");
-        }
-
-        void SmokeScoringChecks()
-        {
-            int[] sizes = { 3, 4, 5, 6, 8, 10, 19 };
-            int[] expected = { 30, 48, 70, 96, 160, 200, 380 };
-            for (int i = 0; i < sizes.Length; i++)
-                if (ElementScoring.MatchRate(sizes[i]) * sizes[i] != expected[i])
-                    throw new Exception("Incorrect capped match bonus");
-            board.Cells.Clear(); visuals.Clear(); totals[0] = totals[1] = score = 0;
-            var matched = new HashSet<Vector2Int>();
-            for (int i = 1; i <= 3; i++)
-            {
-                var cell = new Vector2Int(i, 0); matched.Add(cell);
-                board.Cells[cell] = 0; visuals[cell] = new GameObject("Matched scoring test");
-            }
-            RemoveCells(matched, ElementScoring.MatchRate(matched.Count));
-            if (totals[0] != 30 || score != 30) throw new Exception("Three matches must award 30 Ice and total points");
-            var sun = new Vector2Int(0, 1); var stone = new Vector2Int(0, 2);
-            board.Cells[sun] = 1; board.Cells[stone] = StoneType;
-            visuals[sun] = new GameObject("Sunlight scoring test"); visuals[stone] = new GameObject("Stone scoring test");
-            RemoveCells(new HashSet<Vector2Int> { sun, stone }, ElementScoring.Breakaway, true);
-            if (totals[0] != 30 || totals[1] != 50 || score != 130)
-                throw new Exception("Breakaways must award 50 each; Stone affects score without adding a resource bar");
-            board.Cells[sun] = 1; visuals[sun] = new GameObject("Threshold scoring test");
-            RemoveCells(new HashSet<Vector2Int> { sun }, ElementScoring.Breakaway, true);
-            if (totals[1] != 100 || LevelAudio.ResourceCallout(new[] { 0, totals[1] }) != -1)
-                throw new Exception("Two Sunlight breakaways must remain below the inclusion threshold");
-            UpdateVisualizer(); int initialGoal=resourceGoal, initialExcess=abundanceGoal;
-            for (int i = 0; i < totals.Length; i++) totals[i] = abundanceGoal * 4;
-            UpdateVisualizer();
-            if (initialGoal!=resourceGoal || initialExcess!=abundanceGoal)
-                throw new Exception("Visualizer scaling changed the gameplay thresholds");
-            if (barTotals[0].text != (abundanceGoal*4).ToString() || barTotals[1].text != (abundanceGoal*4).ToString())
-                throw new Exception("Full point totals must remain readable above the visual scale");
-            Debug.Log("ECOSPHERE_SCORING_CHECKS_PASSED");
-        }
-        Vector2 SmokeMatchingDirection()
-        {
-            for (int step = -240; step <= 240; step++)
-            {
-                float degrees = step * .25f;
-                Vector2 candidate = new Vector2(Mathf.Sin(degrees * Mathf.Deg2Rad), Mathf.Cos(degrees * Mathf.Deg2Rad));
-                Vector2 origin = (Vector2)gun.position + candidate * (.57f * VisualScale);
-                float nearest = 20; int hitType = -1; Vector2 hitCenter = default;
-                foreach (var entry in board.Cells)
-                    if (BoardRules.Sweep(origin, candidate, cluster.TransformPoint(BoardRules.Position(entry.Key)),
-                        Radius * 2, nearest, out float distance))
-                    { nearest = distance; hitType = entry.Value; hitCenter = cluster.TransformPoint(BoardRules.Position(entry.Key)); }
-                // The test shot must reach its matching target before contacting the Core.
-                if (BoardRules.Sweep(origin, candidate, center, Radius * 2, nearest, out _)) continue;
-                Vector2 offset = hitCenter - origin;
-                float perpendicular = Mathf.Abs(offset.x * candidate.y - offset.y * candidate.x);
-                if (hitType == loadedType && perpendicular < .12f) return candidate;
-            }
-            throw new Exception("No direct matching smoke-test trajectory found");
-        }
-
-        IEnumerator SmokeVoiceChecks()
-        {
-            if (!levelAudio || !levelAudio.worldComplete || !levelAudio.creationFailed ||
-                !Catalog.ElementVoice(ElementId.Ice) || !Catalog.ElementVoice(ElementId.Sunlight) || !levelAudio.ecosphere)
-                throw new Exception("Level result voice clips are missing");
-            var mainAudio = levelAudio;
-            var lossSource = mainAudio.transform.Find("Level result announcer").GetComponent<AudioSource>();
-            if (lossSource.clip != mainAudio.creationFailed)
-                throw new Exception("Actual game-over checkpoint did not announce Creation Failed");
-            var test = new GameObject("Win announcement test").AddComponent<LevelAudio>();
-            test.voiceVolume = 0; test.musicVolume = 0; test.Initialize();
-            test.AnnounceResources(ElementScoring.Inclusion, ElementScoring.Inclusion + 50);
-            var source = test.transform.Find("Level result announcer").GetComponent<AudioSource>();
-            if (source.clip != mainAudio.ecosphere)
-                throw new Exception("Two qualifying resource gains did not announce EcoSphere");
-            levelAudio = test; failed = false; complete = true;
-            yield return FinishTurn();
-            float deadline = Time.time + 15;
-            while (source.clip != mainAudio.worldComplete && Time.time < deadline) yield return null;
-            if (source.clip != mainAudio.worldComplete || source.clip.length <= 0)
-                throw new Exception("Completion did not select World Complete");
-            test.AnnounceResult(false);
-            if (source.clip != mainAudio.worldComplete)
-                throw new Exception("Level result was announced more than once");
-            levelAudio = mainAudio; Destroy(test.gameObject);
-            Debug.Log("ECOSPHERE_RESULT_VOICE_CHECKS_PASSED");
         }
 
         void OnDestroy()

@@ -168,6 +168,12 @@ namespace EcoSphere
                 BuildResourceVisualizer(resourcePanel); previousPresentation=Vector2.zero;
             }
             UpdateComposition();
+            if(TemperatureLabel && planet)
+            {
+                float fahrenheit=planet.GetComponent<PlanetSurface>().DisplayedTemperatureFahrenheit;
+                int rounded=Mathf.RoundToInt(fahrenheit);
+                if(rounded!=displayedTemperature){displayedTemperature=rounded;TemperatureLabel.text=PlanetTemperatureDisplay.Average(fahrenheit);}
+            }
             float largest=0;
             foreach(var element in displayedElements) largest=Mathf.Max(largest,(float)totals[(int)element]);
             float targetScale=largest/Mathf.Clamp(visualizerStyle.leaderHeightFraction,.5f,.95f);

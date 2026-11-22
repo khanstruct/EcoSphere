@@ -1,0 +1,12 @@
+# Life sphere artwork
+
+Generated using the built-in image_gen tool. Full-resolution sources are kept outside imported Assets. Game exports: life-icon-v1.png is 256x256 RGBA with generated transparency; life-surface-v1.png is 256x128 RGB. Import settings follow Plant's sphere assets with unique GUIDs and a 256px maximum. Registered as the Life sphere (ID 8): pale pink #F6B7CD, biosphere voice, 3 Life / 1 Null. The Water + Mud recipe is registered now that Mud exists.
+
+## Icon prompt
+
+Use case: stylized-concept. Asset type: EcoSphere standalone transparent game element icon. Input images are STYLE REFERENCES ONLY, the existing Plant leaf and Water droplet icons. Generate a NEW LIFE sphere icon, a single rounded organic cell with one prominent pink nucleus and two small internal organelles. Bold clean dark rose outline, pearly white outer membrane, pale blush-pink interior, warm medium pink nucleus. Match the references' crisp chunky outlined polygon-faceted fantasy game emblem style, NOT realistic medical illustration. Broad simple facets and strong legible silhouette readable at tiny size. Centered single cell occupying 88 percent of square canvas, fully contained, transparent padding. True RGBA transparent background. No sphere behind cell, no text, no watermark, no extra cells, no external glow/shadow, no checkerboard. Final game export 256x256 pixels.
+
+## Surface prompt
+
+Use case: stylized-concept. Asset type: flat color/albedo texture for the LIFE elemental sphere in EcoSphere. Create a full-bleed landscape 2:1 equirectangular texture, NOT a rendered sphere. A beautiful broad organic cellular pattern: softly faceted translucent blush-pink cells packed together, pearly white gently glowing membrane networks and a few small richer rose-pink nuclei. Warm pink and white palette, no green, no blue. Polished colorful hand-painted fantasy game material, subtle luminous living tissue, friendly primordial life rather than medical gore. Broad readable forms that survive reduction to 256x128. Medium cell scale, about 10-14 cells across the width. Even diffuse illumination, no central hotspot, no vignette, no sphere shading, no border, no blank margins. Seamless left/right wrapping, quieter detail near top/bottom for sphere mapping. Opaque image covering every pixel. No text, icons, labels, watermarks, blood, veins or organs. Match the painterly richness and readable material detail of the existing Plant sphere foliage texture, with pink-white cellular material instead of leaves. Aspect ratio exactly 2:1.
+

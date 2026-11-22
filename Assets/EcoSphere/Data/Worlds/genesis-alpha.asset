@@ -33,8 +33,8 @@ MonoBehaviour:
     waitForFullLoadout: 1
   rules:
     requiredSpheres: 2
-    inclusionGoal: 500
-    abundanceGoal: 1500
+    inclusionGoal: 300
+    abundanceGoal: 1000000
     rotationDegrees: 24
     rotationDuration: 0.65
   modifiers: []

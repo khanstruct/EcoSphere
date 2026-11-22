@@ -78,8 +78,7 @@ namespace EcoSphere
                 rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.sizeDelta = Vector2.one * -12;
                 image.GetComponent<RawImage>().raycastTarget = false;
                 var preview = image.AddComponent<SpherePreview>();
-                preview.surfaceMaterial = completedWorldMaterial;
-                preview.rotationSpeed = completedPlanetRotationSpeed; preview.seaLevel = world.seaLevel; preview.initialRotation = world.rotation;
+                preview.ConfigurePlanet(world,completedWorldMaterial,completedPlanetRotationSpeed);
             }
             if (any && !GameObject.Find("Completed world light"))
             {

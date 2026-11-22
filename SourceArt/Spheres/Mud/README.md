@@ -1,0 +1,12 @@
+# Mud sphere artwork
+
+Generated with the built-in image_gen tool. Full-resolution sources are retained outside imported Assets. Final game surface is 256x128 RGB; icon is 256x256 RGBA with generated transparency preserved. Unity import metadata follows existing sphere conventions with unique GUIDs and a 256px maximum. Registered as Mud (sphere ID 9): light brown #CA9C6B, pelitosphere voice, 1 Water / 1 Stone / 2 Mud. Stone + Water unlocks Mud, and Water + Mud unlocks Life.
+
+## Icon prompt
+
+Use case: stylized-concept. Asset type: standalone transparent MUD element icon for EcoSphere. Input images are STYLE REFERENCES ONLY: existing Stone mountain and Water droplet game icons. Create a NEW matching emblem: a single squat rounded mound of wet brown mud sinking into a shallow irregular puddle, with one small thick raised splash lobe to communicate soft wet material. Clear cohesive silhouette, not a mountain, not a poop coil, no stacked swirls. Chunky very dark chocolate-brown outline, broad clean polygonal facets in medium earthy umber and warm brown, a few pale tan wet glossy highlights. Match references' crisp outlined faceted fantasy game emblem style, comparable visual weight. Centered emblem occupies 88 percent of square canvas, fully contained with transparent padding. Readable at tiny game sizes. True RGBA transparent background, no checkerboard, no backdrop circle or sphere, no external shadow or glow, no text, no watermark, no leaves or rocks. Final game export 256x256 pixels.
+
+## Surface prompt
+
+Use case: stylized-concept. Asset type: MUD sphere surface color/albedo texture for EcoSphere, matching the colorful hand-painted elemental fantasy game materials. Create a FLAT full-bleed landscape 2:1 equirectangular texture, NOT a rendered globe. Rich medium earthy brown wet mud with smooth soft irregular clods, shallow winding grooves and a few small darker slick puddled areas. Warm umber, chocolate brown creases, muted tan moist highlights. Clearly soft, damp and cohesive, unlike dry rough Stone or cracked desert. Broad readable organic material forms with subtle painterly faceting, gentle wet sheen baked into small local details only, no directional overall lighting. Seamless left/right wrapping for a sphere, quieter detail at top/bottom. Even illumination, no central hotspot, no spherical shading or vignette. Opaque texture covering every pixel, no margins, no rocks, vegetation, footprints, text, icon, watermark or border. Detail must remain readable at final 256x128 pixels. Landscape aspect ratio exactly 2:1.
+

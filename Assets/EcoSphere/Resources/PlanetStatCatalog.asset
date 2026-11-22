@@ -1,0 +1,422 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55e0671552344f748a1c10c0d8f3bea1, type: 3}
+  m_Name: PlanetStatCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.PlanetStatCatalog
+  pointsForFullInfluence: 250
+  temperaturePointsForFullInfluence: 100
+  neutralTemperatureFahrenheit: 59
+  coldTemperatureFahrenheit: -60
+  hotTemperatureFahrenheit: 250
+  vegetationTemperatureRangeFahrenheit: {x: -25, y: 45, z: 85, w: 180}
+  dryVegetationGrowth: 0.55
+  dominanceBonus: 0.25
+  freezingStartsAt: -0.02
+  fullyFrozenAt: -0.45
+  minimumAtmosphereWidth: 0.02
+  baseAtmosphereWidth: 0.05
+  maximumAtmosphereWidth: 0.12
+  elements:
+  - element: 3
+    effects:
+    - stat: 0
+      amount: 0.8
+    - stat: 7
+      amount: 0.7
+    - stat: 17
+      amount: 0.2
+    atmosphereColor: {r: 1, g: 0.25, b: 0.035, a: 1}
+    atmosphereStrength: 0.12
+  - element: 0
+    effects:
+    - stat: 0
+      amount: -1
+    - stat: 2
+      amount: 0.8
+    - stat: 5
+      amount: 0.3
+    - stat: 17
+      amount: -0.5
+    atmosphereColor: {r: 0.88, g: 0.95, b: 1, a: 1}
+    atmosphereStrength: 0.18
+  - element: 5
+    effects:
+    - stat: 2
+      amount: 1
+    - stat: 5
+      amount: 0.8
+    - stat: 17
+      amount: 0.85
+    atmosphereColor: {r: 0.72, g: 0.87, b: 1, a: 1}
+    atmosphereStrength: 0.14
+  - element: 2
+    effects:
+    - stat: 1
+      amount: 1
+    - stat: 15
+      amount: 0.25
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 1
+    effects:
+    - stat: 0
+      amount: 1
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 4
+    effects: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 8
+    effects:
+    - stat: 11
+      amount: 0.2
+    - stat: 17
+      amount: 0.6
+    atmosphereColor: {r: 0.45, g: 0.72, b: 1, a: 1}
+    atmosphereStrength: 0.5
+  - element: 9
+    effects:
+    - stat: 4
+      amount: 1
+    - stat: 5
+      amount: 0.15
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 10
+    effects:
+    - stat: 3
+      amount: 1
+    - stat: 4
+      amount: 0.1
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 11
+    effects:
+    - stat: 6
+      amount: 0.5
+    - stat: 4
+      amount: 0.2
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 12
+    effects:
+    - stat: 0
+      amount: 0.25
+    - stat: 5
+      amount: 0.8
+    - stat: 9
+      amount: 0.6
+    - stat: 10
+      amount: 0.5
+    - stat: 17
+      amount: 0.4
+    atmosphereColor: {r: 0.9, g: 0.94, b: 1, a: 1}
+    atmosphereStrength: 0.3
+  - element: 13
+    effects:
+    - stat: 9
+      amount: 1
+    - stat: 10
+      amount: 0.8
+    - stat: 5
+      amount: 0.4
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 14
+    effects:
+    - stat: 0
+      amount: -0.15
+    - stat: 5
+      amount: 1
+    - stat: 2
+      amount: 0.25
+    - stat: 9
+      amount: 0.6
+    - stat: 11
+      amount: 0.6
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 15
+    effects:
+    - stat: 0
+      amount: -0.8
+    - stat: 2
+      amount: 0.6
+    - stat: 5
+      amount: 0.4
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 16
+    effects:
+    - stat: 11
+      amount: 1
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 17
+    effects:
+    - stat: 12
+      amount: 1
+    - stat: 11
+      amount: 0.5
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 18
+    effects:
+    - stat: 0
+      amount: 1
+    - stat: 7
+      amount: 1
+    - stat: 1
+      amount: 0.4
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 19
+    effects:
+    - stat: 14
+      amount: 0.8
+    - stat: 10
+      amount: 0.3
+    - stat: 17
+      amount: 0.3
+    atmosphereColor: {r: 0.38, g: 0.34, b: 0.3, a: 1}
+    atmosphereStrength: 0.35
+  - element: 20
+    effects:
+    - stat: 3
+      amount: 0.6
+    - stat: 4
+      amount: 0.35
+    - stat: 14
+      amount: 0.25
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 21
+    effects:
+    - stat: 3
+      amount: 0.8
+    - stat: 14
+      amount: 0.3
+    atmosphereColor: {r: 0.78, g: 0.64, b: 0.45, a: 1}
+    atmosphereStrength: 0.2
+  - element: 22
+    effects:
+    - stat: 14
+      amount: 1
+    - stat: 6
+      amount: -0.35
+    atmosphereColor: {r: 0.65, g: 0.8, b: 0.4, a: 1}
+    atmosphereStrength: 0.25
+  - element: 23
+    effects:
+    - stat: 4
+      amount: 0.7
+    - stat: 3
+      amount: 0.4
+    - stat: 5
+      amount: 0.3
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 24
+    effects:
+    - stat: 15
+      amount: 0.6
+    - stat: 3
+      amount: 0.35
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 25
+    effects:
+    - stat: 15
+      amount: 0.8
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 26
+    effects:
+    - stat: 15
+      amount: 1
+    - stat: 1
+      amount: 0.2
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 27
+    effects:
+    - stat: 15
+      amount: 0.6
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 28
+    effects:
+    - stat: 15
+      amount: 0.4
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 29
+    effects:
+    - stat: 14
+      amount: 0.3
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 30
+    effects:
+    - stat: 6
+      amount: 0.4
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 31
+    effects: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 32
+    effects:
+    - stat: 6
+      amount: 0.8
+    - stat: 18
+      amount: 0.04
+    - stat: 17
+      amount: 0.12
+    - stat: 4
+      amount: 0.25
+    atmosphereColor: {r: 0.56, g: 0.85, b: 0.85, a: 1}
+    atmosphereStrength: 0.08
+  - element: 33
+    effects:
+    - stat: 6
+      amount: 0.6
+    - stat: 5
+      amount: 0.4
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 34
+    effects:
+    - stat: 6
+      amount: 0.5
+    - stat: 5
+      amount: 0.35
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 35
+    effects:
+    - stat: 6
+      amount: 0.5
+    - stat: 5
+      amount: 0.3
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 36
+    effects:
+    - stat: 6
+      amount: 0.6
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 37
+    effects:
+    - stat: 6
+      amount: 1
+    - stat: 4
+      amount: 0.2
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 38
+    effects:
+    - stat: 6
+      amount: 0.2
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 39
+    effects: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 40
+    effects: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 41
+    effects: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 42
+    effects: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 43
+    effects: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 44
+    effects:
+    - stat: 13
+      amount: 0.25
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 45
+    effects:
+    - stat: 2
+      amount: 1
+    - stat: 5
+      amount: 1
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 46
+    effects:
+    - stat: 2
+      amount: 0.4
+    - stat: 5
+      amount: 1
+    - stat: 4
+      amount: 0.8
+    - stat: 6
+      amount: 0.6
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 47
+    effects:
+    - stat: 7
+      amount: 0.25
+    - stat: 12
+      amount: 0.5
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 48
+    effects:
+    - stat: 16
+      amount: 1
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 49
+    effects:
+    - stat: 13
+      amount: 0.7
+    - stat: 12
+      amount: 0.3
+    - stat: 14
+      amount: 0.15
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 50
+    effects: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 51
+    effects:
+    - stat: 13
+      amount: 1
+    - stat: 14
+      amount: 0.3
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 52
+    effects:
+    - stat: 4
+      amount: 1
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0

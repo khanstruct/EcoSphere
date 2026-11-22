@@ -9,6 +9,11 @@ namespace EcoSphere
         public Sprite icon;
         public Material surfaceMaterial;
         public float rotationSpeed = 12, initialRotation, seaLevel = -.02f;
+        public float stoneRuggedness;
+        public float iceCoverage;
+        public float fireHeat, atmosphereStrength, atmosphereWidth;
+        public Color atmosphereColor;
+        public PlanetStats planetStats;
         static int serial;
         GameObject stage;
         Transform globe;
@@ -16,6 +21,13 @@ namespace EcoSphere
         Material material;
         public Camera PreviewCamera { get; private set; }
         public Quaternion SurfaceRotation => globe ? globe.localRotation : Quaternion.identity;
+        public void ConfigurePlanet(CompletedWorld world,Material planetMaterial,float spin=2)
+        {
+            surfaceMaterial=planetMaterial;planetStats=world.planetStats;
+            seaLevel=world.seaLevel;initialRotation=world.rotation;rotationSpeed=spin;
+            stoneRuggedness=world.stoneRuggedness;iceCoverage=world.iceCoverage;fireHeat=world.fireHeat;
+            atmosphereColor=world.atmosphereColor;atmosphereStrength=world.atmosphereStrength;atmosphereWidth=world.atmosphereWidth;
+        }
         void Start()
         {
             if (definition) { surface = definition.surface; icon = definition.icon; }
@@ -28,13 +40,21 @@ namespace EcoSphere
             globe = sphere.transform; globe.localScale = Vector3.one * 1.65f;
             globe.localRotation = Quaternion.Euler(0, initialRotation, 0);
             material = surfaceMaterial ? new Material(surfaceMaterial) : new Material(Shader.Find(definition && definition.unlit ? "Universal Render Pipeline/Unlit" : "Universal Render Pipeline/Lit"));
-            if (surfaceMaterial) material.SetFloat("_SeaLevel", seaLevel);
+            if (surfaceMaterial) { material.SetFloat("_SeaLevel", seaLevel); material.SetFloat("_StoneRuggedness",stoneRuggedness); material.SetFloat("_IceCoverage",iceCoverage); }
             else
             {
                 material.SetTexture("_BaseMap", surface); material.SetColor("_BaseColor", Color.white);
                 material.SetFloat("_Smoothness", .35f);
             }
             sphere.GetComponent<Renderer>().sharedMaterial = material;
+            if(surfaceMaterial)
+            {
+                material.SetFloat("_FireHeat",fireHeat);
+                var stats=planetStats ?? PlanetStats.Legacy(stoneRuggedness,iceCoverage,fireHeat,atmosphereColor,atmosphereStrength,atmosphereWidth);
+                var block=new MaterialPropertyBlock();stats.Apply(block);block.SetVector("_TerrainBounds",PlanetSurface.TerrainBounds(material));sphere.GetComponent<Renderer>().SetPropertyBlock(block);
+                var atmosphere=PlanetAtmosphere.Create(globe);
+                if(atmosphere)atmosphere.SetAppearance(stats.atmosphereColor,stats.AtmosphereDensity,stats.atmosphereWidth);
+            }
             SphereGlow.Create(stage.transform,definition,1.65f,layer);
             var symbol = new GameObject("Sphere icon"); symbol.layer = layer;
             symbol.transform.SetParent(stage.transform, false); symbol.transform.localPosition = new Vector3(0, 0, -.85f);
@@ -49,9 +69,16 @@ namespace EcoSphere
             target = new RenderTexture(256,256,24,RenderTextureFormat.ARGB32); target.Create();
             PreviewCamera.targetTexture = target;
             PreviewCamera.aspect = 1;
-            GetComponent<RawImage>().texture = target;
+            var image=GetComponent<RawImage>();image.texture = target;
+            if(surfaceMaterial)
+            {
+                var style=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");
+                if(style && style.previewMaterial)image.material=style.previewMaterial;
+            }
         }
         void Update() { if (globe) globe.Rotate(0, rotationSpeed * Time.deltaTime, 0, Space.Self); }
+        void OnEnable(){if(stage)stage.SetActive(true);}
+        void OnDisable(){if(stage)stage.SetActive(false);}
         void OnDestroy()
         {
             if (stage) Destroy(stage);

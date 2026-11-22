@@ -28,6 +28,7 @@ namespace EcoSphere
                 fire.contributions = new List<ElementContribution> {
                     new ElementContribution(ElementId.Fire, 1), new ElementContribution(ElementId.Water, 1),
                     new ElementContribution(ElementId.Stone, 1), new ElementContribution(ElementId.Void, 1) };
+                fire.unallocatedWeight=0;
                 foreach (var visual in visuals.Values) Destroy(visual);
                 visuals.Clear(); board.Cells.Clear(); Array.Clear(totals, 0, totals.Length);
                 displayedElements.Clear(); channelSphereTypes.Clear();
@@ -43,10 +44,10 @@ namespace EcoSphere
                 cell = new Vector2Int(2, 0); board.Cells[cell] = SphereIds.Void;
                 visuals[cell] = MakeSphere("Void smoke", SphereIds.Void, cluster, BoardRules.Position(cell));
                 RemoveCells(new HashSet<Vector2Int> { cell }, ElementScoring.StandardMatch);
-                Expect(Math.Abs(totals[(int)ElementId.Void] - (10+12.5)) < 1e-10, "shared planet-wide element total did not accumulate");
+                Expect(Math.Abs(totals[(int)ElementId.Void] - (5+12.5)) < 1e-10, "shared planet-wide element total did not accumulate");
                 UpdateVisualizer();
-                Expect(resourceLabels.Count == 5, "four contributions plus the second sphere must produce five channels");
-                Expect(barTotals[3].text=="22" && barTotals[4].text=="22", "duplicate resource channels must show the same total");
+                Expect(resourceLabels.Count == 6, "four contribution units plus two Void units must produce six real channels");
+                Expect(barTotals[3].text=="17" && barTotals[4].text=="17" && barTotals[5].text=="17", "duplicate resource channels must show the same truncated total");
                 for (int i = 0; i < 4; i++) Expect(energyBars[i].color == fire.color, "visualizer did not use the source sphere color");
                 Expect(energyBars[4].color == Definition(SphereIds.Void).color, "Void visualizer color");
                 yield return null;

@@ -10,6 +10,7 @@ namespace EcoSphere
         readonly List<ElementId> ranked = new List<ElementId>();
         readonly Comparison<ElementId> comparison;
         IReadOnlyList<double> amounts;
+        double[] integerBuffer=Array.Empty<double>();
         int[] previousPriority = Array.Empty<int>();
         public double Total { get; private set; }
         public IReadOnlyList<ElementId> Ranked => ranked;
@@ -18,22 +19,22 @@ namespace EcoSphere
 
         public void Update(IReadOnlyList<double> totals, IReadOnlyList<ElementId> firstAppearanceOrder = null)
         {
-            amounts = totals; Total = 0;
+            amounts = totals; Total = new ElementComposition(totals).Total;
             if (previousPriority.Length != totals.Count) previousPriority = new int[totals.Count];
-            for (int i = 0; i < totals.Count; i++) { Total += Math.Max(0,totals[i]); previousPriority[i] = int.MaxValue; }
+            for (int i = 0; i < totals.Count; i++) previousPriority[i] = int.MaxValue;
             for (int i = ranked.Count-1; i >= 0; i--) if (Amount(ranked[i]) == 0) ranked.RemoveAt(i);
             if (firstAppearanceOrder != null)
                 foreach (var element in firstAppearanceOrder) if (Amount(element) > 0 && !ranked.Contains(element)) ranked.Add(element);
-            for (int i = 0; i < totals.Count; i++) if (totals[i] > 0 && !ranked.Contains((ElementId)i)) ranked.Add((ElementId)i);
+            for (int i = 0; i < totals.Count; i++) if (Amount((ElementId)i) > 0 && !ranked.Contains((ElementId)i)) ranked.Add((ElementId)i);
             for (int i = 0; i < ranked.Count; i++) previousPriority[(int)ranked[i]] = i;
             ranked.Sort(comparison);
         }
 
         public void Update(IReadOnlyList<int> totals, IReadOnlyList<ElementId> order = null)
         {
-            var precise = new double[totals.Count];
-            for (int i=0;i<precise.Length;i++) precise[i]=totals[i];
-            Update(precise,order);
+            if(integerBuffer.Length!=totals.Count)integerBuffer=new double[totals.Count];
+            for (int i=0;i<integerBuffer.Length;i++) integerBuffer[i]=totals[i];
+            Update(integerBuffer,order);
         }
 
         int Compare(ElementId first, ElementId second)
@@ -42,7 +43,7 @@ namespace EcoSphere
             // Incumbents retain their place until another element has a strictly larger amount.
             return amount != 0 ? amount : previousPriority[(int)first].CompareTo(previousPriority[(int)second]);
         }
-        public double Amount(ElementId element) => amounts != null && (int)element >= 0 && (int)element < amounts.Count ? Math.Max(0,amounts[(int)element]) : 0;
+        public double Amount(ElementId element) => amounts != null && (int)element >= 0 && (int)element < amounts.Count ? ElementComposition.PositiveFinite(amounts[(int)element]) : 0;
         public int Rank(ElementId element) { int index = ranked.IndexOf(element); return index < 0 ? 0 : index+1; }
         public bool IsLeading(ElementId element) => Total > 0 && Amount(element)*100 >= Total*LeadershipPercent;
         public bool MeetsRecipeMinimum(ElementId element,int minimum) => IsLeading(element) && Amount(element)>=Math.Max(1,minimum);

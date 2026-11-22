@@ -208,12 +208,12 @@ namespace EcoSphere.Editor
             Expect(!BoardRules.CircleTouchesTriangle(new Vector2(2, 2), .1f, Vector2.zero, Vector2.right, Vector2.up),
                 "Empty space outside cannon geometry must not touch");
             Debug.Log("ECOSPHERE_CONTACT_CHECKS_PASSED 6");
-            Expect(LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion - 1, ElementScoring.Inclusion - 1 }) == -1, "Subthreshold gains must not announce");
-            Expect(LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion, 0 }) == 0, "Exactly the inclusion threshold of Ice must announce Cryosphere");
-            Expect(LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion, ElementScoring.Inclusion + 50 }) == LevelAudio.MixedResourceCallout, "Two unequal qualifying gains must announce EcoSphere");
-            Expect(LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion + 50, ElementScoring.Inclusion + 50 }) == LevelAudio.MixedResourceCallout, "Equal qualifying gains must announce EcoSphere");
+            Expect(LevelAudio.ResourceCallout(new[] { LevelAudio.SphereVoiceMinimumPoints - 1, LevelAudio.SphereVoiceMinimumPoints - 1 }) == -1, "Subthreshold gains must not announce");
+            Expect(LevelAudio.ResourceCallout(new[] { LevelAudio.SphereVoiceMinimumPoints, 0 }) == 0, "Exactly the audio threshold of Ice must announce Cryosphere");
+            Expect(LevelAudio.ResourceCallout(new[] { LevelAudio.SphereVoiceMinimumPoints, LevelAudio.SphereVoiceMinimumPoints + 50 }) == LevelAudio.MixedResourceCallout, "Two unequal qualifying gains must announce EcoSphere");
+            Expect(LevelAudio.ResourceCallout(new[] { LevelAudio.SphereVoiceMinimumPoints + 50, LevelAudio.SphereVoiceMinimumPoints + 50 }) == LevelAudio.MixedResourceCallout, "Equal qualifying gains must announce EcoSphere");
             Debug.Log("ECOSPHERE_RESOURCE_VOICE_CHECKS_PASSED 4");
-            int tied = LevelAudio.ResourceCallout(new[] { ElementScoring.Inclusion - 1, ElementScoring.Inclusion + 100, ElementScoring.Inclusion + 100, ElementScoring.Inclusion });
+            int tied = LevelAudio.ResourceCallout(new[] { LevelAudio.SphereVoiceMinimumPoints - 1, LevelAudio.SphereVoiceMinimumPoints + 100, LevelAudio.SphereVoiceMinimumPoints + 100, LevelAudio.SphereVoiceMinimumPoints });
             Expect(tied == LevelAudio.MixedResourceCallout, "Any two or more qualifying resources must announce EcoSphere");
             Expect(LevelAudio.ImpressiveChance(0, 5, false) == 0, "Bank shots without matches must never announce Impressive");
             Expect(LevelAudio.ImpressiveChance(3, 0, false) == 0, "Direct shots must never announce Impressive");

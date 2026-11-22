@@ -18,7 +18,7 @@ namespace EcoSphere
             if(cells.Count==0 || LevelAudio.MatchVoice(SphereIds.Water,30)!=Definition(SphereIds.Water).resourceVoice)
                 throw new Exception("DEV Water: no board spheres or incorrect large-match voice");
             RemoveCells(cells,ElementScoring.MatchRate(cells.Count)); UpdateVisualizer();
-            if(totals[(int)ElementId.Water]!=600 || score!=600)throw new Exception("DEV Water: match points did not contribute to Water");
+            if(totals[(int)ElementId.Water]!=450 || score!=600)throw new Exception("DEV Water: expected 75% elemental yield with unchanged score");
             foreach(var bar in energyBars)
                 if(bar.color!=Definition(SphereIds.Water).color && bar.color!=Definition(SphereIds.Ice).color)
                     throw new Exception("DEV Water: visualizer used the wrong loadout colors");

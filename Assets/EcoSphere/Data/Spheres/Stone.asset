@@ -13,10 +13,12 @@ MonoBehaviour:
   m_Name: Stone
   m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereDefinition
   id: 3
+  namesakeElement: 2
   displayName: Stone
-  surface: {fileID: 2800000, guid: ed42ee9d135b445aaa8136c13ec694a2, type: 3}
-  icon: {fileID: 21300000, guid: a39851ea559e45678279bc39888e3f57, type: 3}
-  color: {r: 0.5882353, g: 0.39607844, b: 0.23137255, a: 1}
+  category: 0
+  surface: {fileID: 2800000, guid: 43341876142147f4b5e413e2c79a1d89, type: 3}
+  icon: {fileID: 21300000, guid: 49af49664e2c45dc827e3e6518847f4b, type: 3}
+  color: {r: 0.8156863, g: 0.827451, b: 0.84705883, a: 1}
   resourceVoice: {fileID: 8300000, guid: 9c2443ee6b6e408469446abc7bda67c8, type: 3}
   role: 0
   availableAtStart: 0
@@ -24,4 +26,5 @@ MonoBehaviour:
   unlit: 0
   contributions:
   - element: 2
-    amount: 1
+    amount: 3
+  unallocatedWeight: 1

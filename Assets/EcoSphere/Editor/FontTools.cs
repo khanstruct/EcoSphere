@@ -23,7 +23,7 @@ namespace EcoSphere.Editor
             var asset = TMP_FontAsset.CreateFontAsset(font, 90, 9, GlyphRenderMode.SDFAA, 1024, 1024);
             asset.name = Path.GetFileNameWithoutExtension(path);
             AssetDatabase.CreateAsset(asset, path);
-            asset.TryAddCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?/+-=()[]<>%·–—→←↑↓×", out string missing);
+            asset.TryAddCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;!?/+-=()[]<>%°·–—→←↑↓×", out string missing);
             AssetDatabase.AddObjectToAsset(asset.material, asset);
             foreach (var texture in asset.atlasTextures) AssetDatabase.AddObjectToAsset(texture, asset);
             EditorUtility.SetDirty(asset);

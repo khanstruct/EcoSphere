@@ -100,7 +100,14 @@ namespace EcoSphere
             float left, float right, float top, float bottom,
             IReadOnlyList<Vector2> obstacles = null, float combinedRadius = 0)
         {
-            var points = new List<Vector2> { origin };
+            return TraceAimPath(origin,direction,length,left,right,top,bottom,new List<Vector2>(13),obstacles,combinedRadius);
+        }
+
+        public static List<Vector2> TraceAimPath(Vector2 origin, Vector2 direction, float length,
+            float left, float right, float top, float bottom, List<Vector2> points,
+            IReadOnlyList<Vector2> obstacles = null, float combinedRadius = 0)
+        {
+            points.Clear();points.Add(origin);
             direction.Normalize();
             if (direction.sqrMagnitude < .5f) return points;
             for (int bounce = 0; bounce < 12 && length > .00001f; bounce++)

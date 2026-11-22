@@ -75,7 +75,8 @@ namespace EcoSphere
             var completed = system.planets[1].transform.Find("Completed world");
             if (!completed) throw new Exception("Completed planet was not displayed on the map");
             var preview = completed.GetComponent<SpherePreview>();
-            if (preview.surfaceMaterial != expectedMaterial || preview.seaLevel != stored.seaLevel)
+            if(preview.planetStats!=stored.planetStats)throw new Exception("System globe lost saved planet stats");
+            if (preview.surfaceMaterial != expectedMaterial || preview.seaLevel != stored.seaLevel || preview.stoneRuggedness != stored.stoneRuggedness || preview.iceCoverage != stored.iceCoverage || preview.fireHeat!=stored.fireHeat || preview.atmosphereColor!=stored.atmosphereColor || preview.atmosphereStrength!=stored.atmosphereStrength || preview.atmosphereWidth!=stored.atmosphereWidth)
                 throw new Exception("Map world appearance differs from the completed gameplay world");
             var rotation = preview.SurfaceRotation;
             yield return new WaitForSecondsRealtime(.3f);
@@ -96,10 +97,16 @@ namespace EcoSphere
             Capture(results,"revisited-stone",900,1600);
             // Exercise the layout/animation capacity with three sample discoveries, without changing player saves.
             var three = WorldProgress.Complete(3, 2, -.02f, 30, false);
+            three.world.iceCoverage=.6f; three.world.stoneRuggedness=.4f; three.world.seaLevel=.35f;
+            three.world.fireHeat=.7f;three.world.atmosphereColor=new Color(1,.25f,.035f,1);three.world.atmosphereStrength=.6f;three.world.atmosphereWidth=.055f;
+            var materials=new double[System.Enum.GetValues(typeof(ElementId)).Length];
+            materials[(int)ElementId.Fire]=400;materials[(int)ElementId.Water]=400;materials[(int)ElementId.Stone]=200;
+            three.world.SetStats(PlanetStatCalculator.Evaluate(materials));
             three.discoveries.AddRange(new[] { 0, 1, 3 });
             SceneManager.LoadScene("Results");
             yield return new WaitForSecondsRealtime(.4f);
             results = FindAnyObjectByType<ResultsView>();
+            CheckGlobe(results,expectedMaterial);
             if (results.DiscoverySpheres.Count != 3 || results.DiscoveryPlayCount != 1) throw new Exception("Three-discovery overlay missing");
             Capture(results, "three-overlay", 900, 1600);
             Capture(results, "three-overlay-tablet", 1200, 1600);
@@ -140,10 +147,21 @@ namespace EcoSphere
             var globe=results.Root.Find("Completed world globe");
             var preview=globe ? globe.GetComponent<SpherePreview>() : null;
             var stored=WorldProgress.Pending.world;
+            var climate=stored.planetStats ?? PlanetStats.Legacy(stored.stoneRuggedness,stored.iceCoverage,stored.fireHeat,stored.atmosphereColor,stored.atmosphereStrength,stored.atmosphereWidth);
+            if(results.TemperatureLabel.text!=PlanetTemperatureDisplay.Average(climate.TemperatureFahrenheit))throw new Exception("Results lost saved average temperature");
             if(!preview || preview.surfaceMaterial!=expectedMaterial || preview.seaLevel!=stored.seaLevel ||
-                preview.initialRotation!=stored.rotation || !globe.GetComponent<RawImage>().texture ||
+                preview.initialRotation!=stored.rotation || preview.stoneRuggedness!=stored.stoneRuggedness || preview.iceCoverage!=stored.iceCoverage || !globe.GetComponent<RawImage>().texture ||
+                preview.fireHeat!=stored.fireHeat || preview.atmosphereColor!=stored.atmosphereColor || preview.atmosphereStrength!=stored.atmosphereStrength || preview.atmosphereWidth!=stored.atmosphereWidth ||
+                preview.planetStats!=stored.planetStats ||
                 globe.GetComponent<Image>() || globe.Find("Backing") || results.Root.Find("World image placeholder"))
                 throw new Exception("Results globe must show saved appearance without an image frame");
+            if(stored.planetStats!=null)
+            {
+                var renderer=preview.PreviewCamera.transform.parent.Find("Sphere").GetComponent<Renderer>();
+                var block=new MaterialPropertyBlock();renderer.GetPropertyBlock(block);
+                if(block.GetFloat("_Temperature")!=stored.planetStats.Temperature || block.GetFloat("_GeologicalActivity")!=stored.planetStats.Geology)
+                    throw new Exception("Results globe changed temperature/geology");
+            }
         }
 
         static void Capture(ResultsView results, string name, int width, int height)

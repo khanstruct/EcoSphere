@@ -180,21 +180,22 @@ namespace EcoSphere
             void In(Transform parent,string name,Vector2 size,Vector2 pos)=>ScreenLayout.Place((RectTransform)parent.Find(name),size,pos);
             In(collection,"Midnight backing",new Vector2(leftWidth-42,panelHeight-42),Vector2.zero);
             In(collection,"Collection heading",new Vector2(leftWidth-50,60),new Vector2(0,panelHeight*.5f-65));
-            float viewportHeight=panelHeight-165;
-            In(collection,"Collection viewport",new Vector2(leftWidth-65,viewportHeight),new Vector2(0,-30));
+            LayoutCategoryTabs(leftWidth-65,panelHeight*.5f-125);
+            float viewportHeight=panelHeight-230;
+            In(collection,"Collection viewport",new Vector2(leftWidth-65,viewportHeight),new Vector2(0,-65));
             var content=(RectTransform)collection.Find("Collection viewport/Sphere list");
             int columns=Mathf.Max(2,Mathf.FloorToInt((leftWidth-65)/245));
             float tileWidth=Mathf.Min(245,(leftWidth-65)/columns-10);
-            content.sizeDelta=new Vector2(leftWidth-65,Mathf.Max(viewportHeight, Mathf.CeilToInt(tiles.Count / (float)columns) * 275 + 160)); content.anchoredPosition=Vector2.zero;
-            for(int i=0;i<tiles.Count;i++)
+            content.sizeDelta=new Vector2(leftWidth-65,Mathf.Max(viewportHeight, Mathf.CeilToInt(visibleTileIndices.Count / (float)columns) * 275 + 160)); content.anchoredPosition=Vector2.zero;
+            for(int i=0;i<visibleTileIndices.Count;i++)
             {
-                var rect=tiles[i].rectTransform; rect.anchorMin=rect.anchorMax=new Vector2(.5f,1);
+                var rect=tiles[visibleTileIndices[i]].rectTransform; rect.anchorMin=rect.anchorMax=new Vector2(.5f,1);
                 rect.sizeDelta=new Vector2(tileWidth,260);
                 rect.anchoredPosition=new Vector2(-(columns-1)*(tileWidth+10)*.5f+(i%columns)*(tileWidth+10),-145-(i/columns)*275);
                 In(rect,"Midnight backing",rect.sizeDelta-new Vector2(42,42),Vector2.zero);
                 In(rect,"Rotating sphere",new Vector2(Mathf.Min(185,tileWidth-35),Mathf.Min(185,tileWidth-35)),new Vector2(0,20));
             }
-            In(content,"Collection note",new Vector2(leftWidth-90,80),new Vector2(0,-Mathf.CeilToInt(tiles.Count/(float)columns)*275-90));
+            In(content,"Collection note",new Vector2(leftWidth-90,80),new Vector2(0,-Mathf.CeilToInt(visibleTileIndices.Count/(float)columns)*275-90));
             In(loadout,"Midnight backing",new Vector2(rightWidth-42,loadoutHeight-42),Vector2.zero);
             In(loadout,"Loadout heading",new Vector2(rightWidth-35,60),new Vector2(0,loadoutHeight*.5f-55));
             for(int i=0;i<slots.Count;i++)
@@ -265,6 +266,8 @@ namespace EcoSphere
             var note=Text("Collection note",content,"More spheres await discovery",22,new Vector2(480,80),new Vector2(0, -Mathf.CeilToInt(collectionTypes.Count / 2f) * 275 - 90));
             note.rectTransform.anchorMin=note.rectTransform.anchorMax=new Vector2(.5f,1);
             note.color=new Color(.6f,.66f,.74f);
+            BuildCategoryTabs(panel);
+            ApplyCategoryFilter();
         }
         void Preview(RectTransform parent,int type)
         {
@@ -313,7 +316,8 @@ namespace EcoSphere
         {
             for(int i=0;i<slots.Count;i++)
             {
-                var old=slots[i].Find("Selected sphere"); if(old) Destroy(old.gameObject);
+                var old=slots[i].Find("Selected sphere");
+                if(old){old.gameObject.SetActive(false);old.SetParent(null,false);Destroy(old.gameObject);}
                 if(i<Selected.Count) Preview(Rect("Selected sphere",slots[i],slots[i].sizeDelta-Vector2.one*10,Vector2.zero),Selected[i]);
             }
             for(int i=0;i<tiles.Count;i++) tiles[i].color=new Color(1,1,1,Selected.Contains(collectionTypes[i])?1:.35f);

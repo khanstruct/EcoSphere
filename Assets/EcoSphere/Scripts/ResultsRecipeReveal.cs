@@ -88,7 +88,7 @@ namespace EcoSphere
             if(appearance) sphere.gameObject.AddComponent<SpherePreview>().definition=appearance;
             else
             {
-                // An element without dedicated sphere art gets a labeled procedural orb, never a mixed sphere's identity.
+                // Elements without a registered namesake sphere use a labeled procedural orb.
                 material.SetFloat("_OrbFallback",1);
                 foreach(var source in SphereCatalog.Current.spheres)
                     if(source.contributions.Exists(entry=>entry.element==element)) { graphic.color=source.color; break; }

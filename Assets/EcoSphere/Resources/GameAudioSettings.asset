@@ -24,3 +24,4 @@ MonoBehaviour:
   impressive: {fileID: 8300000, guid: 7ef2d9f814fe4934aacff235ad27bddf, type: 3}
   ecosphere: {fileID: 8300000, guid: 1b45dcaa78ecc074782a04caf3e292d6, type: 3}
   sphereCombine: {fileID: 8300000, guid: 01e0b015348e6db4e873c8eb8811e6cb, type: 3}
+  minimumMatchedSpheresForVoice: 6

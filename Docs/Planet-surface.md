@@ -1,18 +1,13 @@
 # Receiving planet surface
 
-The First Light receiving world keeps its existing position, scale, and partial-screen framing. It now uses `Art/Planets/barren-planet-v1.mat` and rotates at two degrees per second through `PlanetSurface`. Rotation uses gameplay time, so tutorial messages pause it.
+Planet appearance now uses the [shared planet stat model](Planet-stats.md). Element profiles in Resources/PlanetStatCatalog.asset convert whole-planet contribution percentages into temperature, water, ruggedness, geological activity, atmosphere and other stats. The stat catalog supersedes the former per-element shader wiring and atmosphere list.
 
-Runtime textures are both 256 × 128:
+The existing surface and matching linear heightmap remain 256 x 128. Surface water fills low terrain through a cached, area-weighted elevation distribution. PlanetSurface smoothly transitions sea level, stats and atmosphere while rotating at two degrees per second; gameplay pause also pauses these transitions.
 
-- `Assets/EcoSphere/Art/Planets/barren-surface-v1.png`: gray rocky albedo.
-- `Assets/EcoSphere/Art/Planets/barren-heightmap-v1.png`: matching elevation, imported as linear data.
+Temperature controls polar snow/ice and heat/scorching. Ice edges use elevation and stable 3D noise: higher terrain freezes farther toward the equator, while lowlands and water freeze more slowly. Surface water remains present beneath frozen oceans. Stone's relief remains visible through snow. Lava depends on geological activity independently of average temperature, allowing frozen volcanic worlds; heat alone cannot create lava. Minority heat retains sparse, dim fissures rather than encountering an abrupt cutoff. Ruggedness, sediment and soil contribute independently to ground shading.
 
-Both textures use horizontal repeat, vertical clamp, bilinear filtering, and mipmaps. The material references the custom URP shader directly, so the shader is included in builds. Source images and generation prompts are preserved in `SourceArt/Planets`, outside runtime Assets.
+Resources/PlanetVisualStyle.asset holds rendering materials only. PlanetAtmosphere is a transparent front-facing shell with a barely visible face tint, stronger rim and soft outer fade. Element profiles control atmosphere color/strength/width; Fire, Ice and Water keep their established colors. UIPlanetPreview corrects camera alpha compositing so Results/System previews preserve the same relative atmosphere profile. Preview textures remain 256 x 256.
 
-The world starts barren with Sea Level at -0.02. During Play Mode, select the runtime **Receiving planet** object and adjust **Planet Surface → Sea Level** to preview flooding: dark terrain fills first, lighter regions remain exposed. Water is now connected to gameplay as described below; composition updates override manual sea-level changes.
+Completed worlds save their full stats, sea level and rotation for the frame-free results globe and System previews. Legacy appearances remain supported. Procedural foliage now favors temperate, middle-elevation land in stable clusters, with soft peak/valley falloff. Plant also supplies a very faint green water tint and faint blue-green atmosphere. Additional terrain texture variants, cloud layers, lightning and cities remain future rendering work.
 
-`EcoSphere.Editor.PlanetTools.Setup` imports the pair, creates/updates the material, and patches First Light without rebuilding its scene. The test-level builder also preserves these assignments.
-
-Run `EcoSphere.Editor.TestLevelTools.RunSmoke` with `-planetSmoke` to check texture assignment, rotation, pause behavior, and increasing water coverage. Full-sphere previews are written to `Logs/planet-barren.png`, `planet-lakes.png`, and `planet-oceans.png` within the validation project.
-
-Water contributions now drive sea level through the selected-element totals used by the visualizer. Coverage equals the Water share multiplied by buildup toward 250 Water points, with up to 25 percentage points of extra coverage as Water rises from 50% to 100%. These PlanetSurface settings are independent of recipe thresholds. An area-weighted heightmap distribution converts coverage into elevation; transitions are smooth. Shallow water is lighter than deep water, with a subtle specular highlight. Completed worlds save the target level for System previews. Naturally occurring-only elements are excluded. Clouds, ice and atmosphere remain later work.
+PlanetVisualTools.Configure creates/validates shared assets. PlanetVisualTools.Smoke with -planetSmoke renders neutral, water, ice, balanced Fire/Ice, hot desert, rocky volcano and minority-Fire cases. Previews are written to the validation project's Logs/planet-stats-*.png.

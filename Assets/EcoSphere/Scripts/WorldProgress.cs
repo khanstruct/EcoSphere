@@ -9,9 +9,21 @@ namespace EcoSphere
     {
         public int system = 1, planet;
         public float seaLevel = -.02f, rotation;
+        public float stoneRuggedness;
+        public float iceCoverage;
+        public float fireHeat, atmosphereStrength, atmosphereWidth;
+        public Color atmosphereColor;
+        public PlanetStats planetStats;
         public List<int> discoveries = new List<int>();
         public bool discoveryTutorialSeen, nextWorldTutorialSeen;
         public List<DiscoveryRecord> discoveryDetails = new List<DiscoveryRecord>();
+        public PlanetStats AppearanceStats => planetStats ?? PlanetStats.Legacy(stoneRuggedness,iceCoverage,fireHeat,atmosphereColor,atmosphereStrength,atmosphereWidth);
+        public void SetStats(PlanetStats stats)
+        {
+            planetStats=stats.Copy();
+            stoneRuggedness=planetStats.Ruggedness;iceCoverage=planetStats.IceCoverage;fireHeat=planetStats.Heat;
+            atmosphereColor=planetStats.atmosphereColor;atmosphereStrength=planetStats.AtmosphereDensity;atmosphereWidth=planetStats.atmosphereWidth;
+        }
     }
 
     public sealed class WorldResult
@@ -26,6 +38,8 @@ namespace EcoSphere
     public static class WorldProgress
     {
         static WorldSaveData data;
+        static readonly Dictionary<int,SystemRecord> systemsByNumber=new Dictionary<int,SystemRecord>();
+        static readonly Dictionary<(int system,int planet),CompletedWorld> completedByLocation=new Dictionary<(int,int),CompletedWorld>();
         public static WorldResult Pending { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -38,7 +52,7 @@ namespace EcoSphere
 
         static void ClearSessionState()
         {
-            data = null; Pending = null;
+            data = null; Pending = null;systemsByNumber.Clear();completedByLocation.Clear();
         }
 
         static bool IsSmokeRun => Array.Exists(Environment.GetCommandLineArgs(),
@@ -55,12 +69,18 @@ namespace EcoSphere
                 {
                     data = PersistenceEnabled ? WorldSaveStore.Load(SavePath) : new WorldSaveData {
                         universeSeed = Application.isPlaying && !IsSmokeRun ? Guid.NewGuid().GetHashCode() & int.MaxValue : 3187 };
+                    systemsByNumber.Clear();completedByLocation.Clear();
+                    foreach(var system in data.systems)systemsByNumber.TryAdd(system.number,system);
+                    foreach(var world in data.worlds)completedByLocation.TryAdd((world.system,world.planet),world);
                 }
                 return data;
             }
         }
 
-        public static CompletedWorld Find(int system, int planet) => Data.worlds.Find(w => w.system == system && w.planet == planet);
+        public static CompletedWorld Find(int system, int planet)
+        {
+            _=Data;return completedByLocation.TryGetValue((system,planet),out var world) ? world : null;
+        }
         public static bool TryOpenCompletedResults(int system, int planet)
         {
             var completed = Find(system, planet);
@@ -75,9 +95,12 @@ namespace EcoSphere
 
         public static SystemRecord GetSystem(int number)
         {
-            int previousCount = Data.systems.Count;
-            var system = WorldGeneration.GetOrCreate(Data, WorldCatalog.Current, Mathf.Max(1, number));
-            if (Data.systems.Count != previousCount) Save();
+            var save=Data;number=Mathf.Max(1,number);
+            if(systemsByNumber.TryGetValue(number,out var system))return system;
+            int previousCount = save.systems.Count;
+            system = WorldGeneration.GetOrCreate(save, WorldCatalog.Current, number);
+            systemsByNumber[number]=system;
+            if (save.systems.Count != previousCount) Save();
             return system;
         }
 
@@ -149,7 +172,20 @@ namespace EcoSphere
             if (TryOpenCompletedResults(system, planet)) return Pending;
             GetSystem(system);
             var world = new CompletedWorld { system = system, planet = planet, seaLevel = seaLevel, rotation = rotation };
+            if(elements!=null)
+            {
+                world.SetStats(PlanetStatCalculator.Evaluate(elements));
+                if(DevelopmentMode.Enabled)
+                {
+                    double total=0;for(int i=0;i<elements.Count;i++)total+=Math.Max(0,elements[i]);
+                    double ice=(int)ElementId.Ice<elements.Count ? elements[(int)ElementId.Ice] : 0;
+                    double fire=(int)ElementId.Fire<elements.Count ? elements[(int)ElementId.Fire] : 0;
+                    double sunlight=(int)ElementId.Sunlight<elements.Count ? elements[(int)ElementId.Sunlight] : 0;
+                    Debug.Log($"ECOSPHERE_PLANET_CLIMATE total={total}, Ice={ice}, Fire={fire}, Sunlight={sunlight}, temperature={world.planetStats.Temperature}, frozen={world.planetStats.IceCoverage}, fullFreezeAt={world.planetStats.fullyFrozenAt}");
+                }
+            }
             Data.worlds.Add(world);
+            completedByLocation.Add((system,planet),world);
             Data.currentSystem = system;
             Pending = new WorldResult { world = world };
             if (releasedStone && !Data.stoneUnlocked)

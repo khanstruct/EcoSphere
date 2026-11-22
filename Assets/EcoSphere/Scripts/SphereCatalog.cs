@@ -11,6 +11,12 @@ namespace EcoSphere
         public ElementRecipeBook recipeBook;
         public int[] openingSpheres = { SphereIds.Fire, SphereIds.Void };
         static SphereCatalog current;
+        Dictionary<int,SphereDefinition> byId;
+        Dictionary<ElementId,SphereDefinition> byNamesake;
+        List<SphereDefinition> indexedSpheres;
+        int indexedCount=-1;
+        int indexedIdentityRevision=-1;
+
         public static SphereCatalog Current
         {
             get
@@ -20,40 +26,59 @@ namespace EcoSphere
                 return current;
             }
         }
-        public SphereDefinition Get(int id)
+        void OnEnable()=>InvalidateIndexes();
+        void OnValidate()=>InvalidateIndexes();
+        void OnDisable(){if(current==this)current=null;}
+        public void InvalidateIndexes(){byId=null;byNamesake=null;indexedSpheres=null;indexedCount=-1;}
+        void EnsureIndexes()
         {
-            foreach (var sphere in spheres) if (sphere && sphere.id == id) return sphere;
-            throw new InvalidOperationException("Unknown sphere ID: " + id);
+            if(spheres==null)throw new InvalidOperationException(name+": missing spheres");
+            if(byId!=null && ReferenceEquals(indexedSpheres,spheres) && indexedCount==spheres.Count && indexedIdentityRevision==SphereDefinition.IdentityRevision)return;
+            var ids=new Dictionary<int,SphereDefinition>(spheres.Count);
+            var namesakes=new Dictionary<ElementId,SphereDefinition>(spheres.Count);
+            foreach(var sphere in spheres)
+            {
+                if(!sphere || !ids.TryAdd(sphere.id,sphere))throw new InvalidOperationException("Missing or duplicate sphere definition");
+                if(!Enum.IsDefined(typeof(ElementId),sphere.namesakeElement) || !namesakes.TryAdd(sphere.namesakeElement,sphere))
+                    throw new InvalidOperationException(sphere.name+": missing or duplicate namesake element");
+            }
+            byId=ids;byNamesake=namesakes;indexedSpheres=spheres;indexedCount=spheres.Count;
+            indexedIdentityRevision=SphereDefinition.IdentityRevision;
         }
-        public string ElementName(ElementId element) => element.ToString();
+        public bool TryGet(int id,out SphereDefinition sphere){EnsureIndexes();return byId.TryGetValue(id,out sphere);}
+        public SphereDefinition Get(int id) => TryGet(id,out var sphere) ? sphere : throw new InvalidOperationException("Unknown sphere ID: "+id);
+        public string ElementName(ElementId element)=>element.ToString();
         public SphereDefinition ElementAppearance(ElementId element)
         {
-            foreach(var sphere in spheres)
-                if(sphere && sphere.contributions.Count==1 && sphere.contributions[0].element==element)return sphere;
-            return null;
+            EnsureIndexes();return byNamesake.TryGetValue(element,out var sphere) ? sphere : null;
         }
         public AudioClip ElementVoice(ElementId element)
         {
-            foreach (var sphere in spheres)
-                if (sphere.contributions.Count > 0 && sphere.contributions[0].element == element) return sphere.resourceVoice;
-            return null;
+            var canonical=ElementAppearance(element);
+            if(canonical && canonical.resourceVoice)return canonical.resourceVoice;
+            // Until an element gets its own sphere, use the strongest existing representative voice.
+            AudioClip voice=null;float bestShare=0;
+            foreach(var sphere in spheres)
+                foreach(var contribution in sphere.contributions)
+                    if(contribution.element==element && sphere.resourceVoice)
+                    {
+                        float share=(float)contribution.amount/sphere.TotalContributionUnits;
+                        if(share>bestShare){bestShare=share;voice=sphere.resourceVoice;}
+                    }
+            return voice;
         }
         public void Validate()
         {
-            var ids = new HashSet<int>();
-            foreach (var sphere in spheres)
-            {
-                if (!sphere || !ids.Add(sphere.id)) throw new InvalidOperationException("Missing or duplicate sphere definition");
-                sphere.Validate();
-            }
-            if (openingSpheres == null || openingSpheres.Length != 2 || openingSpheres[0] == openingSpheres[1])
+            InvalidateIndexes();EnsureIndexes();
+            foreach(var sphere in spheres)sphere.Validate();
+            if(openingSpheres==null || openingSpheres.Length!=2 || openingSpheres[0]==openingSpheres[1])
                 throw new InvalidOperationException("Opening level needs two distinct spheres");
-            foreach (int id in openingSpheres)
-                if (!Get(id).AmmoEligible || !Get(id).availableAtStart) throw new InvalidOperationException("Invalid opening sphere");
-            if (!recipeBook) throw new InvalidOperationException("Missing recipe book");
+            foreach(int id in openingSpheres)
+                if(!Get(id).AmmoEligible || !Get(id).availableAtStart)throw new InvalidOperationException("Invalid opening sphere");
+            if(!recipeBook)throw new InvalidOperationException("Missing recipe book");
             recipeBook.Validate();
-            foreach (var recipe in recipeBook.recipes)
-                if (Get(recipe.output.id) != recipe.output) throw new InvalidOperationException("Recipe output is not the catalog's sphere definition");
+            foreach(var recipe in recipeBook.recipes)
+                if(Get(recipe.output.id)!=recipe.output)throw new InvalidOperationException("Recipe output is not the catalog's sphere definition");
         }
     }
 }

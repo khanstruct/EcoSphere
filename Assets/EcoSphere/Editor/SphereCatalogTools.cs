@@ -26,10 +26,13 @@ namespace EcoSphere.Editor
             Add(catalog, SphereIds.Ice, "Ice", ElementId.Ice, new Color32(55, 198, 255, 255), SphereRole.Element, false);
             Add(catalog, SphereIds.Sunlight, "Sunlight", ElementId.Sunlight, new Color32(255, 194, 40, 255), SphereRole.Element, false);
             Add(catalog, SphereIds.Laser, "Laser", ElementId.Laser, Color.red, SphereRole.Laser, false);
-            Add(catalog, SphereIds.Stone, "Stone", ElementId.Stone, new Color32(150, 101, 59, 255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Stone, "Stone", ElementId.Stone, new Color32(208, 211, 216, 255), SphereRole.Element, false);
             Add(catalog, SphereIds.Fire, "Fire", ElementId.Fire, new Color32(255, 86, 24, 255), SphereRole.Element, true);
             Add(catalog, SphereIds.Void, "Void", ElementId.Void, new Color32(232, 238, 255, 255), SphereRole.Element, true);
             Add(catalog, SphereIds.Water, "Water", ElementId.Water, new Color32(20,100,225,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Plant, "Plant", ElementId.Plant, new Color32(62,160,74,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Life, "Life", ElementId.Life, new Color32(246,183,205,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Mud, "Mud", ElementId.Mud, new Color32(202,156,107,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Core, "Core", ElementId.Core, new Color32(163, 64, 255, 255), SphereRole.Core, false);
             if (!catalog.recipeBook)
             {
@@ -43,15 +46,20 @@ namespace EcoSphere.Editor
                 }
                 catalog.recipeBook = book;
             }
-            if(!catalog.recipeBook.recipes.Exists(recipe=>(recipe.first==ElementId.Ice && recipe.second==ElementId.Fire) || (recipe.first==ElementId.Fire && recipe.second==ElementId.Ice)))
-            {
-                catalog.recipeBook.recipes.Add(new ElementRecipe { first=ElementId.Ice,second=ElementId.Fire,output=catalog.Get(SphereIds.Water) });
-                EditorUtility.SetDirty(catalog.recipeBook);
-            }
+            SeedRecipe(catalog,ElementId.Ice,ElementId.Fire,SphereIds.Water);
+            SeedRecipe(catalog,ElementId.Stone,ElementId.Water,SphereIds.Mud);
+            SeedRecipe(catalog,ElementId.Water,ElementId.Mud,SphereIds.Life);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             catalog.Validate();
-            Debug.Log("ECOSPHERE_SPHERE_CATALOG_CONFIGURED: 8 definitions, shared artwork, contributions and colors");
+            Debug.Log($"ECOSPHERE_SPHERE_CATALOG_CONFIGURED: {catalog.spheres.Count} definitions, shared artwork, contributions and colors");
+        }
+
+        static void SeedRecipe(SphereCatalog catalog,ElementId first,ElementId second,int output)
+        {
+            if(catalog.recipeBook.TryCombine(first,second,out _))return;
+            catalog.recipeBook.recipes.Add(new ElementRecipe{first=first,second=second,output=catalog.Get(output)});
+            catalog.recipeBook.InvalidateIndex();EditorUtility.SetDirty(catalog.recipeBook);
         }
 
         static void Add(SphereCatalog catalog, int id, string label, ElementId element, Color color, SphereRole role, bool starter)
@@ -61,16 +69,21 @@ namespace EcoSphere.Editor
             if (!definition)
             {
                 definition = ScriptableObject.CreateInstance<SphereDefinition>();
-                definition.id = id; definition.displayName = label; definition.color = color;
+                definition.id = id; definition.namesakeElement=element; definition.displayName = label; definition.color = color;
+                definition.category=id==SphereIds.Plant || id==SphereIds.Life ? SphereCategory.Life :
+                    id==SphereIds.Void || role==SphereRole.Core ? SphereCategory.Forces :
+                    role==SphereRole.Laser ? SphereCategory.Technology : SphereCategory.Materials;
+                if(id==SphereIds.Plant)definition.displayName="Plant Life";
                 definition.role = role; definition.selectable = role == SphereRole.Element;
                 definition.availableAtStart = starter;
                 definition.unlit = role == SphereRole.Core || id == SphereIds.Void;
                 if(id==SphereIds.Void) { definition.glowColor=Color.white; definition.glowStrength=.42f; }
-                definition.contributions.Add(new ElementContribution(element, 1));
+                SeedContributions(definition,element);
                 string art = "Assets/EcoSphere/Art/";
                 string stem = "Spheres/" + label + "/" + label.ToLowerInvariant();
-                definition.surface = AssetDatabase.LoadAssetAtPath<Texture2D>(art + (role == SphereRole.Core ? "Core/core-surface-v2.png" : stem + "-surface-v1.png"));
-                definition.icon = AssetDatabase.LoadAssetAtPath<Sprite>(art + (role == SphereRole.Core ? "Core/core-halo-v1.png" : stem + "-icon-v1.png"));
+                string version=id==SphereIds.Stone ? "v2" : "v1";
+                definition.surface = AssetDatabase.LoadAssetAtPath<Texture2D>(art + (role == SphereRole.Core ? "Core/core-surface-v2.png" : stem + "-surface-"+version+".png"));
+                definition.icon = AssetDatabase.LoadAssetAtPath<Sprite>(art + (role == SphereRole.Core ? "Core/core-halo-v1.png" : stem + "-icon-"+version+".png"));
                 AssetDatabase.CreateAsset(definition, path);
             }
             if (!catalog.spheres.Contains(definition)) catalog.spheres.Add(definition);
@@ -78,7 +91,7 @@ namespace EcoSphere.Editor
             if (!definition.resourceVoice)
             {
                 string voice = id == SphereIds.Ice ? "cryosphere" : id == SphereIds.Sunlight ? "heliosphere" :
-                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : null;
+                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : null;
                 if (voice != null)
                 {
                     definition.resourceVoice = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/Voice/" + voice + ".mp3");
@@ -90,12 +103,55 @@ namespace EcoSphere.Editor
         static double TotalWeight(SphereDefinition sphere)
         { double sum=sphere.unallocatedWeight; foreach(var entry in sphere.contributions) sum+=entry.amount; return sum; }
 
+        static void SeedContributions(SphereDefinition sphere,ElementId fallback)
+        {
+            sphere.contributions.Clear();
+            switch(sphere.id)
+            {
+                case SphereIds.Fire:case SphereIds.Water:case SphereIds.Stone:case SphereIds.Life:
+                    sphere.contributions.Add(new ElementContribution(fallback,3));sphere.unallocatedWeight=1;break;
+                case SphereIds.Void:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Void,2));sphere.unallocatedWeight=2;break;
+                case SphereIds.Sunlight:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Fire,1));sphere.contributions.Add(new ElementContribution(ElementId.Sunlight,2));sphere.unallocatedWeight=1;break;
+                case SphereIds.Ice:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.contributions.Add(new ElementContribution(ElementId.Ice,2));sphere.unallocatedWeight=1;break;
+                case SphereIds.Plant:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Life,1));sphere.contributions.Add(new ElementContribution(ElementId.Plant,2));sphere.unallocatedWeight=1;break;
+                case SphereIds.Mud:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.contributions.Add(new ElementContribution(ElementId.Stone,1));sphere.contributions.Add(new ElementContribution(ElementId.Mud,2));break;
+                default:sphere.contributions.Add(new ElementContribution(fallback,1));break;
+            }
+        }
+
         [MenuItem("EcoSphere/Validate Sphere Catalog")]
         public static void Validate()
         {
             var catalog = SphereCatalog.Current;
             catalog.Validate();
             void Expect(bool value, string message) { if (!value) throw new Exception("Sphere catalog: " + message); }
+            var audio=GameAudioSettings.Current;audio.Validate();
+            int voiceMinimum=audio.minimumMatchedSpheresForVoice;
+            try
+            {
+                foreach(int minimum in new[]{voiceMinimum,voiceMinimum+2})
+                {
+                    audio.minimumMatchedSpheresForVoice=minimum;
+                    foreach(var sphere in catalog.spheres)if(sphere.AmmoEligible && sphere.resourceVoice)
+                    {
+                        Expect(!LevelAudio.MatchVoice(sphere.id,minimum-1),sphere.displayName+" voice below minimum");
+                        Expect(LevelAudio.MatchVoice(sphere.id,minimum)==sphere.resourceVoice,sphere.displayName+" voice at adjustable minimum");
+                    }
+                }
+            }
+            finally{audio.minimumMatchedSpheresForVoice=voiceMinimum;}
+            int voicePoints=LevelAudio.SphereVoiceMinimumPoints;
+            var candidates=new Dictionary<int,int>{{SphereIds.Fire,voicePoints},{SphereIds.Void,voicePoints-1}};
+            Expect(LevelAudio.ResolutionVoice(candidates)==catalog.Get(SphereIds.Fire).resourceVoice,"one qualifying type must keep its voice");
+            candidates[SphereIds.Void]=voicePoints;
+            Expect(LevelAudio.ResolutionVoice(candidates)==audio.ecosphere,"two qualifying types must replace individual voices with EcoSphere");
+            candidates.Clear();candidates[SphereIds.Mud]=voicePoints*3;
+            Expect(LevelAudio.ResolutionVoice(candidates)==catalog.Get(SphereIds.Mud).resourceVoice,"mixed contributions must not invent multiple qualifying sphere types");
             foreach (var sphere in catalog.spheres)
             {
                 Expect(sphere.surface.width <= 256 && sphere.surface.height <= 256 && sphere.icon.texture.width <= 256 && sphere.icon.texture.height <= 256,

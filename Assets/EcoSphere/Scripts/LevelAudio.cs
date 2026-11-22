@@ -20,6 +20,10 @@ namespace EcoSphere
         public AudioClip impressive => Settings.impressive;
         public AudioClip ecosphere => Settings.ecosphere;
         public const int MixedResourceCallout = -2;
+        public static int SphereVoiceMinimumPoints
+        {
+            get{int count=Mathf.Max(3,GameAudioSettings.Current.minimumMatchedSpheresForVoice);return count*ElementScoring.MatchRate(count);}
+        }
         [Range(0, 1)] public float voiceVolume = 1f;
         [Range(0, 1)] public float musicVolume = .18f;
         [Range(0, 1)] public float effectsVolume = .85f;
@@ -129,7 +133,7 @@ namespace EcoSphere
             int selected = -1;
             for (int i = 0; i < gains.Count; i++)
             {
-                if (gains[i] < ElementScoring.Inclusion) continue;
+                if (gains[i] < SphereVoiceMinimumPoints) continue;
                 if (selected >= 0) return MixedResourceCallout;
                 selected = i;
             }
@@ -140,7 +144,7 @@ namespace EcoSphere
             => AnnounceResources(new double[] { iceAdded, sunlightAdded });
 
         public static AudioClip MatchVoice(int sphereType, int matchedCount) =>
-            matchedCount * ElementScoring.MatchRate(matchedCount) >= ElementScoring.Inclusion
+            matchedCount >= Mathf.Max(3,GameAudioSettings.Current.minimumMatchedSpheresForVoice)
                 ? SphereCatalog.Current.Get(sphereType).resourceVoice : null;
 
         public bool AnnounceMatch(int sphereType, int matchedCount)
@@ -150,6 +154,27 @@ namespace EcoSphere
             if (!clip) return false;
             QueueVoice(clip);
             return true;
+        }
+
+        public static AudioClip ResolutionVoice(IReadOnlyDictionary<int,int> spherePoints)
+        {
+            AudioClip selected=null;int minimum=SphereVoiceMinimumPoints;
+            foreach(var pair in spherePoints)
+            {
+                if(pair.Value<minimum)continue;
+                var definition=SphereCatalog.Current.Get(pair.Key);
+                if(!definition.Matchable || !definition.resourceVoice)continue;
+                if(selected)return GameAudioSettings.Current.ecosphere;
+                selected=definition.resourceVoice;
+            }
+            return selected;
+        }
+        public bool AnnounceResolution(IReadOnlyDictionary<int,int> spherePoints)
+        {
+            if(resultAnnounced)return false;
+            var clip=ResolutionVoice(spherePoints);
+            if(!clip)return false;
+            QueueVoice(clip);return true;
         }
 
         public bool AnnounceResources(IReadOnlyList<double> gains)

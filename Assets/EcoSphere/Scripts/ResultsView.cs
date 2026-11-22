@@ -16,6 +16,7 @@ namespace EcoSphere
         public Sprite frame, line, arch, starfield;
         public GameObject buttonPrefab;
         public AudioClip elementDiscovered;
+        public TMP_Text TemperatureLabel {get;private set;}
         public Material completedWorldMaterial;
         public Button ContinueButton { get; private set; }
         public Button OkButton { get; private set; }
@@ -112,11 +113,11 @@ namespace EcoSphere
             worldGlobe = Rect("Completed world globe", Root, Vector2.one * 480, Vector2.zero);
             worldGlobe.gameObject.AddComponent<RawImage>().raycastTarget = false;
             var worldPreview = worldGlobe.gameObject.AddComponent<SpherePreview>();
-            worldPreview.surfaceMaterial = completedWorldMaterial;
-            worldPreview.seaLevel = result.world.seaLevel;
-            worldPreview.initialRotation = result.world.rotation;
-            worldPreview.rotationSpeed = 2;
+            worldPreview.ConfigurePlanet(result.world,completedWorldMaterial);
             descriptionFrame = Frame("World description placeholder", Root);
+            var climate=result.world.AppearanceStats;
+            TemperatureLabel=Text("Average temperature",descriptionFrame,PlanetTemperatureDisplay.Average(climate.TemperatureFahrenheit),32,new Vector2(700,90),Vector2.zero);
+            TemperatureLabel.enableAutoSizing=true;TemperatureLabel.fontSizeMin=18;TemperatureLabel.fontSizeMax=32;
             collectionFrame = Frame("Discovered elements", Root);
             Text("Collection heading", collectionFrame, "Spheres Discovered", 28, new Vector2(700, 45), new Vector2(0, 85));
             ContinueButton = Button("Continue", Root, Continue);
@@ -261,6 +262,7 @@ namespace EcoSphere
                 PlaceFrame(collectionFrame, new Vector2(width, 260), new Vector2(0, -420));
             }
             ScreenLayout.Place(ContinueButton.GetComponent<RectTransform>(), new Vector2(360, 120), new Vector2(m.width * .5f - 180, -m.height * .5f + 62));
+            ScreenLayout.Place(TemperatureLabel.rectTransform,descriptionFrame.sizeDelta-new Vector2(80,60),Vector2.zero);
             if (slots.Count > 0)
             {
                 float spacing = Mathf.Min(190,(collectionFrame.sizeDelta.x-90)/slots.Count);

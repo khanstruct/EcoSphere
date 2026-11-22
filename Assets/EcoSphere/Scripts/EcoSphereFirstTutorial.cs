@@ -32,18 +32,22 @@ namespace EcoSphere
             File.Copy(Path.Combine(Application.dataPath, "../Logs/EcoSphere-test-level.png"),
                 Path.Combine(Application.dataPath, "../Logs/Tutorial1-preview.png"), true);
             int firstAmmo = loadedType;
+            var expectedFirst=new double[totals.Length];Definition(firstAmmo).AddContributions(expectedFirst,620);
             direction = SmokeMatchingDirection(); gun.up = direction; Fire();
             float deadline = Time.realtimeSinceStartup + 15;
             while (!ready && !complete && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!ready || complete || board.Cells.Count != 30 || loadedType == firstAmmo || totals[(int)Definition(firstAmmo).contributions[0].element] != 620 || tutorialPaused)
+            if (!ready || complete || board.Cells.Count != 30 || loadedType == firstAmmo || totals[(int)Definition(firstAmmo).contributions[0].element] != expectedFirst[(int)Definition(firstAmmo).contributions[0].element] || tutorialPaused)
                 throw new Exception("First tutorial shot did not clear its half and load the remaining element");
             direction = SmokeMatchingDirection(); gun.up = direction; Fire();
             deadline = Time.realtimeSinceStartup + 15;
             while (!complete && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!complete || board.Cells.Count != 0 || totals[firstElement] != 620 || totals[secondElement] != 620 ||
-                totals[firstElement] < resourceGoal || totals[secondElement] < resourceGoal || totals[firstElement] >= abundanceGoal || stoneReleased)
-                throw new Exception($"Both tutorial elements must reach inclusion without reaching excess or releasing Stone: complete={complete}, cells={board.Cells.Count}, first={totals[firstElement]}, second={totals[secondElement]}, goal={resourceGoal}, abundance={abundanceGoal}, stone={stoneReleased}, failed={failed}");
-            Debug.Log("ECOSPHERE_TUTORIAL_ONE_SMOKE_PASSED: welcome and cannon lessons, pause/input shield, 30 Fire / 30 Void, two actual shots, both elements 620/500");
+            var expected=new double[totals.Length];Definition(first).AddContributions(expected,620);Definition(second).AddContributions(expected,620);
+            if (!complete || board.Cells.Count != 0 || totals[firstElement] != expected[firstElement] || totals[secondElement] != expected[secondElement] || score!=1240 || stoneReleased)
+                throw new Exception($"Tutorial weighted totals: first={totals[firstElement]}, second={totals[secondElement]}, score={score}");
+            UpdateComposition();
+            var reward=WorldProgress.Complete(LevelPrepView.SystemNumber,LevelPrepView.PlanetIndex,-.02f,0,false,selectedElementTotals,resourceGoal,composition.Ranked);
+            if(!reward.discoveries.Contains(SphereIds.Sunlight))throw new Exception("Genesis Alpha's weighted opening clear must unlock Sunlight");
+            Debug.Log($"ECOSPHERE_TUTORIAL_ONE_SMOKE_PASSED: two actual shots, unchanged 1240 score, weighted Fire={totals[(int)ElementId.Fire]}, Void={totals[(int)ElementId.Void]}, recipe minimum={resourceGoal}; reduced yields may require tutorial balancing");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif
