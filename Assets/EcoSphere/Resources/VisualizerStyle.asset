@@ -16,5 +16,4 @@ MonoBehaviour:
   frame: {fileID: 21300000, guid: dcbee05e750e42b8984be4bab5c038de, type: 3}
   maximumBarWidth: 82
   minimumGap: 12
-  sphereGroupGap: 12
   pulseFraction: 0.025

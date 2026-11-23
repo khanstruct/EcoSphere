@@ -29,7 +29,7 @@ namespace EcoSphere
                 if (count != WorldLevels.Get(1, slot).RequiredSpheres.ToString()) throw new Exception("System requirement badge did not read world data");
             }
             system.SetSystemNumber(8);
-            foreach (var world in WorldProgress.GetSystem(8).worlds)
+            foreach (var world in GameServices.Progress.GetSystem(8).worlds)
                 if (!world.IsProcedural || world.RequiredSpheres < 4) throw new Exception("Later system reused tutorial requirements");
             var chosen = WorldLevels.Get(8, 0); string expectedName = chosen.displayName;
             chosen.rules.requiredSpheres = 6;

@@ -14,3 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.PlanetVisualStyle
   atmosphereMaterial: {fileID: 2100000, guid: e1b1b14444fa62248aab4116b6e53fed, type: 2}
   previewMaterial: {fileID: 2100000, guid: 312767bf35b35ae41b32943259985871, type: 2}
+  cloudMaterial: {fileID: 2100000, guid: 3a19d01c3e6d3154e9c63b9627ee890c, type: 2}
+  cloudShellScale: 1.012
+  cloudDriftSpeed: 0.008
+  terrains:
+  - id: barren-v1
+    material: {fileID: 2100000, guid: 250cc250237f59b43b95df23022711df, type: 2}

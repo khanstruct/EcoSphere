@@ -28,7 +28,9 @@ namespace EcoSphere
                     new ElementRecipe { first=ElementId.Fire,second=ElementId.Void,output=catalog.Get(SphereIds.Sunlight) },
                     new ElementRecipe { first=ElementId.Fire,second=ElementId.Fire,output=catalog.Get(SphereIds.Ice) } };
                 var amounts=new double[Enum.GetValues(typeof(ElementId)).Length]; amounts[(int)ElementId.Fire]=600; amounts[(int)ElementId.Void]=400;
-                award=WorldProgress.Complete(3,0,-.02f,0,true,amounts,350);
+                WorldLevels.Get(3,0).naturalSpheres.Add(new NaturalSpherePlacement{sphereId=SphereIds.Stone,cell=Vector2Int.up});
+                WorldLevels.Get(3,0).rules.inclusionGoal=350;
+                award=GameServices.Progress.Complete(3,0,-.02f,0,new int[]{SphereIds.Stone},amounts);
             }
             finally { book.recipes=original; }
             Expect(award.discoveries.Count==3 && award.discoveryDetails.Count==3,"natural/pair/self award provenance");
@@ -78,10 +80,10 @@ namespace EcoSphere
             Expect(results.Settled && results.ContinueButton.interactable && results.DiscoverySpheres.TrueForAll(s=>s.parent.name.EndsWith("collected")),"sequence failed to collect every discovery");
             Expect(merge && charge && flash,"recipe skipped a required animation phase");
             Capture(results,"collected");
-            WorldProgress.TryOpenCompletedResults(3,0); SceneManager.LoadScene("Results"); yield return null; yield return null;
+            GameServices.Progress.TryOpenCompletedResults(3,0); SceneManager.LoadScene("Results"); yield return null; yield return null;
             results=FindAnyObjectByType<ResultsView>();
             Expect(!results.IsRecipeReveal && results.Settled && results.DiscoverySpheres.Count==3 && results.DiscoveryPlayCount==0,"revisited world replayed the reveal or lost history");
-            Expect(WorldProgress.Complete(3,0,0,0,true).discoveries.Count==0 && award.world.discoveryDetails.Count==3,"revisit repeated a discovery reward");
+            Expect(GameServices.Progress.Complete(3,0,0,0,new int[]{SphereIds.Stone}).discoveries.Count==0 && award.world.discoveryDetails.Count==3,"revisit repeated a discovery reward");
             Debug.Log("ECOSPHERE_RECIPE_REVEAL_PASSED: saved pair/self ingredients, mixed discovery sequence, merge/charge/flash/reveal/collection, input gating, responsive renders and no replay rewards");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);

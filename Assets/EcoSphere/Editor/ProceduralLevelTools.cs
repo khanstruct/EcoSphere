@@ -50,9 +50,9 @@ namespace EcoSphere.Editor
             }
             if(high/64<=low/64+.12)throw new Exception("Clustering control did not meaningfully increase same-type neighbors");
             var catalog=WorldCatalog.Current; catalog.Validate();
-            var save=new WorldSaveData {universeSeed=1491};
+            var save=new PlayerProfile {universeSeed=1491};
             var system=WorldGeneration.GetOrCreate(save,catalog,1);
-            var restored=JsonUtility.FromJson<WorldSaveData>(JsonUtility.ToJson(save));
+            var restored=JsonUtility.FromJson<PlayerProfile>(JsonUtility.ToJson(save));
             for(int i=2;i<system.worlds.Count;i++)
             {
                 var world=system.worlds[i];

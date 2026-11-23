@@ -15,7 +15,7 @@ namespace EcoSphere
         {
             get
             {
-                int index=world!=null ? WorldProgress.SetupTutorialStep(world.id) : 0;
+                int index=world!=null ? GameServices.Progress.SetupTutorialStep(world.id) : 0;
                 return setupSteps!=null && index<setupSteps.Count ? setupSteps[index] : null;
             }
         }
@@ -41,14 +41,14 @@ namespace EcoSphere
         }
         void AdvanceSetupTutorial()
         {
-            WorldProgress.AdvanceSetupTutorial(world.id); dialogDismissedFrame=Time.frameCount;
+            GameServices.Progress.AdvanceSetupTutorial(world.id); dialogDismissedFrame=Time.frameCount;
             UpdateSetupTutorial();
         }
         bool CanBeginDuringTutorial => setupPopup && setupPopup.IsOpen && CurrentSetupStep!=null && CurrentSetupStep.target==SetupTutorialTarget.Begin;
         void FinishBeginTutorial()
         {
             if(!CanBeginDuringTutorial)return;
-            setupPopup.Close(); WorldProgress.AdvanceSetupTutorial(world.id);
+            setupPopup.Close(); GameServices.Progress.AdvanceSetupTutorial(world.id);
         }
         internal void DismissSetupTutorialForSmoke()
         {
@@ -56,7 +56,7 @@ namespace EcoSphere
                 throw new InvalidOperationException("Test helper requires a smoke run");
             if(setupSteps==null)return;
             setupPopup.Close();
-            while(CurrentSetupStep!=null)WorldProgress.AdvanceSetupTutorial(world.id);
+            while(CurrentSetupStep!=null)GameServices.Progress.AdvanceSetupTutorial(world.id);
             dialogDismissedFrame=-1;
         }
     }

@@ -29,7 +29,7 @@ namespace EcoSphere
             continueButton.onClick.Invoke(); yield return null;
             var amounts=new double[Enum.GetValues(typeof(ElementId)).Length];
             amounts[(int)ElementId.Fire]=amounts[(int)ElementId.Void]=620;
-            var completed=WorldProgress.Complete(1,0,-.02f,0,false,amounts).world;
+            var completed=GameServices.Progress.Complete(1,0,-.02f,0,null,amounts).world;
             SceneManager.LoadScene("Results"); yield return null; yield return null; yield return new WaitForSecondsRealtime(.3f);
             var results=FindAnyObjectByType<ResultsView>();
             Expect(results && results.OkButton && !results.DiscoveryTutorial,"lesson appeared before discovery prompt completed");

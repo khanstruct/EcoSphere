@@ -15,6 +15,18 @@ namespace EcoSphere
         public Color atmosphereColor=Color.white;
         [Range(0,1)] public float atmosphereStrength;
     }
+    [Serializable] public sealed class PlanetStatResponse
+    {
+        public PlanetStat stat;
+        [Min(.001f),Tooltip("Combined weighted contribution that produces full visual strength. Temperature and atmosphere expansion also support negative values.")]
+        public float contributionForFullEffect=.5f;
+        [Min(.001f)] public float negativeContributionForFullEffect=.5f;
+        public float Evaluate(float contribution)
+        {
+            float full=contribution<0 ? negativeContributionForFullEffect : contributionForFullEffect;
+            return Mathf.Clamp(contribution/Mathf.Max(.001f,full),-1,1);
+        }
+    }
     [CreateAssetMenu(menuName="EcoSphere/Planet Stat Catalog")]
     public sealed class PlanetStatCatalog : ScriptableObject
     {
@@ -51,16 +63,34 @@ namespace EcoSphere
         [Range(.01f,.12f)] public float maximumAtmosphereWidth=.12f;
         public float ClampAtmosphereWidth(float width)=>Mathf.Clamp(width,minimumAtmosphereWidth,maximumAtmosphereWidth);
         public List<ElementPlanetProfile> elements=new List<ElementPlanetProfile>();
+        public List<PlanetStatResponse> responses=DefaultResponses();
+        public static List<PlanetStatResponse> DefaultResponses()
+        {
+            var result=new List<PlanetStatResponse>();
+            foreach(PlanetStat stat in Enum.GetValues(typeof(PlanetStat)))
+            {
+                float full=stat==PlanetStat.Temperature ? 1 : stat==PlanetStat.CloudCover ? .45f :
+                    stat==PlanetStat.BiologicalCoverage ? .3f : stat==PlanetStat.AtmosphereDensity ? .3f : stat==PlanetStat.CloudThickness ? .35f :
+                    stat==PlanetStat.AtmosphereExpansion ? .6f : .45f;
+                result.Add(new PlanetStatResponse{stat=stat,contributionForFullEffect=full,negativeContributionForFullEffect=full});
+            }
+            return result;
+        }
+        public float Respond(PlanetStat stat,float contribution)
+        {
+            if(responses!=null)foreach(var response in responses)if(response.stat==stat)return response.Evaluate(contribution);
+            return Mathf.Clamp(contribution,-1,1);
+        }
         public void PopulateDefaults()
         {
             elements.Clear();
-            Add(ElementId.Fire,(PlanetStat.Temperature,.8f),(PlanetStat.GeologicalActivity,.7f),(PlanetStat.AtmosphereExpansion,.2f));
+            Add(ElementId.Fire,(PlanetStat.Temperature,.8f),(PlanetStat.GeologicalActivity,.7f),(PlanetStat.AtmosphereExpansion,.2f),(PlanetStat.CloudDarkness,.6f));
             Add(ElementId.Ice,(PlanetStat.Temperature,-1),(PlanetStat.SurfaceWater,.8f),(PlanetStat.Moisture,.3f),(PlanetStat.AtmosphereExpansion,-.5f));
-            Add(ElementId.Water,(PlanetStat.SurfaceWater,1),(PlanetStat.Moisture,.8f),(PlanetStat.AtmosphereExpansion,.85f));
+            Add(ElementId.Water,(PlanetStat.SurfaceWater,1),(PlanetStat.Moisture,.8f),(PlanetStat.AtmosphereExpansion,.85f),(PlanetStat.CloudThickness,.6f),(PlanetStat.CloudCover,.2f));
             Add(ElementId.Stone,(PlanetStat.TerrainRuggedness,1),(PlanetStat.Mineralization,.25f));
             Add(ElementId.Sunlight,(PlanetStat.Temperature,1));
             Add(ElementId.Void);
-            Add(ElementId.Air,(PlanetStat.WeatherActivity,.2f),(PlanetStat.AtmosphereExpansion,.6f));
+            Add(ElementId.Air,(PlanetStat.WeatherActivity,.2f),(PlanetStat.AtmosphereExpansion,.6f),(PlanetStat.CloudCover,.75f));
             Add(ElementId.Soil,(PlanetStat.Soil,1),(PlanetStat.Moisture,.15f));
             Add(ElementId.Sand,(PlanetStat.Sediment,1),(PlanetStat.Soil,.1f));
             Add(ElementId.Life,(PlanetStat.BiologicalCoverage,.5f),(PlanetStat.Soil,.2f));

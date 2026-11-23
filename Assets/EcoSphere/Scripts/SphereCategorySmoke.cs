@@ -33,9 +33,9 @@ namespace EcoSphere
             int previous=-1;
             for(int i=1;i<categoryTabs.Count;i++)
             {int current=(int)categoryTabs[i].category.Value;ExpectCategory(current>previous && expected.Contains(categoryTabs[i].category.Value),"category order/ownership");previous=current;}
-            SelectCategory(SphereCategory.Materials);
+            SelectCategory(SphereCategory.Basic);
             CheckCategoryLight();
-            foreach(int index in visibleTileIndices)ExpectCategory(SphereCatalog.Current.Get(collectionTypes[index]).category==SphereCategory.Materials,"Materials filter leaked another category");
+            foreach(int index in visibleTileIndices)ExpectCategory(SphereCatalog.Current.Get(collectionTypes[index]).category==SphereCategory.Basic,"Basic filter leaked another category");
             AddSphere(SphereIds.Fire);SelectCategory(SphereCategory.Forces);AddSphere(SphereIds.Void);
             ExpectCategory(visibleTileIndices.Count==1 && collectionTypes[visibleTileIndices[0]]==SphereIds.Void,"Forces must show Void only");
             SelectCategory(null);
@@ -120,12 +120,12 @@ namespace EcoSphere
             DontDestroyOnLoad(gameObject);yield return null;yield return null;
             var prep=FindAnyObjectByType<LevelPrepView>();prep.DismissSetupTutorialForSmoke();yield return null;
             prep.CheckInitialCategories();
-            foreach(var category in new[]{SphereCategory.Nature,SphereCategory.Technology,SphereCategory.Beyond})prep.CheckCategoryAbsent(category);
+            foreach(var category in new[]{SphereCategory.Weather,SphereCategory.Technology,SphereCategory.Beyond})prep.CheckCategoryAbsent(category);
             if(!DevelopmentMode.Enabled)
             {
                 prep.CheckCategoryAbsent(SphereCategory.Life);yield return prep.CaptureCategoryLayout("normal");
                 var totals=new double[ElementComposition.Capacity];totals[(int)ElementId.Water]=500;totals[(int)ElementId.Mud]=500;
-                WorldProgress.Complete(7,0,-.02f,0,false,totals,300);
+                GameServices.Progress.Complete(7,0,-.02f,0,null,totals);
                 SceneManager.LoadScene("LevelPrep");yield return null;yield return null;
                 prep=FindAnyObjectByType<LevelPrepView>();prep.DismissSetupTutorialForSmoke();yield return null;
                 if(prep.SelectedCategory.HasValue)throw new Exception("Reopened setup must default to All");
@@ -135,7 +135,7 @@ namespace EcoSphere
             {
                 prep.CheckLifeFilter(2);yield return prep.CaptureCategoryLayout("dev");
                 int[] types={SphereIds.Fire,SphereIds.Sunlight,SphereIds.Ice};
-                var previous=new SphereCategory[3];var future=new[]{SphereCategory.Nature,SphereCategory.Technology,SphereCategory.Beyond};
+                var previous=new SphereCategory[3];var future=new[]{SphereCategory.Weather,SphereCategory.Technology,SphereCategory.Beyond};
                 try
                 {
                     for(int i=0;i<types.Length;i++){var sphere=SphereCatalog.Current.Get(types[i]);previous[i]=sphere.category;sphere.category=future[i];}

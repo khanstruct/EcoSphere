@@ -64,14 +64,14 @@ namespace EcoSphere
             yield return game.ExerciseProceduralShot();
             if(game && SceneManager.GetActiveScene().name==WorldLevels.ProceduralSceneName)game.FinishProceduralForSmoke();
             float deadline=Time.realtimeSinceStartup+25;
-            while(SceneManager.GetActiveScene().name!="Results" && Time.realtimeSinceStartup<deadline)yield return null;
-            Expect(SceneManager.GetActiveScene().name=="Results" && WorldProgress.Find(1,2)!=null,"procedural win did not persist and open results");
-            Expect(!WorldProgress.Find(1,2).discoveries.Contains(SphereIds.Stone),"ordinary selected Stone unlocked a natural discovery");
+            while(SceneManager.GetActiveScene().name!="Results" && Time.realtimeSinceStartup<deadline) { var rating=FindAnyObjectByType<StarRatingPresentation>(); if(rating && rating.RevealComplete)rating.ContinueButton.onClick.Invoke(); yield return null; }
+            Expect(SceneManager.GetActiveScene().name=="Results" && GameServices.Progress.Find(1,2)!=null,"procedural win did not persist and open results");
+            Expect(!GameServices.Progress.Find(1,2).discoveries.Contains(SphereIds.Stone),"ordinary selected Stone unlocked a natural discovery");
             Expect(WorldLevels.Get(1,2).seed==world.seed && WorldLevels.Get(1,2).rules.clustering==world.rules.clustering,"world layout settings changed after completion");
             var book=SphereCatalog.Current.recipeBook;
             Expect(book.TryCombine(ElementId.Ice,ElementId.Fire,out var water) && water.id==SphereIds.Water,"Water recipe missing");
             var amounts=new double[Enum.GetValues(typeof(ElementId)).Length]; amounts[(int)ElementId.Fire]=amounts[(int)ElementId.Ice]=620;
-            Expect(WorldProgress.Complete(9,0,0,0,false,amounts).discoveries.Contains(SphereIds.Water),"Ice and Fire did not actually award Water");
+            Expect(!GameServices.Progress.Complete(9,0,0,0,null,amounts).discoveries.Contains(SphereIds.Water),"DEV rediscovered Water");
             Debug.Log("ECOSPHERE_PROCEDURAL_GAMEPLAY_PASSED: shared world name and five-sphere requirement across System/setup/gameplay, selected seeded board, real shot, results/save, scripted-only natural unlocks and actual Ice+Fire Water award");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);

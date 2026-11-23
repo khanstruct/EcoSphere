@@ -20,8 +20,8 @@ namespace EcoSphere
             // Simulate the successful first world, so setup exposes exactly the three earned types.
             var resources = new double[Enum.GetValues(typeof(ElementId)).Length];
             resources[(int)ElementId.Fire] = resources[(int)ElementId.Void] = 620;
-            WorldProgress.Complete(1, 0, -.02f, 0, false, resources);
-            WorldProgress.ClearPending();
+            GameServices.Progress.Complete(1, 0, -.02f, 0,null, resources);
+            GameServices.Progress.ClearPending();
             SceneManager.LoadScene("System"); yield return null; yield return null;
             var system = FindAnyObjectByType<SystemView>();
             system.DismissIntroductionForSmoke(); yield return null;

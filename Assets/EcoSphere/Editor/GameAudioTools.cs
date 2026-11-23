@@ -31,6 +31,7 @@ namespace EcoSphere.Editor
             Assign(ref settings.impressive,"Voice/impressive.mp3");
             Assign(ref settings.ecosphere,"Voice/ecosphere.mp3");
             Assign(ref settings.sphereCombine,"sphere-combine.mp3");
+            Assign(ref settings.starScore,"star-score.mp3");
             EditorUtility.SetDirty(settings); AssetDatabase.SaveAssets(); settings.Validate();
             Debug.Log("ECOSPHERE_SHARED_AUDIO_CONFIGURED: all common gameplay clips come from one asset");
         }

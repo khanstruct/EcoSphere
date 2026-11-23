@@ -14,9 +14,8 @@ namespace EcoSphere
         WorldRecord preparedWorld;
         readonly Dictionary<int,Material> sphereMaterials = new Dictionary<int,Material>();
         readonly List<ElementId> displayedElements = new List<ElementId>();
-        readonly List<int> channelSphereTypes = new List<int>();
         readonly List<EnergyBarGraphic> energyBars = new List<EnergyBarGraphic>();
-        readonly List<TMP_Text> resourceLabels = new List<TMP_Text>(), barTotals = new List<TMP_Text>(), sphereLabels = new List<TMP_Text>();
+        readonly List<TMP_Text> resourceLabels = new List<TMP_Text>(), barTotals = new List<TMP_Text>();
         readonly List<RectTransform> resourceValues = new List<RectTransform>();
         readonly double[] selectedElementTotals = new double[Enum.GetValues(typeof(ElementId)).Length];
         readonly ElementStandings composition = new ElementStandings();
@@ -29,16 +28,17 @@ namespace EcoSphere
 
         void InitializeSphereData()
         {
+            GameServices.Session.Phase=GamePhase.Playing;
             Catalog.Validate();
-            var selected = LevelPrepView.TakeLoadout();
+            var selected = GameServices.Session.TakeLoadout();
             if(ProceduralLayout && selected==null)
             {
-                var system=WorldProgress.GetSystem(LevelPrepView.SystemNumber);
-                int index=LevelPrepView.PlanetIndex;
+                var system=GameServices.Progress.GetSystem(GameServices.Session.SystemNumber);
+                int index=GameServices.Session.PlanetIndex;
                 if(index<0 || index>=system.worlds.Count || !system.worlds[index].IsProcedural)
                     index=system.worlds.FindIndex(world=>world.IsProcedural);
                 if(index<0)throw new InvalidOperationException("This system has no procedural world");
-                LevelPrepView.PlanetIndex=index; preparedWorld=system.worlds[index];
+                GameServices.Session.PlanetIndex=index; preparedWorld=system.worlds[index];
             }
             if (selected == null && !ProceduralLayout)
             {
@@ -47,13 +47,13 @@ namespace EcoSphere
                 foreach (var definition in WorldCatalog.Current.predefinedWorlds)
                     if (definition.guaranteedSystem > 0 && definition.gameplayScene == scene)
                     {
-                        LevelPrepView.SystemNumber = definition.guaranteedSystem; LevelPrepView.PlanetIndex = definition.guaranteedSlot;
+                        GameServices.Session.SystemNumber = definition.guaranteedSystem; GameServices.Session.PlanetIndex = definition.guaranteedSlot;
                         preparedWorld = WorldLevels.Get(definition.guaranteedSystem, definition.guaranteedSlot);
                         break;
                     }
             }
             if (selected != null)
-                preparedWorld = WorldLevels.Get(LevelPrepView.SystemNumber, LevelPrepView.PlanetIndex);
+                preparedWorld = WorldLevels.Get(GameServices.Session.SystemNumber, GameServices.Session.PlanetIndex);
             if (preparedWorld != null)
             {
                 resourceGoal = preparedWorld.rules.inclusionGoal; abundanceGoal = preparedWorld.rules.abundanceGoal;
@@ -66,7 +66,7 @@ namespace EcoSphere
             {
                 var available=new List<int>();
                 foreach(var sphere in Catalog.spheres)
-                    if(sphere.AmmoEligible && WorldProgress.IsSphereAvailable(sphere.id) && available.Count<required)available.Add(sphere.id);
+                    if(sphere.AmmoEligible && GameServices.Progress.IsSphereAvailable(sphere.id) && available.Count<required)available.Add(sphere.id);
                 defaultLoadout=available.ToArray();
             }
             activeSphereTypes = selected ??
@@ -84,10 +84,8 @@ namespace EcoSphere
 
         void IncludeElements(SphereDefinition definition)
         {
-            if (channelSphereTypes.Contains(definition.id)) return;
             foreach (var entry in definition.contributions)
-                for (int unit=0;unit<entry.amount;unit++)
-                { displayedElements.Add(entry.element); channelSphereTypes.Add(definition.id); }
+                if(entry.amount>0 && !displayedElements.Contains(entry.element)) displayedElements.Add(entry.element);
         }
         void UpdateComposition()
         {
@@ -101,27 +99,22 @@ namespace EcoSphere
             visualizerStyle=Resources.Load<VisualizerStyle>("VisualizerStyle");
             if (!visualizerStyle || !visualizerStyle.energyMaterial || !visualizerStyle.frame)
                 throw new InvalidOperationException("VisualizerStyle needs its energy material and shared frame");
-            energyBars.Clear(); resourceLabels.Clear(); barTotals.Clear(); sphereLabels.Clear(); resourceValues.Clear();
+            energyBars.Clear(); resourceLabels.Clear(); barTotals.Clear(); resourceValues.Clear();
             var frame=Panel("Shared visualizer frame",strip,Vector2.one*.5f,Vector2.zero,Vector2.zero,Color.white);
             frame.anchorMin=Vector2.zero; frame.anchorMax=Vector2.one; frame.offsetMin=frame.offsetMax=Vector2.zero;
             var image=frame.GetComponent<Image>(); image.sprite=visualizerStyle.frame; image.type=Image.Type.Sliced; image.fillCenter=false; image.raycastTarget=false;
             for (int i=0;i<displayedElements.Count;i++)
             {
-                var bar=new GameObject("Element contribution unit",typeof(RectTransform),typeof(CanvasRenderer),typeof(EnergyBarGraphic)).GetComponent<EnergyBarGraphic>();
+                var bar=new GameObject("Element bar",typeof(RectTransform),typeof(CanvasRenderer),typeof(EnergyBarGraphic)).GetComponent<EnergyBarGraphic>();
                 bar.transform.SetParent(strip,false); bar.rectTransform.anchorMin=bar.rectTransform.anchorMax=new Vector2(.5f,0);
                 bar.rectTransform.pivot=new Vector2(.5f,0); bar.material=visualizerStyle.energyMaterial;
-                bar.Phase=i*.13f; bar.color=ColorFor(channelSphereTypes[i]); energyBars.Add(bar);
+                bar.Phase=i*.13f; bar.color=Catalog.ElementAppearance(displayedElements[i])?.color ?? Color.white; energyBars.Add(bar);
                 var label=Label("Element name",strip,new Vector2(.5f,0),Vector2.zero,new Vector2(90,24),"",16);
                 label.enableAutoSizing=true; label.fontSizeMin=6; label.fontSizeMax=16; resourceLabels.Add(label);
                 var total=Label("Element points",strip,new Vector2(.5f,0),Vector2.zero,new Vector2(90,24),"0",20);
                 total.enableAutoSizing=true; total.fontSizeMin=6; total.fontSizeMax=22; barTotals.Add(total);
                 var marker=Panel("True element value",strip,new Vector2(.5f,0),Vector2.zero,new Vector2(50,1),new Color(1,1,1,.45f));
                 marker.GetComponent<Image>().raycastTarget=false; resourceValues.Add(marker);
-                if (i==0 || channelSphereTypes[i]!=channelSphereTypes[i-1])
-                {
-                    var source=Label("Source sphere",strip,new Vector2(.5f,0),Vector2.zero,new Vector2(150,24),Definition(channelSphereTypes[i]).displayName,18);
-                    source.enableAutoSizing=true; source.fontSizeMin=6; source.fontSizeMax=20; source.textWrappingMode=TextWrappingModes.NoWrap; sphereLabels.Add(source);
-                }
             }
             LayoutResourceChannels();
         }
@@ -130,33 +123,19 @@ namespace EcoSphere
             int count=energyBars.Count; if(count==0)return;
             float available=Mathf.Max(1,resourcePanel.sizeDelta.x-64);
             float minimumGap=Mathf.Min(visualizerStyle.minimumGap,available/(count*3));
-            float groupGap=Mathf.Min(visualizerStyle.sphereGroupGap,minimumGap);
-            int groups=sphereLabels.Count;
-            float width=Mathf.Min(visualizerStyle.maximumBarWidth,
-                (available-Mathf.Max(0,count-1)*minimumGap-Mathf.Max(0,groups-1)*groupGap)/count);
-            width=Mathf.Max(1,width);
-            float gap=count>1 ? minimumGap : 0;
-            groupGap=groups>1 ? (available-width*count-Mathf.Max(0,count-1)*gap)/(groups-1) : 0;
-            float used=width*count+gap*Mathf.Max(0,count-1)+groupGap*Mathf.Max(0,groups-1);
+            float width=Mathf.Max(1,Mathf.Min(visualizerStyle.maximumBarWidth,(available-Mathf.Max(0,count-1)*minimumGap)/count));
+            float gap=count>1 ? (available-width*count)/(count-1) : 0;
+            float used=width*count+gap*Mathf.Max(0,count-1);
             float x=-used*.5f+width*.5f;
-            barBaseline=62; maximumBarHeight=Mathf.Max(24,resourcePanel.sizeDelta.y-barBaseline-38);
-            int start=0,group=0;
+            barBaseline=38; maximumBarHeight=Mathf.Max(24,resourcePanel.sizeDelta.y-barBaseline-38);
             for(int i=0;i<count;i++)
             {
-                if(i>0 && channelSphereTypes[i]!=channelSphereTypes[i-1]) x+=groupGap;
                 var rect=energyBars[i].rectTransform;
                 rect.anchoredPosition=new Vector2(x,barBaseline); rect.sizeDelta=new Vector2(width,rect.sizeDelta.y);
                 resourceLabels[i].rectTransform.anchoredPosition=new Vector2(x,barBaseline-15);
-                resourceLabels[i].rectTransform.sizeDelta=new Vector2(width+gap*.5f,24);
+                resourceLabels[i].rectTransform.sizeDelta=new Vector2(width+Mathf.Min(gap*.5f,24),24);
                 resourceValues[i].sizeDelta=new Vector2(width,1);
-                barTotals[i].rectTransform.sizeDelta=new Vector2(width+gap*.5f,24);
-                if(i==count-1 || channelSphereTypes[i]!=channelSphereTypes[i+1])
-                {
-                    float left=energyBars[start].rectTransform.anchoredPosition.x-width*.5f;
-                    var label=sphereLabels[group++].rectTransform;
-                    label.anchoredPosition=new Vector2((left+x+width*.5f)*.5f,24);
-                    label.sizeDelta=new Vector2(x+width*.5f-left,24); start=i+1;
-                }
+                barTotals[i].rectTransform.sizeDelta=new Vector2(width+Mathf.Min(gap*.5f,24),24);
                 x+=width+gap;
             }
         }
@@ -186,13 +165,13 @@ namespace EcoSphere
             {
                 var element=displayedElements[i]; var bar=energyBars[i]; var rect=bar.rectTransform;
                 float height=Mathf.Clamp(shown[(int)element]/scale*maximumBarHeight,2,maximumBarHeight);
-                // Repeated units share their element's height and pulse, as well as its actual total.
+                // Motion stays close to the element's actual value.
                 float pulse=totals[(int)element]>0 ? Mathf.Sin(Time.time*2.2f+(int)element*.83f)*Mathf.Min(2,height*visualizerStyle.pulseFraction) : 0;
                 rect.sizeDelta=new Vector2(rect.sizeDelta.x,Mathf.Clamp(height+pulse,2,maximumBarHeight));
                 bar.Leading=composition.MeetsRecipeMinimum(element,resourceGoal);
                 bar.SelfCombination=bar.Leading && composition.CanSelfCombine(element);
                 string name=Catalog.ElementName(element);
-                resourceLabels[i].text=rect.sizeDelta.x<48 ? name.Substring(0,Mathf.Min(rect.sizeDelta.x<22 ? 1 : 3,name.Length)).ToUpperInvariant() : name;
+                resourceLabels[i].text=name;
                 barTotals[i].text=Math.Truncate(totals[(int)element]).ToString("0");
                 barTotals[i].color=bar.SelfCombination ? new Color(1,.8f,.3f) : Color.white;
                 barTotals[i].rectTransform.anchoredPosition=new Vector2(rect.anchoredPosition.x,barBaseline+rect.sizeDelta.y+17);

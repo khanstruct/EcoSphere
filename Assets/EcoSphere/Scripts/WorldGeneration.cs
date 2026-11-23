@@ -4,44 +4,6 @@ using UnityEngine;
 
 namespace EcoSphere
 {
-    [Serializable]
-    public sealed class WorldRecord
-    {
-        public string id, predefinedId, displayName, gameplayScene;
-        public int seed;
-        public double highestScore;
-        public int EarnedStars => rules.StarsForScore(highestScore);
-        public WorldRules rules = new WorldRules();
-        public List<string> modifiers = new List<string>();
-        public bool IsProcedural => string.IsNullOrEmpty(predefinedId);
-        public string GameplayScene => IsProcedural && string.IsNullOrWhiteSpace(gameplayScene) ? WorldCatalog.Current.proceduralGameplayScene : gameplayScene;
-        public int RequiredSpheres => IsProcedural ? Mathf.Max(4, rules.requiredSpheres) : rules.requiredSpheres;
-        public IEnumerable<WorldModifierDefinition> ModifierDefinitions
-        {
-            get{foreach(string id in modifiers)yield return WorldCatalog.Current.Modifier(id);}
-        }
-    }
-
-    [Serializable]
-    public sealed class SystemRecord
-    {
-        public int number, seed;
-        public List<WorldRecord> worlds = new List<WorldRecord>();
-    }
-
-    [Serializable]
-    public sealed class WorldSaveData
-    {
-        public int version = 1, universeSeed, currentSystem = 1;
-        public List<SystemRecord> systems = new List<SystemRecord>();
-        public List<string> placedPredefinedWorlds = new List<string>();
-        public List<CompletedWorld> worlds = new List<CompletedWorld>();
-        public bool stoneUnlocked;
-        public bool systemIntroductionSeen;
-        public List<SetupTutorialProgress> setupTutorials = new List<SetupTutorialProgress>();
-        public List<int> unlockedSpheres = new List<int>();
-    }
-
     public static class WorldGeneration
     {
         // Stable integer mixing; independent of platform-specific string hashing and Unity's global RNG.
@@ -50,13 +12,14 @@ namespace EcoSphere
             unchecked { uint value = (uint)universe ^ (uint)system * 0x9e3779b9u; value ^= value >> 16; value *= 0x85ebca6bu; value ^= value >> 13; return (int)(value & 0x7fffffff); }
         }
 
-        public static SystemRecord GetOrCreate(WorldSaveData save, WorldCatalog catalog, int number)
+        public static SystemRecord GetOrCreate(PlayerProfile save, WorldCatalog catalog, int number)
         {
             if (number < 1) throw new ArgumentOutOfRangeException(nameof(number));
             var existing = save.systems.Find(system => system.number == number);
             if (existing != null) return existing;
             catalog.Validate();
-            var system = new SystemRecord { number = number, seed = Seed(save.universeSeed, number) };
+            var system = new SystemRecord { number = number, seed = Seed(save.universeSeed, number), id="system:"+number, displayName="System "+number.ToString("D2") };
+            system.sunTypeId=catalog.defaultSunTypeId;
             var random = new System.Random(system.seed);
             var slots = new WorldRecord[catalog.planetsPerSystem];
             var placed = new HashSet<string>(save.placedPredefinedWorlds);
@@ -83,7 +46,7 @@ namespace EcoSphere
                 rules.requiredSpheres = random.Next(minimum, maximum + 1);
                 rules.clustering=Mathf.Lerp(catalog.minimumClustering,catalog.maximumClustering,(float)random.NextDouble());
                 var world = new WorldRecord { id = number + ":" + slot, seed = random.Next(), rules = rules,
-                    displayName = GenerateName(random, catalog, names), gameplayScene = catalog.proceduralGameplayScene };
+                    displayName = GenerateName(random, catalog, names), gameplayScene = catalog.proceduralGameplayScene, terrainStyleId=catalog.defaultTerrainStyleId };
                 foreach (var modifier in catalog.proceduralModifiers)
                     if (modifier.proceduralChance>0 && random.NextDouble() < modifier.proceduralChance) world.modifiers.Add(modifier.id);
                 slots[slot] = world;
@@ -99,22 +62,23 @@ namespace EcoSphere
             void Place(PredefinedWorld definition, int slot)
             {
                 var world = new WorldRecord { id = number + ":" + slot, predefinedId = definition.id, displayName = definition.displayName,
-                    gameplayScene = definition.gameplayScene, seed = random.Next(), rules = definition.rules.Copy() };
+                    gameplayScene = definition.gameplayScene, seed = random.Next(), rules = definition.rules.Copy(), terrainStyleId=catalog.defaultTerrainStyleId };
                 foreach (var modifier in definition.modifiers) world.modifiers.Add(modifier.id);
+                foreach(var natural in definition.naturalSpheres)world.naturalSpheres.Add(natural.Copy());
                 slots[slot] = world; placed.Add(definition.id); newlyPlaced.Add(definition.id); names.Add(world.displayName);
             }
         }
 
-        static bool Eligible(WorldSaveData save, PredefinedWorld definition)
+        static bool Eligible(PlayerProfile save, PredefinedWorld definition)
         {
             foreach (int sphere in definition.requiredUnlockedSpheres)
-                if (!save.unlockedSpheres.Contains(sphere) && !(sphere == SphereIds.Stone && save.stoneUnlocked) && !SphereCatalog.Current.Get(sphere).availableAtStart) return false;
+                if (!save.unlockedSpheres.Contains(sphere) && !SphereCatalog.Current.Get(sphere).availableAtStart) return false;
             foreach (string required in definition.requiredCompletedWorlds)
             {
                 bool found = false;
                 foreach (var system in save.systems)
                     for (int slot = 0; slot < system.worlds.Count; slot++)
-                        if (system.worlds[slot].predefinedId == required && save.worlds.Exists(world => world.system == system.number && world.planet == slot)) found = true;
+                        if (system.worlds[slot].predefinedId == required && system.worlds[slot].IsComplete) found = true;
                 if (!found) return false;
             }
             return true;

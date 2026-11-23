@@ -13,7 +13,7 @@ namespace EcoSphere.Editor
                 if(sphere.id>SphereIds.Mud)continue; // New sphere assets choose their own category; catalog validation checks the enum.
                 var expected=sphere.id==SphereIds.Plant || sphere.id==SphereIds.Life ? SphereCategory.Life :
                     sphere.id==SphereIds.Void || sphere.role==SphereRole.Core ? SphereCategory.Forces :
-                    sphere.role==SphereRole.Laser ? SphereCategory.Technology : SphereCategory.Materials;
+                    sphere.role==SphereRole.Laser ? SphereCategory.Technology : SphereCategory.Basic;
                 if(sphere.category!=expected)throw new Exception("Unexpected category on "+sphere.displayName);
             }
             Debug.Log("ECOSPHERE_SPHERE_CATEGORY_DATA_PASSED: current definitions categorized, category validation, stable sphere/element IDs");

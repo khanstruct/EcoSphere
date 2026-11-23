@@ -33,6 +33,7 @@ namespace EcoSphere.Editor
             Add(catalog, SphereIds.Plant, "Plant", ElementId.Plant, new Color32(62,160,74,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Life, "Life", ElementId.Life, new Color32(246,183,205,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Mud, "Mud", ElementId.Mud, new Color32(202,156,107,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Air, "Air", ElementId.Air, new Color32(232,245,250,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Core, "Core", ElementId.Core, new Color32(163, 64, 255, 255), SphereRole.Core, false);
             if (!catalog.recipeBook)
             {
@@ -72,7 +73,7 @@ namespace EcoSphere.Editor
                 definition.id = id; definition.namesakeElement=element; definition.displayName = label; definition.color = color;
                 definition.category=id==SphereIds.Plant || id==SphereIds.Life ? SphereCategory.Life :
                     id==SphereIds.Void || role==SphereRole.Core ? SphereCategory.Forces :
-                    role==SphereRole.Laser ? SphereCategory.Technology : SphereCategory.Materials;
+                    role==SphereRole.Laser ? SphereCategory.Technology : SphereCategory.Basic;
                 if(id==SphereIds.Plant)definition.displayName="Plant Life";
                 definition.role = role; definition.selectable = role == SphereRole.Element;
                 definition.availableAtStart = starter;
@@ -91,7 +92,7 @@ namespace EcoSphere.Editor
             if (!definition.resourceVoice)
             {
                 string voice = id == SphereIds.Ice ? "cryosphere" : id == SphereIds.Sunlight ? "heliosphere" :
-                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : null;
+                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : null;
                 if (voice != null)
                 {
                     definition.resourceVoice = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/Voice/" + voice + ".mp3");
@@ -108,7 +109,7 @@ namespace EcoSphere.Editor
             sphere.contributions.Clear();
             switch(sphere.id)
             {
-                case SphereIds.Fire:case SphereIds.Water:case SphereIds.Stone:case SphereIds.Life:
+                case SphereIds.Fire:case SphereIds.Water:case SphereIds.Stone:case SphereIds.Life:case SphereIds.Air:
                     sphere.contributions.Add(new ElementContribution(fallback,3));sphere.unallocatedWeight=1;break;
                 case SphereIds.Void:
                     sphere.contributions.Add(new ElementContribution(ElementId.Void,2));sphere.unallocatedWeight=2;break;

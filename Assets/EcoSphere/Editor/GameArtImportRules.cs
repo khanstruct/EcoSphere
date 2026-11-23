@@ -14,7 +14,7 @@ namespace EcoSphere.Editor
             if (assetPath.StartsWith("Assets/EcoSphere/Art/Planets/") && assetPath.EndsWith(".png"))
             {
                 importer.textureType = TextureImporterType.Default;
-                importer.sRGBTexture = !assetPath.Contains("heightmap");
+                importer.sRGBTexture = !assetPath.Contains("heightmap") && !assetPath.Contains("mask");
                 importer.mipmapEnabled = true;
                 importer.wrapModeU = UnityEngine.TextureWrapMode.Repeat;
                 importer.wrapModeV = UnityEngine.TextureWrapMode.Clamp;

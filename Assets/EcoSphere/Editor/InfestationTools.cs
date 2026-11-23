@@ -66,7 +66,7 @@ namespace EcoSphere.Editor
                 if(startingFrames.Count!=2 || (modifier.animationSpeedVariation>0 && speeds.Count<2))throw new Exception("Alien animation starts/speeds must vary independently");
             }
             finally{UnityEngine.Object.DestroyImmediate(animationObject);}
-            var save=new WorldSaveData{universeSeed=3187};var system=WorldGeneration.GetOrCreate(save,catalog,1);
+            var save=new PlayerProfile{universeSeed=3187};var system=WorldGeneration.GetOrCreate(save,catalog,1);
             if(!system.worlds[2].modifiers.Contains(modifier.id) || system.worlds[0].modifiers.Contains(modifier.id) || system.worlds[1].modifiers.Contains(modifier.id))throw new Exception("Infestation placement must target world three");
             var counts=new HashSet<int>();
             for(int seed=0;seed<100;seed++)

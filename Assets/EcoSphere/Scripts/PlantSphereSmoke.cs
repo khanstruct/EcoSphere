@@ -22,8 +22,10 @@ namespace EcoSphere
             if(visual.GetComponent<TrailRenderer>().startColor!=plant.color || LevelAudio.MatchVoice(SphereIds.Plant,30)!=plant.resourceVoice)
                 throw new Exception("Plant streak/voice ignored its definition");
             int units=0;
-            for(int i=0;i<channelSphereTypes.Count;i++)if(channelSphereTypes[i]==SphereIds.Plant){units++;if(energyBars[i].color!=plant.color)throw new Exception("Plant visualizer color mismatch");}
-            if(units!=3 || planet.GetComponent<PlanetSurface>().Stats[PlanetStat.BiologicalCoverage]<=0)throw new Exception("Plant real-unit bars or existing base-stat wiring missing");
+            int lifeBar=displayedElements.IndexOf(ElementId.Life);
+            if(lifeBar<0 || energyBars[lifeBar].color!=Definition(SphereIds.Life).color)throw new Exception("Life supplied by Plant must use the Life sphere color");
+            for(int i=0;i<displayedElements.Count;i++)if(displayedElements[i]==ElementId.Plant){units++;if(energyBars[i].color!=plant.color)throw new Exception("Plant visualizer color mismatch");}
+            if(units!=1 || planet.GetComponent<PlanetSurface>().Stats[PlanetStat.BiologicalCoverage]<=0)throw new Exception("Plant element bars or existing base-stat wiring missing");
         }
     }
     public sealed class PlantSphereSmoke : MonoBehaviour
@@ -33,9 +35,9 @@ namespace EcoSphere
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;
-            if(!DevelopmentMode.Enabled || !WorldProgress.IsSphereAvailable(SphereIds.Plant))throw new Exception("Plant missing from DEV collection");
+            if(!DevelopmentMode.Enabled || !GameServices.Progress.IsSphereAvailable(SphereIds.Plant))throw new Exception("Plant missing from DEV collection");
             var configuration=Resources.Load<DevelopmentSettings>("DevelopmentSettings");bool previous=configuration.devModeEnabled;
-            try{configuration.devModeEnabled=false;if(WorldProgress.IsSphereAvailable(SphereIds.Plant))throw new Exception("Plant was accidentally added to normal starting collection");}
+            try{configuration.devModeEnabled=false;if(GameServices.Progress.IsSphereAvailable(SphereIds.Plant))throw new Exception("Plant was accidentally added to normal starting collection");}
             finally{configuration.devModeEnabled=previous;}
             FindAnyObjectByType<SystemView>().OpenPlanet(2);yield return null;yield return null;
             var prep=FindAnyObjectByType<LevelPrepView>();
@@ -53,7 +55,7 @@ namespace EcoSphere
                 File.WriteAllBytes(Path.Combine(Application.dataPath,"../Logs/Plant-"+size.x+"x"+size.y+".png"),pixels.EncodeToPNG());
                 RenderTexture.active=old;game.SetPreviewTarget(null);target.Release();Destroy(target);Destroy(pixels);
             }
-            Debug.Log("ECOSPHERE_PLANT_GAMEPLAY_PASSED: DEV versus normal collection, setup, generated board, weighted matches/breakaways, three real-unit bars, green streaks, florasphere voice, base stats, portrait/wide previews");
+            Debug.Log("ECOSPHERE_PLANT_GAMEPLAY_PASSED: DEV versus normal collection, setup, generated board, weighted matches/breakaways, unique element bars with namesake colors, green streaks, florasphere voice, base stats, portrait/wide previews");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

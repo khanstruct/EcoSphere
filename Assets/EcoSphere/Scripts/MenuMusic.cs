@@ -19,10 +19,10 @@ namespace EcoSphere
             }
             instance = this;
             DontDestroyOnLoad(gameObject);
-            Source = gameObject.AddComponent<AudioSource>();
+            Source = GameServices.Audio.CreateSource(gameObject,"Menu music",AudioChannel.Music,volume);
             Source.playOnAwake = false;
             Source.clip = clip;
-            Source.volume = volume;
+
             Source.loop = true;
             Source.spatialBlend = 0;
             Source.priority = 160;

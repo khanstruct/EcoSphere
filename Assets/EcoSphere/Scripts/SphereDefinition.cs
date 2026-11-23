@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
@@ -18,7 +18,7 @@ namespace EcoSphere
         Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud }
     public enum SphereRole { Element, Laser, Core }
     // Append categories only: sphere definitions serialize these values. All is a UI filter, not a category.
-    public enum SphereCategory { Materials, Forces, Nature, Life, Technology, Beyond }
+    public enum SphereCategory { Basic = 0, Forces = 1, Weather = 2, Life = 3, Technology = 4, Beyond = 5 }
 
     [Serializable]
     public struct ElementContribution

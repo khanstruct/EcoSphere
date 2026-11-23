@@ -18,17 +18,17 @@ namespace EcoSphere
         {
             yield return null;yield return null;
             var view=FindAnyObjectByType<SystemView>();
-            double[] scores={999.75,1000,2000,5000};
+            double[] scores={499.75,500,1000,2500};
             for(int i=0;i<scores.Length;i++)
             {
                 var record=WorldLevels.Get(1,i);
-                Expect(record.rules.oneStarScore==1000 && record.rules.twoStarScore==2000 && record.rules.threeStarScore==5000,"default thresholds missing");
+                Expect(record.rules.oneStarScore==500 && record.rules.twoStarScore==1000 && record.rules.threeStarScore==2500,"default thresholds missing");
                 var amounts=new double[ElementComposition.Capacity];amounts[(int)ElementId.Void]=scores[i]*.25;amounts[(int)ElementId.Fire]=scores[i]*.75;
-                WorldProgress.Complete(1,i,0,0,false,amounts);
+                GameServices.Progress.Complete(1,i,0,0,null,amounts);
                 Expect(record.highestScore==scores[i] && record.EarnedStars==i,"score or threshold boundary incorrect");
                 var restored=JsonUtility.FromJson<WorldRecord>(JsonUtility.ToJson(record));
                 Expect(restored.highestScore==scores[i] && restored.EarnedStars==i,"world score/rules serialization");
-                WorldProgress.TryOpenCompletedResults(1,i);
+                GameServices.Progress.TryOpenCompletedResults(1,i);
                 Expect(record.highestScore==scores[i],"viewing results changed highest score");
             }
             view.RefreshSystemHeading(); Check(view);
@@ -39,7 +39,7 @@ namespace EcoSphere
                 Expect(badges.Find("Sphere Icon").gameObject.activeSelf && !badges.Find("World Stars").gameObject.activeSelf,"stale completed badges in another system");
             }
             view.SetSystemNumber(1);view.RefreshSystemHeading();Check(view);
-            var rules=WorldLevels.Get(1,1).rules;rules.twoStarScore=1000;view.RefreshSystemHeading();
+            var rules=WorldLevels.Get(1,1).rules;rules.twoStarScore=500;view.RefreshSystemHeading();
             Expect(WorldLevels.Get(1,1).EarnedStars==2,"rating ignored per-world thresholds");
             CheckStars(view.planets[1].transform,2);
             Capture(view);

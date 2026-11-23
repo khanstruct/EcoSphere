@@ -18,8 +18,8 @@ namespace EcoSphere
             var sphere=Definition(SphereIds.Life);
             if(visual.GetComponent<TrailRenderer>().startColor!=sphere.color || LevelAudio.MatchVoice(SphereIds.Life,30)!=sphere.resourceVoice)
                 throw new Exception("Life streak/voice ignored its definition");
-            int units=0;for(int i=0;i<channelSphereTypes.Count;i++)if(channelSphereTypes[i]==SphereIds.Life){units++;if(energyBars[i].color!=sphere.color)throw new Exception("Life visualizer color incorrect");}
-            if(units!=3 || planet.GetComponent<PlanetSurface>().Stats[PlanetStat.BiologicalCoverage]<=0)throw new Exception("Life unit bars or planet stats missing");
+            int units=0;for(int i=0;i<displayedElements.Count;i++)if(displayedElements[i]==ElementId.Life){units++;if(energyBars[i].color!=sphere.color)throw new Exception("Life visualizer color incorrect");}
+            if(units!=1 || planet.GetComponent<PlanetSurface>().Stats[PlanetStat.BiologicalCoverage]<=0)throw new Exception("Life unit bars or planet stats missing");
         }
     }
     public sealed class LifeSphereSmoke : MonoBehaviour
@@ -29,9 +29,9 @@ namespace EcoSphere
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;
-            if(!DevelopmentMode.Enabled || !WorldProgress.IsSphereAvailable(SphereIds.Life))throw new Exception("Life missing from DEV collection");
+            if(!DevelopmentMode.Enabled || !GameServices.Progress.IsSphereAvailable(SphereIds.Life))throw new Exception("Life missing from DEV collection");
             var settings=Resources.Load<DevelopmentSettings>("DevelopmentSettings");bool previous=settings.devModeEnabled;
-            try{settings.devModeEnabled=false;if(WorldProgress.IsSphereAvailable(SphereIds.Life))throw new Exception("Life must remain locked during normal progression");}
+            try{settings.devModeEnabled=false;if(GameServices.Progress.IsSphereAvailable(SphereIds.Life))throw new Exception("Life must remain locked during normal progression");}
             finally{settings.devModeEnabled=previous;}
             FindAnyObjectByType<SystemView>().OpenPlanet(2);yield return null;yield return null;
             var prep=FindAnyObjectByType<LevelPrepView>();int[] selected={SphereIds.Fire,SphereIds.Void,SphereIds.Water,SphereIds.Life};

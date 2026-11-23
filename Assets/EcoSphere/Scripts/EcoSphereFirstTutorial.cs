@@ -45,7 +45,7 @@ namespace EcoSphere
             if (!complete || board.Cells.Count != 0 || totals[firstElement] != expected[firstElement] || totals[secondElement] != expected[secondElement] || score!=1240 || stoneReleased)
                 throw new Exception($"Tutorial weighted totals: first={totals[firstElement]}, second={totals[secondElement]}, score={score}");
             UpdateComposition();
-            var reward=WorldProgress.Complete(LevelPrepView.SystemNumber,LevelPrepView.PlanetIndex,-.02f,0,false,selectedElementTotals,resourceGoal,composition.Ranked);
+            var reward=GameServices.Progress.Complete(GameServices.Session.SystemNumber,GameServices.Session.PlanetIndex,-.02f,0,null,selectedElementTotals,composition.Ranked);
             if(!reward.discoveries.Contains(SphereIds.Sunlight))throw new Exception("Genesis Alpha's weighted opening clear must unlock Sunlight");
             Debug.Log($"ECOSPHERE_TUTORIAL_ONE_SMOKE_PASSED: two actual shots, unchanged 1240 score, weighted Fire={totals[(int)ElementId.Fire]}, Void={totals[(int)ElementId.Void]}, recipe minimum={resourceGoal}; reduced yields may require tutorial balancing");
 #if UNITY_EDITOR

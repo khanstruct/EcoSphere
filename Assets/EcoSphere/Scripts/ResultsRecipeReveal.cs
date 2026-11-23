@@ -75,9 +75,9 @@ namespace EcoSphere
             screenWash=Image("White discovery wash",overlay,fillSprite,Vector2.zero,Vector2.zero,new Color(1,1,1,0));
             screenWash.rectTransform.anchorMin=Vector2.zero; screenWash.rectTransform.anchorMax=Vector2.one;
             screenWash.rectTransform.offsetMin=screenWash.rectTransform.offsetMax=Vector2.zero;
-            revealAudio=gameObject.AddComponent<AudioSource>(); revealAudio.playOnAwake=false; revealAudio.spatialBlend=0;
+            revealAudio=GameServices.Audio.CreateSource(gameObject,"Discovery effects",AudioChannel.Effects,1,true);
             revealAudio.ignoreListenerPause=true;
-            combineAudio=gameObject.AddComponent<AudioSource>(); combineAudio.playOnAwake=false; combineAudio.spatialBlend=0; combineAudio.ignoreListenerPause=true;
+            combineAudio=GameServices.Audio.CreateSource(gameObject,"Sphere combine",AudioChannel.Effects,1,true);
         }
         void Ingredient(ElementId element)
         {
@@ -124,7 +124,7 @@ namespace EcoSphere
                 if(elementDiscovered)
                 {
                     // Keep earlier announcement tails intact when the player confirms consecutive discoveries quickly.
-                    var announcement=gameObject.AddComponent<AudioSource>(); announcement.playOnAwake=false;
+                    var announcement=GameServices.Audio.CreateSource(gameObject,"Recipe discovery announcement",AudioChannel.Voice,1,true);
                     announcement.spatialBlend=0; announcement.ignoreListenerPause=true; announcement.clip=elementDiscovered;
                     announcement.PlayScheduled(DiscoveryAudioStart);
                 }

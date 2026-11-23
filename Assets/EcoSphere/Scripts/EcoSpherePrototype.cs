@@ -32,7 +32,8 @@ namespace EcoSphere
         [Min(1)] public int resourceGoal = ElementScoring.Inclusion;
         [Min(1)] public int abundanceGoal = ElementScoring.Abundance;
         int score;
-        bool stoneReleased;
+        readonly HashSet<int> releasedNaturalSpheres=new HashSet<int>();
+        bool stoneReleased=>releasedNaturalSpheres.Contains(StoneType);
         public const float VisualScale = .6f;
         public const float Radius = .44f * VisualScale;
         const int InitialRings = 4;
@@ -165,6 +166,8 @@ namespace EcoSphere
             var globe = GameObject.CreatePrimitive(PrimitiveType.Sphere); globe.name = "Receiving planet";
             globe.transform.position = new Vector3(0, 11.5f, 3); globe.transform.localScale = Vector3.one * 10;
             Destroy(globe.GetComponent<Collider>()); planet = globe.transform;
+            var planetStyle=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");
+            if(planetStyle)receivingPlanetMaterial=planetStyle.Terrain(preparedWorld.terrainStyleId,receivingPlanetMaterial);
             var pm = receivingPlanetMaterial ? new Material(receivingPlanetMaterial) : Surface(null);
             if (receivingPlanetMaterial) materials.Add(pm);
             globe.GetComponent<Renderer>().sharedMaterial = pm;
@@ -243,32 +246,31 @@ namespace EcoSphere
 
         void BuildBoard()
         {
-            if(ProceduralLayout)
+            releasedNaturalSpheres.Clear();
+            if(ProceduralLayout)ProceduralCluster.Populate(board,activeSphereTypes,InitialRings,preparedWorld.seed,preparedWorld.rules.clustering);
+            else if(StoneTutorial)StoneTutorialLayout.Populate(board,activeSphereTypes,InitialRings);
+            else
             {
-                ProceduralCluster.Populate(board,activeSphereTypes,InitialRings,preparedWorld.seed,preparedWorld.rules.clustering);
-                foreach(var cell in board.Cells)
-                    visuals.Add(cell.Key,MakeSphere(Definition(cell.Value).displayName+" "+cell.Key,cell.Value,cluster,BoardRules.Position(cell.Key)));
-                return;
+                // Authored opening topology; element identities come from the selected loadout.
+                for(int q=-InitialRings;q<=InitialRings;q++)for(int r=-InitialRings;r<=InitialRings;r++)
+                {
+                    if(Mathf.Abs(q+r)>InitialRings || (q==0 && r==0))continue;
+                    var cell=new Vector2Int(q,r);Vector2 point=BoardRules.Position(cell);
+                    board.Cells.Add(cell,point.x<-.0001f || (Mathf.Abs(point.x)<=.0001f && point.y<0) ? activeSphereTypes[0] : activeSphereTypes[1]);
+                }
             }
-            if(StoneTutorial)
+            ApplyNaturalPlacements();
+            foreach(var cell in board.Cells)
+                visuals.Add(cell.Key,MakeSphere(Definition(cell.Value).displayName+" "+cell.Key,cell.Value,cluster,BoardRules.Position(cell.Key)));
+        }
+        void ApplyNaturalPlacements()
+        {
+            foreach(var natural in preparedWorld.naturalSpheres)
             {
-                StoneTutorialLayout.Populate(board,activeSphereTypes,InitialRings);
-                foreach(var cell in board.Cells)
-                    visuals.Add(cell.Key,MakeSphere(Definition(cell.Value).displayName+" "+cell.Key,cell.Value,cluster,BoardRules.Position(cell.Key)));
-                return;
-            }
-            // Same-type groups intentionally exist at startup. Only the fired sphere seeds matching.
-            for (int q = -InitialRings; q <= InitialRings; q++) for (int r = -InitialRings; r <= InitialRings; r++)
-            {
-                if (Mathf.Abs(q + r) > InitialRings || (q == 0 && r == 0)) continue;
-                var cell = new Vector2Int(q, r);
-                Vector2 p = BoardRules.Position(cell);
-                int type = p.x < -.0001f || (Mathf.Abs(p.x) <= .0001f && p.y < 0) ? activeSphereTypes[0] : activeSphereTypes[1];
-                board.Cells.Add(cell, type);
-                visuals.Add(cell, MakeSphere(Definition(type).displayName + " " + cell, type, cluster, p));
+                if(!board.Cells.ContainsKey(natural.cell))throw new System.InvalidOperationException("Natural sphere placement lies outside the cluster");
+                board.Cells[natural.cell]=natural.sphereId;
             }
         }
-
         void LoadNext()
         {
             if (complete || failed) return;
@@ -287,7 +289,7 @@ namespace EcoSphere
             if (tutorialPaused || Time.frameCount <= tutorialResumeFrame) return;
             if (halo) halo.localScale = Vector3.one * (1.8f * VisualScale / coreHalo.bounds.size.x) * (1 + .035f * Mathf.Sin(Time.time * 2));
             if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame && !smoke)
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                GameServices.UI.Retry();
             bool touching = Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed;
             if (ready && !smoke && (Mouse.current != null || touching))
             {
@@ -467,7 +469,7 @@ namespace EcoSphere
                 if(!released && board.Infested.Contains(cell))continue;
                 if(board.Infested.Contains(cell))KnockOffAlien(cell,false);
                 int type = board.Cells[cell];
-                if (released && StoneTutorial && cell==TutorialStoneCell && type == StoneType) stoneReleased = true;
+                if(released && preparedWorld.naturalSpheres.Exists(natural=>natural.cell==cell && natural.sphereId==type))releasedNaturalSpheres.Add(type);
                 var definition = Definition(type);
                 if(voicePoints!=null && definition.Matchable)
                 {
@@ -561,6 +563,7 @@ namespace EcoSphere
 
         IEnumerator CompleteWorld()
         {
+            GameServices.Session.Phase=GamePhase.Completing;
             ready = false;
             status.text = "WORLD COMPLETE";
             if (levelAudio) levelAudio.AnnounceResult(true);
@@ -571,9 +574,13 @@ namespace EcoSphere
             while(activeStreaks>0 || activeAlienStreaks>0)yield return null;
             var appearance = planet.GetComponent<PlanetSurface>();
             UpdateComposition();
-            WorldProgress.Complete(LevelPrepView.SystemNumber, LevelPrepView.PlanetIndex,
-                appearance ? appearance.TargetSeaLevel : -.02f, planet.eulerAngles.y, stoneReleased, selectedElementTotals, resourceGoal, composition.Ranked);
-            SceneManager.LoadScene("Results");
+            GameServices.Progress.Complete(GameServices.Session.SystemNumber, GameServices.Session.PlanetIndex,
+                appearance ? appearance.TargetSeaLevel : -.02f, planet.eulerAngles.y, releasedNaturalSpheres, selectedElementTotals, composition.Ranked);
+            GameServices.Session.Phase=GamePhase.Rating;
+            var rating=new GameObject("Level star rating").AddComponent<StarRatingPresentation>();
+            yield return rating.Present(preparedWorld.EarnedStars,WorldCatalog.Current.ratingStar,tutorialButtonPrefab,uiFont);
+            Destroy(rating.gameObject);
+            GameServices.UI.ShowResults();
         }
 
         bool CheckGameOver(bool previewOnly = false, float? previewAngle = null)
@@ -603,6 +610,7 @@ namespace EcoSphere
                 if (!touches) continue;
                 if (previewOnly) return true;
                 failed = true; ready = false; complete = false;
+                GameServices.Session.Phase=GamePhase.Failed;
                 Array.Clear(totals, 0, totals.Length); Array.Clear(shown, 0, shown.Length);
                 score = matchedCount = lastMatch = lastRelease = 0;
                 if (levelAudio) levelAudio.CancelResolution();
@@ -636,6 +644,7 @@ namespace EcoSphere
 
         void BuildInterface()
         {
+            UIInput.EnsureEventSystem();
             font = uiFont;
             var canvas = new GameObject("Prototype HUD", typeof(Canvas), typeof(CanvasScaler)).GetComponent<Canvas>();
             gameplayCanvas = canvas;
@@ -660,7 +669,7 @@ namespace EcoSphere
 
         void OnDestroy()
         {
-            if (tutorialPaused) Time.timeScale = tutorialPreviousScale;
+            GameServices.Pause.Release(this);
             if (tutorialBackingTexture) Destroy(tutorialBackingTexture);
             if (tutorialSolidTexture) Destroy(tutorialSolidTexture);
             foreach (var material in materials) if (material) Destroy(material);

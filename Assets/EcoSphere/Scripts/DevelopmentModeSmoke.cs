@@ -39,14 +39,14 @@ namespace EcoSphere
             Expect(DevelopmentMode.Enabled,"default development toggle is off");
             int selectable=0;
             foreach(var sphere in SphereCatalog.Current.spheres)
-                if(sphere.AmmoEligible) { selectable++; Expect(WorldProgress.IsSphereAvailable(sphere.id),"selectable sphere unavailable"); }
-            Expect(WorldProgress.AvailableSphereCount==selectable && !WorldProgress.SystemIntroductionSeen,"collection bypass persisted an intro acknowledgment");
+                if(sphere.AmmoEligible) { selectable++; Expect(GameServices.Progress.IsSphereAvailable(sphere.id),"selectable sphere unavailable"); }
+            Expect(GameServices.Progress.AvailableSphereCount==selectable && !GameServices.Progress.SystemIntroductionSeen,"collection bypass persisted an intro acknowledgment");
             var configuration=Resources.Load<DevelopmentSettings>("DevelopmentSettings");
             bool previous=configuration.devModeEnabled;
             try
             {
                 configuration.devModeEnabled=false;
-                Expect(!DevelopmentMode.Enabled && !WorldProgress.IsSphereAvailable(SphereIds.Water) && WorldProgress.AvailableSphereCount==2,"disabling DEV did not restore the actual collection");
+                Expect(!DevelopmentMode.Enabled && !GameServices.Progress.IsSphereAvailable(SphereIds.Water) && GameServices.Progress.AvailableSphereCount==2,"disabling DEV did not restore the actual collection");
             }
             finally { configuration.devModeEnabled=previous; }
             var system=FindAnyObjectByType<SystemView>();
@@ -55,22 +55,18 @@ namespace EcoSphere
             var prep=FindAnyObjectByType<LevelPrepView>();
             Expect(prep && (!prep.SetupPopup || !prep.SetupPopup.IsOpen) && Time.timeScale==1,"setup tutorial opened in DEV mode");
             string alphaId=WorldLevels.Get(1,0).id;
-            Expect(WorldProgress.SetupTutorialStep(alphaId)==0,"DEV skipped lessons by marking them completed");
+            Expect(GameServices.Progress.SetupTutorialStep(alphaId)==0,"DEV skipped lessons by marking them completed");
             prep.AddSphere(SphereIds.Water); prep.AddSphere(SphereIds.Ice);
             Expect(prep.Selected.Count==2 && prep.Begin.interactable,"Water could not be selected in setup");
             prep.Begin.onClick.Invoke(); yield return null; yield return null;
             var game=FindAnyObjectByType<EcoSpherePrototype>(); game.CheckDevelopmentWater();
-            // The temporary collection override must not prevent real recipe/reveal testing.
+            // DEV treats the complete selectable collection as owned for every discovery path.
             var gains=new double[Enum.GetValues(typeof(ElementId)).Length]; gains[(int)ElementId.Fire]=gains[(int)ElementId.Void]=620;
-            var completed=WorldProgress.Complete(1,0,-.02f,0,false,gains);
-            Expect(completed.discoveries.Contains(SphereIds.Sunlight),"DEV availability incorrectly suppressed ordinary recipe awards");
+            var completed=GameServices.Progress.Complete(1,0,-.02f,0,null,gains);
+            Expect(completed.discoveries.Count==0,"DEV rediscovered an already owned sphere");
             SceneManager.LoadScene("Results"); yield return null; yield return null;
-            var results=FindAnyObjectByType<ResultsView>(); float deadline=Time.realtimeSinceStartup+10;
-            while(results.RevealPhase!=DiscoveryRevealPhase.Ready && Time.realtimeSinceStartup<deadline)yield return null;
-            Expect(results.RevealPhase==DiscoveryRevealPhase.Ready,"DEV recipe reveal failed");
-            results.OkButton.onClick.Invoke(); deadline=Time.realtimeSinceStartup+5;
-            while(!results.Settled && Time.realtimeSinceStartup<deadline)yield return null;
-            Expect(results.Settled && !results.DiscoveryTutorial && !completed.world.discoveryTutorialSeen,"results tutorial opened or was marked seen in DEV mode");
+            var results=FindAnyObjectByType<ResultsView>();
+            Expect(results.Settled && !results.DiscoveryTutorial && !completed.world.discoveryTutorialSeen,"DEV results did not settle without duplicate discovery");
             results.ContinueButton.onClick.Invoke(); yield return null; yield return null;
             system=FindAnyObjectByType<SystemView>();
             Expect(!system.Dialog || !system.Dialog.IsOpen,"next-world tutorial opened in DEV mode");
@@ -79,7 +75,7 @@ namespace EcoSphere
             prep.AddSphere(SphereIds.Water); prep.AddSphere(SphereIds.Fire); prep.AddSphere(SphereIds.Void);
             prep.Begin.onClick.Invoke(); yield return null; yield return null;
             Expect(SceneManager.GetActiveScene().name=="FirstLight" && Time.timeScale==1 && !GameObject.Find("Tutorial overlay"),"Beta's natural-element lesson was not skipped");
-            Debug.Log("ECOSPHERE_DEV_MODE_PASSED: complete selectable collection, Water setup/board/scoring/voice/colors, skipped System/setup/gameplay/results/followup lessons, preserved tutorial progress and normal recipe reveals");
+            Debug.Log("ECOSPHERE_DEV_MODE_PASSED: complete selectable collection, Water setup/board/scoring/voice/colors, skipped System/setup/gameplay/results/followup lessons, preserved tutorial progress and no duplicate discoveries");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

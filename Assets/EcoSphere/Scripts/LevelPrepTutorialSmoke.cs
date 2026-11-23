@@ -42,7 +42,7 @@ namespace EcoSphere
             Begin.onClick.Invoke();
             yield return null; yield return null; yield return new WaitForSecondsRealtime(.3f);
             Expect(SceneManager.GetActiveScene().name=="Tutorial1","Begin did not launch Genesis Alpha");
-            Expect(WorldProgress.SetupTutorialStep(world.id)==4,"Begin did not finish the tutorial progress");
+            Expect(GameServices.Progress.SetupTutorialStep(world.id)==4,"Begin did not finish the tutorial progress");
             Debug.Log("ECOSPHERE_SETUP_TUTORIAL_PASSED: exact messages, pointers, paused input, selection gating, click-through guard, direct Begin and responsive previews");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);

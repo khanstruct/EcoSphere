@@ -63,7 +63,7 @@ namespace EcoSphere
             }
             Destroy(tinted);Destroy(untinted);
             if(tint<=0 || count<100 || delta/count<=.00001 || delta/count>.02)throw new Exception($"Water tint must be very subtle and positive: delta={delta/count}, pixels={count}");
-            var completed=WorldProgress.Complete(8,0,surface.TargetSeaLevel,planet.eulerAngles.y,false,input).world;
+            var completed=GameServices.Progress.Complete(8,0,surface.TargetSeaLevel,planet.eulerAngles.y,null,input).world;
             var copy=JsonUtility.FromJson<CompletedWorld>(JsonUtility.ToJson(completed));
             if(copy.planetStats.VegetationPotential!=surface.Stats.VegetationPotential || copy.planetStats[PlanetStat.WaterGreenness]!=tint)throw new Exception("Saved foliage appearance mismatch");
             var ui=new GameObject("Saved foliage preview",typeof(RectTransform),typeof(RawImage));var preview=ui.AddComponent<SpherePreview>();

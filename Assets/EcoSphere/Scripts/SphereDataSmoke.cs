@@ -31,7 +31,7 @@ namespace EcoSphere
                 fire.unallocatedWeight=0;
                 foreach (var visual in visuals.Values) Destroy(visual);
                 visuals.Clear(); board.Cells.Clear(); Array.Clear(totals, 0, totals.Length);
-                displayedElements.Clear(); channelSphereTypes.Clear();
+                displayedElements.Clear();
                 IncludeElements(fire); IncludeElements(Definition(SphereIds.Void));
                 var cell = new Vector2Int(1, 0);
                 board.Cells[cell] = SphereIds.Fire;
@@ -79,10 +79,10 @@ namespace EcoSphere
                 RemoveCells(new HashSet<Vector2Int> { cell },50,true);
                 UpdateVisualizer();
                 Expect(displayedElements.Count==channelsBefore && !displayedElements.Contains(ElementId.Laser) && !composition.IsLeading(ElementId.Laser),"collecting an unselected sphere added a channel or leader");
-                var result = WorldProgress.Complete(9, 0, -.02f, 0, false, new double[] { 0, 0, 0, 620, 620, 0, 0, 0 });
+                var result = GameServices.Progress.Complete(9, 0, -.02f, 0,null, new double[] { 0, 0, 0, 620, 620, 0, 0, 0 });
                 Expect(result.discoveries.Contains(SphereIds.Sunlight), "Fire + Void must unlock the solar sphere after inclusion");
-                Expect(WorldProgress.IsSphereAvailable(SphereIds.Sunlight), "recipe discovery did not enter the collection");
-                result = WorldProgress.Complete(9, 1, -.02f, 0, false, new double[] { 0, 0, 0, 620, 620, 0, 0, 0 });
+                Expect(GameServices.Progress.IsSphereAvailable(SphereIds.Sunlight), "recipe discovery did not enter the collection");
+                result = GameServices.Progress.Complete(9, 1, -.02f, 0,null, new double[] { 0, 0, 0, 620, 620, 0, 0, 0 });
                 Expect(result.discoveries.Count == 0, "recipe discovery awarded twice");
             }
             finally { fire.contributions = original; fire.unallocatedWeight = originalUnallocated; }

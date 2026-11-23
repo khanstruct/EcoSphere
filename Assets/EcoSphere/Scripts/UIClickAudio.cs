@@ -18,7 +18,7 @@ namespace EcoSphere
             if (instance && instance != this) { Destroy(gameObject); return; }
             instance = this;
             source = GetComponent<AudioSource>();
-            source.ignoreListenerPause = true;
+            GameServices.Audio.Configure(source,AudioChannel.UI,source.volume,true);
             DontDestroyOnLoad(gameObject);
         }
 

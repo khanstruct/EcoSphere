@@ -23,7 +23,8 @@ namespace EcoSphere
         public Quaternion SurfaceRotation => globe ? globe.localRotation : Quaternion.identity;
         public void ConfigurePlanet(CompletedWorld world,Material planetMaterial,float spin=2)
         {
-            surfaceMaterial=planetMaterial;planetStats=world.planetStats;
+            var style=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");
+            surfaceMaterial=style ? style.Terrain(world.terrainStyleId,planetMaterial) : planetMaterial;planetStats=world.AppearanceStats;
             seaLevel=world.seaLevel;initialRotation=world.rotation;rotationSpeed=spin;
             stoneRuggedness=world.stoneRuggedness;iceCoverage=world.iceCoverage;fireHeat=world.fireHeat;
             atmosphereColor=world.atmosphereColor;atmosphereStrength=world.atmosphereStrength;atmosphereWidth=world.atmosphereWidth;
@@ -54,6 +55,7 @@ namespace EcoSphere
                 var block=new MaterialPropertyBlock();stats.Apply(block);block.SetVector("_TerrainBounds",PlanetSurface.TerrainBounds(material));sphere.GetComponent<Renderer>().SetPropertyBlock(block);
                 var atmosphere=PlanetAtmosphere.Create(globe);
                 if(atmosphere)atmosphere.SetAppearance(stats.atmosphereColor,stats.AtmosphereDensity,stats.atmosphereWidth);
+                var clouds=PlanetClouds.Create(globe);if(clouds)clouds.SetAppearance(stats);
             }
             SphereGlow.Create(stage.transform,definition,1.65f,layer);
             var symbol = new GameObject("Sphere icon"); symbol.layer = layer;

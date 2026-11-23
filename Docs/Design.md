@@ -12,12 +12,12 @@ Assemble approved cannon sprites; aim left/right; independently open arms on rel
 - Gameplay in a 2D plane, deterministic shots and wall ricochets. Six neighboring attachment cells on a shared rotating hex grid.
 - Match only identical sphere types, including corrupted variants of that type.
 - Remove matches of three or more, then release clusters disconnected from the core.
-- Planet occupies top of portrait screen; released material travels upward into it. Cannon below cluster; grouped contribution bars at bottom.
+- Planet occupies top of portrait screen; released material travels upward into it. Cannon below cluster; one bar per contributed element at bottom.
 
 ## Contributions and discovery — prototype rule
 - Sphere identity, unlock recipe, contribution list, and requirements are independent definitions.
 - A Human sphere may contribute Human, Mammal, and Life despite its Mammal + Stone recipe.
-- Each selected sphere type has a visualizer group containing its contributed resource bars. Repeated resources show identical planet-wide totals.
+- The visualizer merges all selected spheres contributions into one bar per distinct element, labeled by element name and colored by its namesake sphere.
 - Matches clear the cluster but contribute zero resources. Only disconnected breakaways contribute, at x3 per sphere. Matched spheres disappear in place; only breakaways streak to the planet.
 - The visualizer line is a fixed per-level resource goal, initially 15 for Ice and Sunlight in FirstLight. It does not depend on average totals. Resources at or above their targets qualify for recipes after successful completion. Some recipes require more than two resources. All totals affect final planet appearance and description.
 - Clearing the board succeeds even with zero contributed resources; this is a barren-world outcome, not a failure. Actual discovery progression and planet-result imagery remain future work.

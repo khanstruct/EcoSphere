@@ -26,10 +26,11 @@ namespace EcoSphere
 
         void Awake()
         {
+            GameServices.Session.Phase=GamePhase.System;
             if (Camera.main) Camera.main.cullingMask &= ~(1 << 30);
             if (!GetComponent<SystemResponsiveLayout>()) gameObject.AddComponent<SystemResponsiveLayout>();
-            if (LevelPrepView.ReturningToSystem) { systemNumber = LevelPrepView.SystemNumber; LevelPrepView.ReturningToSystem = false; }
-            else systemNumber = WorldProgress.CurrentSystem;
+            if (GameServices.Session.ReturningToSystem) { systemNumber = GameServices.Session.SystemNumber; GameServices.Session.ReturningToSystem = false; }
+            else systemNumber = GameServices.Progress.CurrentSystem;
             RefreshSystemHeading();
             for (int i = 0; i < planets.Length; i++)
             {
@@ -42,9 +43,9 @@ namespace EcoSphere
         void Start()
         {
             RefreshCompletedWorlds();
-            if (systemNumber == 1 && !WorldProgress.SystemIntroductionSeen && WorldProgress.Find(1,0) == null && WorldProgress.AvailableSphereCount == 2)
+            if (systemNumber == 1 && !GameServices.Progress.SystemIntroductionSeen && GameServices.Progress.Find(1,0) == null && GameServices.Progress.AvailableSphereCount == 2)
                 EnsureDialog().ShowIntroduction();
-            else if(WorldProgress.TryGetNextWorldTutorial(systemNumber,out var source,out var definition,out int target) && target<planets.Length)
+            else if(GameServices.Progress.TryGetNextWorldTutorial(systemNumber,out var source,out var definition,out int target) && target<planets.Length)
                 EnsureDialog().ShowNextWorld(source,planets[target].transform,definition.nextWorldTutorialMessage);
         }
 
@@ -71,7 +72,7 @@ namespace EcoSphere
             {
                 var previous = planets[i].transform.Find("Completed world");
                 if (previous) { previous.gameObject.SetActive(false); Destroy(previous.gameObject); }
-                var world = WorldProgress.Find(systemNumber, i);
+                var world = GameServices.Progress.Find(systemNumber, i);
                 if (world == null || !completedWorldMaterial) continue;
                 any = true;
                 var image = new GameObject("Completed world", typeof(RectTransform), typeof(RawImage));
@@ -96,21 +97,21 @@ namespace EcoSphere
             if (index < 0 || index >= planets.Length || (Dialog && Dialog.IsOpen) || Time.frameCount <= dialogDismissFrame) return;
             SelectPlanet(index);
             var world = WorldLevels.Get(systemNumber,index);
-            if (WorldProgress.Find(systemNumber,index) == null && WorldProgress.AvailableSphereCount < world.RequiredSpheres)
+            if (GameServices.Progress.Find(systemNumber,index) == null && GameServices.Progress.AvailableSphereCount < world.RequiredSpheres)
             {
                 EnsureDialog().ShowInsufficientSpheres();
                 return;
             }
-            LevelPrepView.SystemNumber = systemNumber;
-            LevelPrepView.PlanetIndex = index;
-            SceneManager.LoadScene(WorldProgress.TryOpenCompletedResults(systemNumber, index) ? "Results" : "LevelPrep");
+            GameServices.Session.SystemNumber = systemNumber;
+            GameServices.Session.PlanetIndex = index;
+            if(GameServices.Progress.TryOpenCompletedResults(systemNumber,index))GameServices.UI.ShowResults();else GameServices.UI.ShowSetup();
         }
 
         void LateUpdate()
         {
             if (displayedSystem != systemNumber)
             {
-                WorldProgress.VisitSystem(systemNumber);
+                GameServices.Progress.VisitSystem(systemNumber);
                 RefreshSystemHeading();
                 RefreshCompletedWorlds();
             }
@@ -119,7 +120,7 @@ namespace EcoSphere
         public void SetSystemNumber(int number)
         {
             systemNumber = Mathf.Max(1, number);
-            WorldProgress.VisitSystem(systemNumber);
+            GameServices.Progress.VisitSystem(systemNumber);
             RefreshSystemHeading();
             RefreshCompletedWorlds();
         }
@@ -128,7 +129,10 @@ namespace EcoSphere
         {
             systemNumber = Mathf.Max(1, systemNumber);
             displayedSystem = systemNumber;
-            var generated = WorldProgress.GetSystem(systemNumber);
+            var generated = GameServices.Progress.GetSystem(systemNumber);
+            var sun=WorldCatalog.Current.Sun(generated.sunTypeId);
+            if(sun!=null && sun.sprite)
+                foreach(var image in GetComponentsInChildren<Image>())if(image.name=="Yellow Sun")image.sprite=sun.sprite;
             for (int i = 0; i < planets.Length; i++)
             {
                 planets[i].gameObject.SetActive(i < generated.worlds.Count);
@@ -137,12 +141,12 @@ namespace EcoSphere
                 planets[i].name = world.displayName;
                 var count = planets[i].transform.Find("Sphere Requirement/Sphere Count");
                 if (count) count.GetComponent<TMP_Text>().text = world.RequiredSpheres.ToString();
-                RefreshWorldBadges(planets[i].transform,world,WorldProgress.Find(systemNumber,i)!=null);
+                RefreshWorldBadges(planets[i].transform,world,GameServices.Progress.Find(systemNumber,i)!=null);
             }
             if (selection && SelectedPlanet >= 0 && SelectedPlanet < generated.worlds.Count)
                 selection.text = generated.worlds[SelectedPlanet].displayName;
             if (!systemLabel) return;
-            systemLabel.text = "SYSTEM " + systemNumber.ToString("D2");
+            systemLabel.text = generated.displayName.ToUpperInvariant();
             float offset = systemLabel.preferredWidth * .5f + 68;
             if (leftAdornment) leftAdornment.anchoredPosition = new Vector2(-offset, 50);
             if (rightAdornment) rightAdornment.anchoredPosition = new Vector2(offset, 50);

@@ -15,10 +15,10 @@ namespace EcoSphere
             Time.timeScale=0;rotation=planet.eulerAngles.y;yield return new WaitForSecondsRealtime(.1f);
             if(Mathf.Abs(Mathf.DeltaAngle(rotation,planet.eulerAngles.y))>.01f)throw new Exception("Planet rotated while paused");
             Time.timeScale=1;surface.rotationSpeed=0;gameplayCanvas.enabled=false;
-            displayedElements.Clear();channelSphereTypes.Clear();
+            displayedElements.Clear();
             foreach(int type in new[]{SphereIds.Void,SphereIds.Fire,SphereIds.Ice,SphereIds.Water,SphereIds.Stone,SphereIds.Sunlight})IncludeElements(Definition(type));
-            displayedElements.Add(ElementId.Sand);channelSphereTypes.Add(SphereIds.Stone);
-            displayedElements.Add(ElementId.Lava);channelSphereTypes.Add(SphereIds.Fire);
+            displayedElements.Add(ElementId.Sand);
+            displayedElements.Add(ElementId.Lava);
             var target=new RenderTexture(512,512,24);view.targetTexture=target;
             var cases=new[]{"neutral","water","ice","light-frost","mixed-cold","ice-void","low-score-ice","low-score-second-ice","balanced","hot-desert","rocky-volcano","frozen-volcano","minor-fire"};
             foreach(string sample in cases)
@@ -68,7 +68,7 @@ namespace EcoSphere
                 System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.dataPath,"../Logs/planet-stats-"+sample+".png"),capture.EncodeToPNG());Destroy(capture);
                 Debug.Log($"ECOSPHERE_PLANET_STATS_PREVIEW {sample}: temp={surface.Stats.Temperature}, geology={surface.Stats.Geology}, blue={blue}, lava={lava}, white={white}");
             }
-            var completed=WorldProgress.Complete(6,0,surface.TargetSeaLevel,42,false,selectedElementTotals).world;
+            var completed=GameServices.Progress.Complete(6,0,surface.TargetSeaLevel,42,null,selectedElementTotals).world;
             var restored=JsonUtility.FromJson<CompletedWorld>(JsonUtility.ToJson(completed));
             if(restored.planetStats==null || restored.planetStats.Temperature!=surface.Stats.Temperature || restored.planetStats.Ruggedness!=surface.Stats.Ruggedness || restored.planetStats.Geology!=surface.Stats.Geology)
                 throw new Exception("Completed-world stats did not round trip");

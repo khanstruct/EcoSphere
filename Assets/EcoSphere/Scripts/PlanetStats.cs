@@ -11,7 +11,7 @@ namespace EcoSphere
     public enum PlanetStat { Temperature, TerrainRuggedness, SurfaceWater, Sediment, Soil,
         Moisture, BiologicalCoverage, GeologicalActivity, AtmosphereDensity, CloudCover,
         CloudThickness, WeatherActivity, ElectricalActivity, Civilization, Pollution,
-        Mineralization, ExoticActivity, AtmosphereExpansion, WaterGreenness }
+        Mineralization, ExoticActivity, AtmosphereExpansion, WaterGreenness, CloudDarkness }
 
     [Serializable]
     public sealed class PlanetStats
@@ -121,8 +121,13 @@ namespace EcoSphere
                 float weight=profile.atmosphereStrength*influence;
                 atmosphereWeight+=weight;color+=profile.atmosphereColor*weight;
             }
-            for(int i=0;i<result.values.Length;i++)result.values[i]=Mathf.Clamp(result.values[i],i==(int)PlanetStat.Temperature || i==(int)PlanetStat.AtmosphereExpansion?-1:0,1);
-            result[PlanetStat.AtmosphereDensity]=Mathf.Clamp01(result.AtmosphereDensity+atmosphereWeight);
+            // Combine all element effects before applying the visual response: opposite effects still cancel.
+            result[PlanetStat.AtmosphereDensity]+=atmosphereWeight;
+            for(int i=0;i<result.values.Length;i++)
+            {
+                var stat=(PlanetStat)i;float value=catalog.Respond(stat,result.values[i]);
+                result.values[i]=Mathf.Clamp(value,stat==PlanetStat.Temperature || stat==PlanetStat.AtmosphereExpansion?-1:0,1);
+            }
             if(atmosphereWeight>0){result.atmosphereColor=color/atmosphereWeight;result.atmosphereColor.a=1;}
             else if(result.AtmosphereDensity>0)result.atmosphereColor=Color.white;
             float expansion=result[PlanetStat.AtmosphereExpansion];

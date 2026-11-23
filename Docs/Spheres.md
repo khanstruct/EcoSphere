@@ -95,7 +95,7 @@ Stone now uses stone-surface-v2.png and stone-icon-v2.png, a pale-gray rock/moun
 
 ## Setup categories
 
-SphereDefinition.category is an editable SphereCategory enum: Materials, Forces, Nature, Life, Technology, Beyond. All is a setup filter, not an assignable category. Existing elemental spheres are Materials except Void (Forces) and Plant Life/Life (Life). Core is Forces and Laser is Technology for data completeness, but these nonselectable roles never create empty collection tabs.
+SphereDefinition.category is an editable SphereCategory enum: Basic, Forces, Weather, Life, Technology, Beyond. All is a setup filter, not an assignable category. Existing elemental spheres, including Air, are Basic except Void (Forces) and Plant Life/Life (Life). Core is Forces and Laser is Technology for data completeness, but these nonselectable roles never create empty collection tabs.
 
 Each setup opens on All. The tab row contains All followed by categories represented by owned, selectable spheres, in the enum order. DEV availability uses the same collection rules and therefore shows all current elemental spheres/categories. New unlocks appear on reopening setup. Filtering repacks visible tiles, starts the collection at the top, and preserves the chosen loadout and Begin gating. Hidden collection previews disable their separate render stages/cameras. When all categories do not fit, the row supports horizontal scrolling and arrow navigation. No per-world category lists or new art assets are needed.
 

@@ -17,8 +17,8 @@ namespace EcoSphere
             if(totals[(int)ElementId.Mud]!=31 || totals[(int)ElementId.Water]!=15.5 || totals[(int)ElementId.Stone]!=15.5 || score!=before+62)throw new Exception("Mud weighted scoring incorrect");
             var mud=Definition(SphereIds.Mud);
             if(visual.GetComponent<TrailRenderer>().startColor!=mud.color || LevelAudio.MatchVoice(SphereIds.Mud,30)!=mud.resourceVoice)throw new Exception("Mud streak/voice incorrect");
-            int units=0;for(int i=0;i<channelSphereTypes.Count;i++)if(channelSphereTypes[i]==SphereIds.Mud){units++;if(energyBars[i].color!=mud.color)throw new Exception("Mud bar color incorrect");}
-            if(units!=4 || planet.GetComponent<PlanetSurface>().Stats[PlanetStat.Soil]<=0)throw new Exception("Mud four-unit bars or soil stats missing");
+            int units=0;for(int i=0;i<displayedElements.Count;i++)if(displayedElements[i]==ElementId.Mud){units++;if(energyBars[i].color!=mud.color)throw new Exception("Mud bar color incorrect");}
+            if(units!=1 || planet.GetComponent<PlanetSurface>().Stats[PlanetStat.Soil]<=0)throw new Exception("Mud four-unit bars or soil stats missing");
         }
         internal IEnumerator CheckMudTint()
         {
@@ -52,9 +52,9 @@ namespace EcoSphere
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;
-            if(!DevelopmentMode.Enabled || !WorldProgress.IsSphereAvailable(SphereIds.Mud))throw new Exception("Mud missing from DEV collection");
+            if(!DevelopmentMode.Enabled || !GameServices.Progress.IsSphereAvailable(SphereIds.Mud))throw new Exception("Mud missing from DEV collection");
             var settings=Resources.Load<DevelopmentSettings>("DevelopmentSettings");bool previous=settings.devModeEnabled;
-            try{settings.devModeEnabled=false;if(WorldProgress.IsSphereAvailable(SphereIds.Mud))throw new Exception("Mud must start locked normally");}
+            try{settings.devModeEnabled=false;if(GameServices.Progress.IsSphereAvailable(SphereIds.Mud))throw new Exception("Mud must start locked normally");}
             finally{settings.devModeEnabled=previous;}
             FindAnyObjectByType<SystemView>().OpenPlanet(2);yield return null;yield return null;
             var prep=FindAnyObjectByType<LevelPrepView>();int[] selected={SphereIds.Fire,SphereIds.Void,SphereIds.Water,SphereIds.Mud};
@@ -63,12 +63,14 @@ namespace EcoSphere
             prep.Begin.onClick.Invoke();yield return null;yield return null;
             var game=FindAnyObjectByType<EcoSpherePrototype>();game.CheckProceduralBoard(WorldLevels.Get(1,2),selected);game.CheckMudGameplay();
             var totals=new double[ElementComposition.Capacity];totals[(int)ElementId.Stone]=500;totals[(int)ElementId.Water]=500;
-            var mud=WorldProgress.Complete(7,0,-.02f,0,false,totals,300);
+            settings.devModeEnabled=false;
+            var mud=GameServices.Progress.Complete(7,0,-.02f,0,null,totals);
             if(!mud.discoveries.Contains(SphereIds.Mud))throw new Exception("Stone + Water failed to award Mud");
             Array.Clear(totals,0,totals.Length);totals[(int)ElementId.Water]=500;totals[(int)ElementId.Mud]=500;
-            var life=WorldProgress.Complete(8,0,-.02f,0,false,totals,300);
+            var life=GameServices.Progress.Complete(8,0,-.02f,0,null,totals);
             if(!life.discoveries.Contains(SphereIds.Life) || life.world.discoveryDetails[0].kind!=DiscoveryKind.Recipe)throw new Exception("Water + Mud failed to award Life");
-            if(!WorldProgress.TryOpenCompletedResults(8,0) || WorldProgress.Pending.discoveries.Count!=0 || !WorldProgress.Pending.world.discoveries.Contains(SphereIds.Life))throw new Exception("Historical Life discovery failed");
+            if(!GameServices.Progress.TryOpenCompletedResults(8,0) || GameServices.Progress.Pending.discoveries.Count!=0 || !GameServices.Progress.Pending.world.discoveries.Contains(SphereIds.Life))throw new Exception("Historical Life discovery failed");
+            settings.devModeEnabled=previous;
             yield return game.CheckMudTint();
             Debug.Log("ECOSPHERE_MUD_GAMEPLAY_PASSED: DEV/setup, mixed scoring, four bars, light brown streaks, voice, both recipe awards and historical discovery, rendered soil tint");
 #if UNITY_EDITOR

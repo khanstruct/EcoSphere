@@ -45,6 +45,7 @@ namespace EcoSphere.Editor
                 world.id = id; world.displayName = label; world.gameplayScene = scene;
                 world.guaranteedSystem = 1; world.guaranteedSlot = slot;
                 world.rules.requiredSpheres = spheres; world.rules.inclusionGoal = goal; world.rules.abundanceGoal = excess;
+                if(scene=="FirstLight")world.naturalSpheres.Add(new NaturalSpherePlacement{sphereId=SphereIds.Stone,cell=StoneTutorialLayout.StoneCell(4)});
                 AssetDatabase.CreateAsset(world, path);
             }
             if (!catalog.predefinedWorlds.Contains(world)) catalog.predefinedWorlds.Add(world);
@@ -70,7 +71,7 @@ namespace EcoSphere.Editor
             int checks = 0;
             void Expect(bool value, string message) { if (!value) throw new Exception("World generation: " + message); checks++; }
             var catalog = WorldCatalog.Current; catalog.Validate();
-            var save = new WorldSaveData { universeSeed = 7261 };
+            var save = new PlayerProfile { universeSeed = 7261 };
             var later = WorldGeneration.GetOrCreate(save, catalog, 12);
             Expect(later.worlds.TrueForAll(world => world.IsProcedural && world.RequiredSpheres >= 4), "later systems must not receive tutorials or low requirements");
             var first = WorldGeneration.GetOrCreate(save, catalog, 1);
@@ -78,7 +79,7 @@ namespace EcoSphere.Editor
             Expect(first.worlds[1].displayName == "Genesis Beta" && first.worlds[1].RequiredSpheres == 3 && first.worlds[1].gameplayScene == "FirstLight", "guaranteed Beta slot");
             Expect(save.placedPredefinedWorlds.Count == 2, "placement must claim tutorials before they are completed");
             Expect(ReferenceEquals(first, WorldGeneration.GetOrCreate(save, catalog, 1)), "revisit must reuse its saved system");
-            var identical = WorldGeneration.GetOrCreate(new WorldSaveData { universeSeed = 7261 }, catalog, 1);
+            var identical = WorldGeneration.GetOrCreate(new PlayerProfile { universeSeed = 7261 }, catalog, 1);
             for (int i = 0; i < first.worlds.Count; i++) Expect(first.worlds[i].displayName == identical.worlds[i].displayName, "deterministic creation");
             for (int number = 2; number <= 250; number++)
             {
@@ -100,12 +101,12 @@ namespace EcoSphere.Editor
             var never = UnityEngine.Object.Instantiate(catalog.proceduralModifiers[0]); never.proceduralChance = 0;
             var always = UnityEngine.Object.Instantiate(catalog.proceduralModifiers[1]); always.proceduralChance = 1;
             testCatalog.proceduralModifiers = new List<WorldModifierDefinition> { never, always };
-            var conditionalSave = new WorldSaveData { universeSeed = 17 };
+            var conditionalSave = new PlayerProfile { universeSeed = 17 };
             WorldGeneration.GetOrCreate(conditionalSave, testCatalog, 1);
             var blocked = WorldGeneration.GetOrCreate(conditionalSave, testCatalog, 5);
             Expect(blocked.worlds.TrueForAll(world => world.IsProcedural), "prerequisite condition must block appearance");
             conditionalSave.unlockedSpheres.Add(SphereIds.Sunlight);
-            conditionalSave.worlds.Add(new CompletedWorld { system = 1, planet = 0 });
+            conditionalSave.systems.Find(system=>system.number==1).worlds[0].completion=new CompletedWorld { system = 1, planet = 0 };
             var eligible = WorldGeneration.GetOrCreate(conditionalSave, testCatalog, 6);
             Expect(eligible.worlds.FindAll(world => world.predefinedId == conditional.id).Count == 1, "eligible conditional world did not appear");
             var next = WorldGeneration.GetOrCreate(conditionalSave, testCatalog, 7);

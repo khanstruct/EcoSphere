@@ -4,6 +4,11 @@ using UnityEngine;
 
 namespace EcoSphere
 {
+    [System.Serializable] public sealed class SunTypeDefinition
+    {
+        public string id,displayName;
+        public Sprite sprite;
+    }
     [CreateAssetMenu(menuName = "EcoSphere/World Catalog")]
     public sealed class WorldCatalog : ScriptableObject
     {
@@ -13,6 +18,9 @@ namespace EcoSphere
         public List<PredefinedWorld> predefinedWorlds = new List<PredefinedWorld>();
         public List<WorldModifierDefinition> proceduralModifiers = new List<WorldModifierDefinition>();
         public Sprite ratingStar;
+        public string defaultSunTypeId="yellow-star",defaultTerrainStyleId="barren-v1";
+        public List<SunTypeDefinition> sunTypes=new List<SunTypeDefinition>();
+        public SunTypeDefinition Sun(string id)=>sunTypes.Find(sun=>sun.id==id);
         [Min(4)] public int minimumProceduralSpheres = 4, maximumProceduralSpheres = 4;
         public WorldRules proceduralRules = new WorldRules();
         [Range(0,1)] public float minimumClustering=.1f, maximumClustering=.9f;
@@ -58,6 +66,10 @@ namespace EcoSphere
                 if (!world || string.IsNullOrWhiteSpace(world.id) || !ids.Add(world.id) || string.IsNullOrWhiteSpace(world.displayName) || string.IsNullOrWhiteSpace(world.gameplayScene))
                     throw new InvalidOperationException("Predefined worlds need unique IDs, names and gameplay scenes");
                 ValidateRules(world.rules);
+                var naturalCells=new HashSet<Vector2Int>();
+                foreach(var natural in world.naturalSpheres)
+                    if(natural==null || !SphereCatalog.Current.Get(natural.sphereId).AmmoEligible || natural.cell==Vector2Int.zero || !naturalCells.Add(natural.cell))
+                        throw new InvalidOperationException("Invalid natural sphere placement on "+world.name);
                 if(!string.IsNullOrWhiteSpace(world.nextWorldTutorialMessage) && Find(world.nextWorldTutorialTarget)==null)
                     throw new InvalidOperationException("Unknown next-world tutorial target: "+world.name);
                 if(world.setupTutorial!=null) foreach(var step in world.setupTutorial)

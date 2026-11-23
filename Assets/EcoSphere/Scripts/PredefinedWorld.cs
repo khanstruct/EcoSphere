@@ -12,7 +12,7 @@ namespace EcoSphere
         [Range(0,1)] public float clustering=.5f;
         public float rotationDegrees = 24;
         [Min(.01f)] public float rotationDuration = .65f;
-        [Min(0)] public int oneStarScore = 1000, twoStarScore = 2000, threeStarScore = 5000;
+        [Min(0)] public int oneStarScore = 500, twoStarScore = 1000, threeStarScore = 2500;
         public int StarsForScore(double score) => score >= threeStarScore ? 3 : score >= twoStarScore ? 2 : score >= oneStarScore ? 1 : 0;
         public WorldRules Copy() => new WorldRules { requiredSpheres = requiredSpheres, inclusionGoal = inclusionGoal,
             abundanceGoal = abundanceGoal, clustering=clustering, rotationDegrees = rotationDegrees, rotationDuration = rotationDuration,
@@ -29,6 +29,7 @@ namespace EcoSphere
         public string nextWorldTutorialMessage, nextWorldTutorialTarget;
         public WorldRules rules = new WorldRules();
         public List<WorldModifierDefinition> modifiers = new List<WorldModifierDefinition>();
+        public List<NaturalSpherePlacement> naturalSpheres=new List<NaturalSpherePlacement>();
         [Header("Guaranteed placement (system 0 disables)")]
         [Min(0)] public int guaranteedSystem;
         [Min(0)] public int guaranteedSlot;

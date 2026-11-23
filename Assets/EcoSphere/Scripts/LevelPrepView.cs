@@ -11,23 +11,24 @@ namespace EcoSphere
 {
     public sealed partial class LevelPrepView : MonoBehaviour
     {
-        public static int SystemNumber = 1, PlanetIndex;
+        public static int SystemNumber {get=>GameServices.Session.SystemNumber;set=>GameServices.Session.SystemNumber=value;}
+        public static int PlanetIndex {get=>GameServices.Session.PlanetIndex;set=>GameServices.Session.PlanetIndex=value;}
         public static int RequiredSpheres => WorldLevels.Get(SystemNumber,PlanetIndex).RequiredSpheres;
-        public static bool ReturningToSystem;
+        public static bool ReturningToSystem {get=>GameServices.Session.ReturningToSystem;set=>GameServices.Session.ReturningToSystem=value;}
         static bool smokeStarted;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetSession()
         {
-            SystemNumber = 1; PlanetIndex = 0;
-            ReturningToSystem = false; smokeStarted = false; pendingLoadout = null;
+
+            smokeStarted = false;
         }
         public TMP_FontAsset font;
         public Sprite frame, line, arch, starfield;
-        static int[] pendingLoadout;
+
         readonly List<int> collectionTypes = new List<int>();
         readonly List<WorldModifierDefinition> activeModifiers = new List<WorldModifierDefinition>();
         WorldRecord world;
-        public static int[] TakeLoadout() { var result = pendingLoadout; pendingLoadout = null; return result; }
+        public static int[] TakeLoadout()=>GameServices.Session.TakeLoadout();
         public GameObject buttonPrefab;
         public TMP_Text Title { get; private set; }
         public Button Begin { get; private set; }
@@ -68,9 +69,10 @@ namespace EcoSphere
         }
         void Start()
         {
-            if (WorldProgress.TryOpenCompletedResults(SystemNumber, PlanetIndex))
+            GameServices.Session.Phase=GamePhase.Setup;
+            if (GameServices.Progress.TryOpenCompletedResults(SystemNumber, PlanetIndex))
             {
-                SceneManager.LoadScene("Results");
+                GameServices.UI.ShowResults();
                 return;
             }
             world = WorldLevels.Get(SystemNumber, PlanetIndex);
@@ -137,10 +139,10 @@ namespace EcoSphere
             }
             if (activeModifiers.Count == 0) Text("No modifiers",modifierContent,"No modifiers",23,new Vector2(650,50),new Vector2(0,-45));
             var back=Navigation("Back",new Vector2(-270,-738));
-            back.onClick.AddListener(()=>{ReturningToSystem=true; SceneManager.LoadScene("System");});
+            back.onClick.AddListener(()=>{ReturningToSystem=true; GameServices.UI.ShowSystem();});
             Begin=Navigation("Begin",new Vector2(270,-738));
             Begin.onClick.AddListener(BeginLevel);
-            if (!FindAnyObjectByType<EventSystem>()) new GameObject("EventSystem",typeof(EventSystem),typeof(InputSystemUIInputModule));
+            UIInput.EnsureEventSystem();
             Refresh();
             Reflow();
             InitializeSetupTutorial();
@@ -242,7 +244,7 @@ namespace EcoSphere
             var scroll=panel.gameObject.AddComponent<ScrollRect>(); scroll.viewport=viewport; scroll.content=content;
             scroll.horizontal=false; scroll.vertical=true; scroll.movementType=ScrollRect.MovementType.Clamped;
             foreach (var sphere in SphereCatalog.Current.spheres)
-                if (sphere.AmmoEligible && WorldProgress.IsSphereAvailable(sphere.id)) collectionTypes.Add(sphere.id);
+                if (sphere.AmmoEligible && GameServices.Progress.IsSphereAvailable(sphere.id)) collectionTypes.Add(sphere.id);
             // Put the opening pair first, regardless of asset-list ordering.
             collectionTypes.Sort((a,b) => {
                 int Rank(int id) { int index = System.Array.IndexOf(SphereCatalog.Current.openingSpheres, id); return index >= 0 ? index : id + 100; }
@@ -298,13 +300,13 @@ namespace EcoSphere
         {
             if(SetupInputBlocked && !CanBeginDuringTutorial)return;
             if(!Begin.interactable || Selected.Count!=RequiredSpheres)return;
-            if (WorldProgress.TryOpenCompletedResults(SystemNumber, PlanetIndex))
+            if (GameServices.Progress.TryOpenCompletedResults(SystemNumber, PlanetIndex))
             {
-                SceneManager.LoadScene("Results");
+                GameServices.UI.ShowResults();
                 return;
             }
             string scene=world.GameplayScene;
-            if(!string.IsNullOrEmpty(scene)) { FinishBeginTutorial(); pendingLoadout=Selected.ToArray(); SceneManager.LoadScene(scene); }
+            if(!string.IsNullOrEmpty(scene)) { FinishBeginTutorial(); GameServices.Session.PrepareLoadout(Selected.ToArray()); GameServices.UI.Play(scene); }
         }
         public void Remove(int index)
         {

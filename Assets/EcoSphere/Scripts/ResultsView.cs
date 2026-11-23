@@ -79,9 +79,9 @@ namespace EcoSphere
 
         void Start()
         {
-            Time.timeScale = 1;
-            result = WorldProgress.Pending ?? new WorldResult { world = new CompletedWorld {
-                system = LevelPrepView.SystemNumber, planet = LevelPrepView.PlanetIndex } };
+            GameServices.Session.Phase=GamePhase.Results;
+            result = GameServices.Progress.Pending ?? new WorldResult { world = new CompletedWorld {
+                system = GameServices.Session.SystemNumber, planet = GameServices.Session.PlanetIndex } };
             fillTexture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
             for (int y = 0; y < 64; y++) for (int x = 0; x < 64; x++) fillTexture.SetPixel(x, y, Color.white);
             fillTexture.Apply();
@@ -124,7 +124,7 @@ namespace EcoSphere
             ContinueButton.interactable = result.discoveries.Count == 0;
             Settled = result.discoveries.Count == 0;
             BuildDiscovery();
-            if (!FindAnyObjectByType<EventSystem>()) new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            UIInput.EnsureEventSystem();
             Reflow();
             if(recipeMode)StartCoroutine(RevealNextDiscovery());
         }
@@ -171,7 +171,7 @@ namespace EcoSphere
             OkButton = Button("Ok", modal, () => StartCoroutine(SettleDiscoveries()));
             flightLayer = Rect("Discovery animation", overlay, Vector2.zero, Vector2.zero);
             flightLayer.anchorMin = Vector2.zero; flightLayer.anchorMax = Vector2.one;
-            var audio = gameObject.AddComponent<AudioSource>(); audio.playOnAwake = false;
+            var audio = GameServices.Audio.CreateSource(gameObject,"Discovery announcement",AudioChannel.Voice,1,true);
             audio.spatialBlend = 0; audio.priority = 0; audio.ignoreListenerPause = true;
             if (elementDiscovered) { audio.PlayOneShot(elementDiscovered); DiscoveryPlayCount++; }
         }
@@ -212,24 +212,24 @@ namespace EcoSphere
         void ShowDiscoveryTutorial()
         {
             if(DevelopmentMode.Enabled)return;
-            var authored=WorldProgress.TutorialDefinition(result.world);
+            var authored=GameServices.Progress.TutorialDefinition(result.world);
             if(result.revisiting || result.world.discoveryTutorialSeen || result.discoveries.Count==0 || !authored || string.IsNullOrWhiteSpace(authored.discoveryTutorialMessage))return;
             DiscoveryTutorial=new GameObject("Discovery tutorial").AddComponent<TutorialPopup>();
             DiscoveryTutorial.transform.SetParent(transform,false); DiscoveryTutorial.Initialize(frame,buttonPrefab,font);
             DiscoveryTutorial.PreferLeft=true;
             ContinueButton.interactable=false;
             DiscoveryTutorial.Show(authored.discoveryTutorialMessage,null,()=> {
-                WorldProgress.FinishDiscoveryTutorial(result.world); tutorialDismissFrame=Time.frameCount;
+                GameServices.Progress.FinishDiscoveryTutorial(result.world); tutorialDismissFrame=Time.frameCount;
                 ContinueButton.interactable=true;
             });
         }
         void Continue()
         {
             if (!Settled || !ContinueButton.interactable || (DiscoveryTutorial && DiscoveryTutorial.IsOpen) || Time.frameCount<=tutorialDismissFrame) return;
-            LevelPrepView.SystemNumber = result.world.system;
-            LevelPrepView.ReturningToSystem = true;
-            WorldProgress.ClearPending();
-            SceneManager.LoadScene("System");
+            GameServices.Session.SystemNumber = result.world.system;
+            GameServices.Session.ReturningToSystem = true;
+            GameServices.Progress.ClearPending();
+            GameServices.UI.ShowSystem();
         }
 
         void Update()

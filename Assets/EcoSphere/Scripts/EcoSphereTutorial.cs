@@ -18,7 +18,6 @@ namespace EcoSphere
         // 2: release Stone by clearing its outer support; 4: finish normally.
         int tutorialStage = 2, pendingTutorial = -1, tutorialMessage;
         bool tutorialPaused;
-        float tutorialPreviousScale;
         int tutorialResumeFrame = -1;
         Canvas tutorialCanvas;
         RectTransform tutorialRoot, tutorialBox, tutorialLeader, tutorialTip;
@@ -108,8 +107,7 @@ namespace EcoSphere
             buttonLabel.rectTransform.sizeDelta = new Vector2(-70, -40);
             tutorialContinue = button.GetComponent<Button>();
             tutorialContinue.onClick.AddListener(ContinueTutorial);
-            if (!FindAnyObjectByType<EventSystem>())
-                new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            UIInput.EnsureEventSystem();
         }
 
         void ShowTutorial(int message)
@@ -120,9 +118,9 @@ namespace EcoSphere
             tutorialMessage = message;
             tutorialText.text = tutorialMessages[message];
             tutorialRoot.gameObject.SetActive(true);
-            if (!tutorialPaused) tutorialPreviousScale = Time.timeScale;
+            if (!tutorialPaused) GameServices.Pause.Acquire(this);
             tutorialPaused = true;
-            Time.timeScale = 0;
+
             aim.enabled = false;
             UpdateTutorialLayout();
         }
@@ -133,7 +131,7 @@ namespace EcoSphere
             if (tutorialMessage == 0) { ShowTutorial(1); return; }
             tutorialRoot.gameObject.SetActive(false);
             tutorialPaused = false;
-            Time.timeScale = tutorialPreviousScale;
+            GameServices.Pause.Release(this);
             // The same click must never fire a shot through the dismissed modal.
             tutorialResumeFrame = Time.frameCount;
         }
@@ -198,7 +196,7 @@ namespace EcoSphere
             CaptureTutorialPreview("stone-opening");
             int beforeShots=shots; Fire();
             if(shots!=beforeShots)throw new Exception("Opening Stone modal allowed firing");
-            if(displayedElements.Contains(ElementId.Stone) || channelSphereTypes.Contains(StoneType))
+            if(displayedElements.Contains(ElementId.Stone))
                 throw new Exception("Naturally occurring Stone added a visualizer channel");
             ClickTutorialForSmoke(); yield return null;
             for(int miss=0;miss<2;miss++)

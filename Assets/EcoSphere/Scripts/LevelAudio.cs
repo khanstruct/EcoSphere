@@ -43,11 +43,11 @@ namespace EcoSphere
             if (initialized) return;
             Settings.Validate();
             initialized = true;
-            musicSource = CreateSource("Background music", musicVolume);
+            musicSource = CreateSource("Background music", musicVolume,AudioChannel.Music);
             effectsSource = CreateSource("Shot and ricochet effects", effectsVolume);
             resolutionSource = CreateSource("Match and breakaway effects", effectsVolume);
             shootSource = CreateSource("Cannon shot", shootVolume);
-            voiceSource = CreateSource("Level result announcer", voiceVolume);
+            voiceSource = CreateSource("Level result announcer", voiceVolume,AudioChannel.Voice);
             voiceSource.priority = 0;
             if (worldComplete) worldComplete.LoadAudioData();
             if (creationFailed) creationFailed.LoadAudioData();
@@ -66,21 +66,14 @@ namespace EcoSphere
             if (music) musicSource.Play();
         }
 
-        AudioSource CreateSource(string label, float volume)
+        AudioSource CreateSource(string label, float volume,AudioChannel channel=AudioChannel.Effects)
         {
-            var child = new GameObject(label);
-            child.transform.SetParent(transform, false);
-            var source = child.AddComponent<AudioSource>();
-            source.playOnAwake = false;
-            source.spatialBlend = 0;
-            source.volume = volume;
-            return source;
+            return GameServices.Audio.CreateSource(gameObject,label,channel,volume);
         }
-
         public void Shoot()
         {
             if (!shoot || !shootSource) return;
-            shootSource.volume = shootVolume;
+            shootSource.volume = GameServices.Audio.Gain(AudioChannel.Effects,shootVolume);
             shootSource.pitch = shootPitch;
             // Briefly make room for the attack; other sounds continue instead of being interrupted.
             shootEmphasisUntil = Time.unscaledTime + .22f;
@@ -246,11 +239,11 @@ namespace EcoSphere
         void ApplyVolumes()
         {
             float voiceGain = voiceSource && voiceSource.isPlaying ? .35f : 1;
-            if (musicSource) musicSource.volume = musicVolume * backgroundGain * voiceGain;
-            if (effectsSource) effectsSource.volume = effectsVolume * backgroundGain * voiceGain;
-            if (resolutionSource) resolutionSource.volume = effectsVolume * backgroundGain * voiceGain;
-            if (shootSource) shootSource.volume = shootVolume;
-            if (voiceSource) voiceSource.volume = voiceVolume;
+            if (musicSource) musicSource.volume = GameServices.Audio.Gain(AudioChannel.Music,musicVolume) * backgroundGain * voiceGain;
+            if (effectsSource) effectsSource.volume = GameServices.Audio.Gain(AudioChannel.Effects,effectsVolume) * backgroundGain * voiceGain;
+            if (resolutionSource) resolutionSource.volume = GameServices.Audio.Gain(AudioChannel.Effects,effectsVolume) * backgroundGain * voiceGain;
+            if (shootSource) shootSource.volume = GameServices.Audio.Gain(AudioChannel.Effects,shootVolume);
+            if (voiceSource) voiceSource.volume = GameServices.Audio.Gain(AudioChannel.Voice,voiceVolume);
         }
     }
 }

@@ -21,9 +21,12 @@ MonoBehaviour:
     abundanceGoal: 3000000
     rotationDegrees: 24
     rotationDuration: 0.65
-    oneStarScore: 1000
-    twoStarScore: 2000
-    threeStarScore: 5000
+    oneStarScore: 500
+    twoStarScore: 1000
+    threeStarScore: 2500
+  naturalSpheres:
+  - sphereId: 3
+    cell: {x: 0, y: -4}
   modifiers: []
   guaranteedSystem: 1
   guaranteedSlot: 1

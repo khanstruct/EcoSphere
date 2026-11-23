@@ -13,7 +13,8 @@ namespace EcoSphere
             system.DismissIntroductionForSmoke(); yield return null;
             var unlocked = new double[System.Enum.GetValues(typeof(ElementId)).Length];
             unlocked[(int)ElementId.Fire] = unlocked[(int)ElementId.Void] = 620;
-            WorldProgress.Complete(9,0,-.02f,0,true,unlocked); WorldProgress.ClearPending();
+            WorldLevels.Get(9,0).naturalSpheres.Add(new NaturalSpherePlacement{sphereId=SphereIds.Stone,cell=Vector2Int.up});
+            GameServices.Progress.Complete(9,0,-.02f,0,new int[]{SphereIds.Stone},unlocked); GameServices.Progress.ClearPending();
             system.SetSystemNumber(7); system.OpenPlanet(2);
             yield return null; yield return null;
             var prep=FindAnyObjectByType<LevelPrepView>();

@@ -15,7 +15,7 @@ namespace EcoSphere
         Texture2D roundedTexture;
         Sprite roundedSprite;
         Action next;
-        float savedTimeScale;
+
         bool allowTarget;
         public bool IsOpen { get; private set; }
         public bool PreferLeft { get; set; }
@@ -60,14 +60,14 @@ namespace EcoSphere
         }
         public void Show(string message,RectTransform target,Action next,bool allowTarget=false)
         {
-            if(!IsOpen) savedTimeScale=Time.timeScale;
+            if(!IsOpen) GameServices.Pause.Acquire(this);
             this.target=target; this.next=next; this.allowTarget=allowTarget;
-            text.text=message; IsOpen=true; root.gameObject.SetActive(true); Time.timeScale=0; RefreshLayout();
+            text.text=message; IsOpen=true; root.gameObject.SetActive(true);  RefreshLayout();
         }
         public void Close()
         {
             if(!IsOpen)return;
-            IsOpen=false; root.gameObject.SetActive(false); Time.timeScale=savedTimeScale;
+            IsOpen=false; root.gameObject.SetActive(false); GameServices.Pause.Release(this);
         }
         public bool IsRaycastLocationValid(Vector2 point,Camera eventCamera)
         {

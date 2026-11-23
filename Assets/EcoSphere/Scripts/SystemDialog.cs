@@ -21,7 +21,6 @@ namespace EcoSphere
         CompletedWorld followupSource;
         Transform followupTarget;
         string followupMessage;
-        float previousTimeScale;
         public bool IsOpen { get; private set; }
         public bool IsIntroduction => step < 2;
         public string Message => message.text;
@@ -76,17 +75,17 @@ namespace EcoSphere
         { if(DevelopmentMode.Enabled)return; followupSource=source; followupTarget=target; followupMessage=message; Show(3); }
         void Show(int next)
         {
-            if (!IsOpen) previousTimeScale = Time.timeScale;
+            if (!IsOpen) GameServices.Pause.Acquire(this);
             step = next; IsOpen = true; message.text = next == 0 ? Welcome : next == 1 ? Requirement : next==3 ? followupMessage : Insufficient;
-            root.gameObject.SetActive(true); Time.timeScale = 0; RefreshLayout();
+            root.gameObject.SetActive(true);  RefreshLayout();
         }
         void Continue()
         {
             if (!IsOpen) return;
             if (step == 0) { Show(1); return; }
-            if (step == 1) WorldProgress.FinishSystemIntroduction();
-            if (step == 3) WorldProgress.FinishNextWorldTutorial(followupSource);
-            IsOpen = false; root.gameObject.SetActive(false); Time.timeScale = previousTimeScale; owner.DialogDismissed();
+            if (step == 1) GameServices.Progress.FinishSystemIntroduction();
+            if (step == 3) GameServices.Progress.FinishNextWorldTutorial(followupSource);
+            IsOpen = false; root.gameObject.SetActive(false); GameServices.Pause.Release(this); owner.DialogDismissed();
         }
 
         void LateUpdate() { if (IsOpen) RefreshLayout(); }
@@ -119,7 +118,7 @@ namespace EcoSphere
         }
         void OnDestroy()
         {
-            if (IsOpen) Time.timeScale = previousTimeScale;
+            if (IsOpen) GameServices.Pause.Release(this);
             if (roundedSprite) Destroy(roundedSprite);
             if (roundedTexture) Destroy(roundedTexture);
         }

@@ -53,7 +53,7 @@ namespace EcoSphere.Editor
             var hot=Stats((ElementId.Sunlight,500),(ElementId.Sand,500));
             Expect(hot.Temperature>0 && hot.DesertPotential>0 && hot.VolcanicPotential==0,"hot desert must not be volcanic");
             var volcano=Stats((ElementId.Fire,500),(ElementId.Stone,500));
-            Expect(Mathf.Approximately(volcano.Temperature,.4f) && Mathf.Approximately(volcano.Ruggedness,.5f) && volcano.VolcanicPotential>0,"hot rugged volcano");
+            Expect(Mathf.Approximately(volcano.Temperature,.4f) && Mathf.Approximately(volcano.Ruggedness,catalog.Respond(PlanetStat.TerrainRuggedness,.5f)) && volcano.VolcanicPotential>0,"hot rugged volcano");
             var stone=Stats((ElementId.Stone,1000));Expect(stone.Temperature==0 && stone.Geology==0 && stone.Ruggedness==1,"Stone supplies relief, not temperature or active volcanism");
             var cold=Stats((ElementId.Ice,1000));Expect(cold.Temperature==-1 && cold.SurfaceWater>0 && cold.FrozenWater>0 && cold.LiquidWater==0,"frozen ocean state");
             var secondPlaceIce=Stats((ElementId.Ice,490),(ElementId.Void,510));

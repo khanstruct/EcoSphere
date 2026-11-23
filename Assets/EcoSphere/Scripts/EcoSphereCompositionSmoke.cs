@@ -17,7 +17,7 @@ namespace EcoSphere
             totals[(int)ElementId.Fire]=12; totals[(int)ElementId.Void]=12; totals[(int)ElementId.Stone]=1000;
             UpdateVisualizer();
             Expect(composition.Total==24 && !composition.IsLeading(ElementId.Stone) && !composition.CanSelfCombine(ElementId.Fire),"natural-only element diluted composition or entered standings");
-            displayedElements.Clear(); channelSphereTypes.Clear();
+            displayedElements.Clear();
             foreach (int id in new[] { SphereIds.Fire,SphereIds.Void,SphereIds.Sunlight,SphereIds.Stone }) IncludeElements(Definition(id));
             var duplicate = ScriptableObject.CreateInstance<SphereDefinition>(); duplicate.id=SphereIds.Ice;
             duplicate.contributions.Add(new ElementContribution(ElementId.Fire,2)); IncludeElements(duplicate); Destroy(duplicate);
@@ -26,8 +26,10 @@ namespace EcoSphere
             visualizerScale=0;
             for (int i=0;i<shown.Length;i++) shown[i]=(float)totals[i];
             UpdateVisualizer(); yield return null;
-            Expect(composition.Total==1000 && energyBars.Count==6,"duplicate delivery channels inflated composition or leader count");
-            Expect(energyBars[0].Leading && energyBars[4].Leading && !energyBars[3].Leading,"all channels for a leading element must highlight consistently");
+            Expect(composition.Total==1000 && energyBars.Count==4,"shared elements must have one channel regardless of contribution weight or source");
+            Expect(energyBars[0].Leading && !energyBars[3].Leading,"element flare did not follow its standings");
+            for(int i=0;i<energyBars.Count;i++)Expect(energyBars[i].color==Catalog.ElementAppearance(displayedElements[i]).color,"bar did not use namesake color");
+            Expect(!resourcePanel.Find("Source sphere"),"obsolete source-sphere labels remain");
             Expect(energyBars[0].SelfCombination && composition.CanSelfCombine(ElementId.Fire),"majority indicator");
             Expect(energyBars[0].SelfCombination && !energyBars[1].SelfCombination,"tinted background or incorrect self flare");
             Expect(energyBars[0].material==visualizerStyle.energyMaterial && resourceValues.Count==displayedElements.Count,"shared texture or steady value marker missing");
@@ -56,21 +58,20 @@ namespace EcoSphere
             totals[(int)ElementId.Fire]=3000; totals[(int)ElementId.Void]=900; totals[(int)ElementId.Sunlight]=800; totals[(int)ElementId.Stone]=700;
             UpdateVisualizer();
             Expect(!energyBars[2].Leading && !energyBars[3].Leading,"ingredients under 35 percent must not flare even above the minimum");
-            Expect(energyBars[4].rectTransform.sizeDelta.y==energyBars[5].rectTransform.sizeDelta.y && barTotals[4].text==barTotals[5].text,"repeated element units must share the same total and height");
             foreach (int groupCount in new[] { 4,5 })
             {
-                displayedElements.Clear(); channelSphereTypes.Clear();
+                displayedElements.Clear();
                 int[] sources={SphereIds.Fire,SphereIds.Void,SphereIds.Sunlight,SphereIds.Ice,SphereIds.Stone};
                 for(int group=0;group<groupCount;group++)
                 {
                     var sample=ScriptableObject.CreateInstance<SphereDefinition>(); sample.id=sources[group];
-                    foreach(var element in new[] { ElementId.Fire,ElementId.Void,ElementId.Water,ElementId.Stone }) sample.contributions.Add(new ElementContribution(element,1));
+                    for(int unit=0;unit<4;unit++)sample.contributions.Add(new ElementContribution((ElementId)(10+group*4+unit),1));
                     IncludeElements(sample); Destroy(sample);
                 }
                 UpdateVisualizer(); yield return null;
                 for(int i=0;i<shown.Length;i++) shown[i]=(float)totals[i];
                 UpdateVisualizer();
-                Expect(energyBars.Count==groupCount*4 && sphereLabels.Count==groupCount,"dense loadout bar/group count");
+                Expect(energyBars.Count==groupCount*4,"dense distinct-element count");
                 CaptureComposition("dense-"+(groupCount*4));
                 for(int i=0;i<energyBars.Count;i++)
                 {
@@ -84,10 +85,10 @@ namespace EcoSphere
             {
                 book.recipes=new List<ElementRecipe> { new ElementRecipe { first=ElementId.Fire,second=ElementId.Fire,output=Definition(SphereIds.Ice) } };
                 var gains=new double[totals.Length]; gains[(int)ElementId.Fire]=gains[(int)ElementId.Void]=500;
-                var equal=WorldProgress.Complete(9,0,-.02f,0,false,gains);
+                var equal=GameServices.Progress.Complete(9,0,-.02f,0,null,gains);
                 Expect(!equal.discoveries.Contains(SphereIds.Ice),"50 percent self-recipe unlocked");
                 gains[(int)ElementId.Fire]=501; gains[(int)ElementId.Void]=499;
-                var majority=WorldProgress.Complete(9,1,-.02f,0,false,gains);
+                var majority=GameServices.Progress.Complete(9,1,-.02f,0,null,gains);
                 Expect(majority.discoveries.Contains(SphereIds.Ice),"authored self-recipe did not unlock above 50 percent");
             }
             finally { book.recipes=original; }
