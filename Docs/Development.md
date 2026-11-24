@@ -9,3 +9,6 @@ System introduction and next-world callouts, authored setup lessons, gameplay tu
 Water is registered as sphere ID 6 with 3 Water units and 1 Null unit, blue #1464E1, and Audio/Voice/hydrosphere.mp3. Its texture/icon are 256×128 and 256×256. It is not a normal starting sphere and unlocks through Ice + Fire in normal play; DEV exposes it for immediate testing.
 
 DevelopmentTools.Configure validates Water artwork, voice, contribution, and color. DevelopmentTools.Smoke with -devModeSmoke checks collection access, toggling back to the actual earned collection, Water selection/board/scoring/large-match voice/visualizer color, all tutorial suppression sites, unchanged tutorial acknowledgments and suppression of duplicate discoveries. Normal tutorial checks use -noDevMode. work/validate-spheres.ps1 includes that flag for the regular regression suite.
+
+
+Composition readout (DEV mode only): when DEV mode is on, every procedural level logs how its element mix moved from a neutral starting board (every starting sphere worth equal points) to the finished level, as before/after percentages per displayed element. Completed levels also show it in the bottom-left of the Results screen. It never changes scoring, rewards or progression, and it is skipped in smoke tests and release builds. Validate the report maths with EcoSphere > Validate Composition Report.

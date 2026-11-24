@@ -126,6 +126,7 @@ namespace EcoSphere
             BuildDiscovery();
             UIInput.EnsureEventSystem();
             Reflow();
+            ShowDevCompositionReport();
             if(recipeMode)StartCoroutine(RevealNextDiscovery());
         }
 

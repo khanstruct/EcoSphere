@@ -11,6 +11,11 @@ namespace EcoSphere
         public bool ReturningToSystem;
         public GamePhase Phase {get;internal set;}
         public WorldResult PendingResults {get;internal set;}
+        // DEV-only composition readouts, keyed by world, handed from the level to the Results screen.
+        readonly Dictionary<string,string> devReports=new Dictionary<string,string>();
+        string DevReportKey=>SystemNumber+":"+PlanetIndex;
+        internal void SetDevReport(string report)=>devReports[DevReportKey]=report;
+        internal bool TryGetDevReport(out string report)=>devReports.TryGetValue(DevReportKey,out report);
         int[] pendingLoadout,activeLoadout;
         public WorldRecord Planet=>GameServices.Profile.GetPlanet(SystemNumber,PlanetIndex);
         public void PrepareLoadout(int[] selected){pendingLoadout=(int[])selected.Clone();}

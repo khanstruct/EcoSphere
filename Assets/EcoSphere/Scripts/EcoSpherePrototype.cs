@@ -85,6 +85,7 @@ namespace EcoSphere
             levelAudio.Initialize();
             BuildInterface();
             BuildBoard();
+            CaptureCompositionBaseline();
             ApplyInfestation();
             LoadNext();
             if (levelLayout==LevelLayout.FirstTutorial && (!smoke || FirstTutorialTesting)) ShowTutorial(0);
@@ -553,6 +554,7 @@ namespace EcoSphere
             while(activeStreaks>0 || activeAlienStreaks>0)yield return null;
             var appearance = planet.GetComponent<PlanetSurface>();
             UpdateComposition();
+            ReportComposition("completed",true);
             GameServices.Progress.Complete(GameServices.Session.SystemNumber, GameServices.Session.PlanetIndex,
                 appearance ? appearance.TargetSeaLevel : -.02f, planet.eulerAngles.y, releasedNaturalSpheres, selectedElementTotals, composition.Ranked);
             GameServices.Session.Phase=GamePhase.Rating;
@@ -590,6 +592,7 @@ namespace EcoSphere
                 if (previewOnly) return true;
                 failed = true; ready = false; complete = false;
                 GameServices.Session.Phase=GamePhase.Failed;
+                ReportComposition("failed",false);
                 Array.Clear(totals, 0, totals.Length); Array.Clear(shown, 0, shown.Length);
                 score = matchedCount = lastMatch = lastRelease = 0;
                 if (levelAudio) levelAudio.CancelResolution();
