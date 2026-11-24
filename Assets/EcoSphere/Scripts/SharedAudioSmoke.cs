@@ -9,7 +9,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if (Array.IndexOf(Environment.GetCommandLineArgs(),"-sharedAudioSmoke") >= 0)
+            if (LaunchFlags.Has("-sharedAudioSmoke"))
                 new GameObject("Shared gameplay audio checks").AddComponent<SharedAudioSmoke>();
         }
 

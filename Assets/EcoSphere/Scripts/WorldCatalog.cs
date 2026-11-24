@@ -70,6 +70,8 @@ namespace EcoSphere
                 foreach(var natural in world.naturalSpheres)
                     if(natural==null || !SphereCatalog.Current.Get(natural.sphereId).AmmoEligible || natural.cell==Vector2Int.zero || !naturalCells.Add(natural.cell))
                         throw new InvalidOperationException("Invalid natural sphere placement on "+world.name);
+                    else if(Mathf.Max(Mathf.Abs(natural.cell.x),Mathf.Abs(natural.cell.y),Mathf.Abs(natural.cell.x+natural.cell.y))>world.rules.clusterRings)
+                        throw new InvalidOperationException("Natural sphere lies outside the cluster on "+world.name);
                 if(!string.IsNullOrWhiteSpace(world.nextWorldTutorialMessage) && Find(world.nextWorldTutorialTarget)==null)
                     throw new InvalidOperationException("Unknown next-world tutorial target: "+world.name);
                 if(world.setupTutorial!=null) foreach(var step in world.setupTutorial)
@@ -102,6 +104,7 @@ namespace EcoSphere
 
         static void ValidateRules(WorldRules rules)
         {
+            if(rules!=null && (rules.clusterRings<2 || rules.clusterRings>GameplayGeometry.MaximumSafeRings))throw new InvalidOperationException("Cluster rings exceed the playable geometry");
             if (rules == null || rules.requiredSpheres < 1 || rules.inclusionGoal < 1 || rules.abundanceGoal <= rules.inclusionGoal || rules.rotationDuration <= 0 || float.IsNaN(rules.clustering) || rules.clustering<0 || rules.clustering>1)
                 throw new InvalidOperationException("Invalid world rules");
             if(rules.oneStarScore<0 || rules.twoStarScore<=rules.oneStarScore || rules.threeStarScore<=rules.twoStarScore)

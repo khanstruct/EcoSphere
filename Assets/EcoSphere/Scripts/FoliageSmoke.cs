@@ -106,7 +106,7 @@ namespace EcoSphere
     public sealed class FoliageSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-foliageSmoke")>=0)new GameObject("Foliage checks").AddComponent<FoliageSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-foliageSmoke"))new GameObject("Foliage checks").AddComponent<FoliageSmoke>();}
         IEnumerator Start(){yield return null;yield return FindAnyObjectByType<EcoSpherePrototype>().FoliageSmokeRun();}
     }
 }

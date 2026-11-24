@@ -62,10 +62,15 @@ namespace EcoSphere
         }
         void LateUpdate(){if(root)LayoutStars(stars.Count==0 ? 0 : targetCount);}
         int targetCount;
+        Vector2 previousLayoutSize;
+        int previousStarCount=-1,previousTargetCount=-1;
         void LayoutStars(int count)
         {
             targetCount=count;
             float width=root.rect.width,height=root.rect.height;
+            var sizeKey=new Vector2(width,height);
+            if(previousLayoutSize==sizeKey && previousStarCount==stars.Count && previousTargetCount==count)return;
+            previousLayoutSize=sizeKey;previousStarCount=stars.Count;previousTargetCount=count;
             float size=Mathf.Min(width*.28f,height*.42f),step=size+width*.025f;
             for(int i=0;i<stars.Count;i++)
             {

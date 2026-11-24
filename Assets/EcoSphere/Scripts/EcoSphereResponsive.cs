@@ -15,12 +15,17 @@ namespace EcoSphere
 
         Vector2 previousPresentation;
         Rect previousPresentationSafe;
+        Vector2 previousViewport;
+        Rect previousViewportSafe;
 
         void FitPresentation()
         {
             int width=view.targetTexture?view.targetTexture.width:Screen.width;
             int height=view.targetTexture?view.targetTexture.height:Screen.height;
             Rect safe=view.targetTexture?new Rect(0,0,width,height):Screen.safeArea;
+            var viewport=new Vector2(width,height);
+            if(previousViewport==viewport && previousViewportSafe==safe && previousPresentation!=Vector2.zero)return;
+            previousViewport=viewport;previousViewportSafe=safe;
             var metrics=ScreenLayout.Measure(width,height,safe);
             float panelHeight=metrics.wide ? 200 : 260;
             var boardSafe=new Rect(safe.x,safe.y+(panelHeight+20)*metrics.scale,safe.width,safe.height-(panelHeight+20)*metrics.scale);

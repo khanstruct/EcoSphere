@@ -9,7 +9,7 @@ namespace EcoSphere
         internal void CheckLifeGameplay()
         {
             var cells=new List<Vector2Int>();foreach(var cell in board.Cells)if(cell.Value==SphereIds.Life)cells.Add(cell.Key);
-            if(cells.Count!=15 || !displayedElements.Contains(ElementId.Life))throw new Exception("Life missing from generated board/composition");
+            if(cells.Count!=GameplayGeometry.CellCount(InitialRings)/activeSphereTypes.Length || !displayedElements.Contains(ElementId.Life))throw new Exception("Life missing from generated board/composition");
             cells.RemoveAll(cell=>board.Infested.Contains(cell));
             int scoreBefore=score;
             RemoveCells(new HashSet<Vector2Int>{cells[0]},12);
@@ -25,7 +25,7 @@ namespace EcoSphere
     public sealed class LifeSphereSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-lifeSphereSmoke")>=0)new GameObject("Life sphere checks").AddComponent<LifeSphereSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-lifeSphereSmoke"))new GameObject("Life sphere checks").AddComponent<LifeSphereSmoke>();}
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;

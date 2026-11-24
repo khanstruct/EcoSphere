@@ -13,7 +13,7 @@ namespace EcoSphere
         };
         public readonly Dictionary<Vector2Int, int> Cells = new Dictionary<Vector2Int, int>();
         public readonly HashSet<Vector2Int> Infested = new HashSet<Vector2Int>();
-        public const float Spacing = .9f * .6f;
+        public const float Spacing = GameplayGeometry.CellSpacing;
         public static Vector2 Position(Vector2Int c) =>
             new Vector2(Spacing * (c.x + c.y * .5f), Spacing * .8660254f * c.y);
 
@@ -108,45 +108,7 @@ namespace EcoSphere
             float left, float right, float top, float bottom, List<Vector2> points,
             IReadOnlyList<Vector2> obstacles = null, float combinedRadius = 0)
         {
-            points.Clear();points.Add(origin);
-            direction.Normalize();
-            if (direction.sqrMagnitude < .5f) return points;
-            for (int bounce = 0; bounce < 12 && length > .00001f; bounce++)
-            {
-                float distance = length;
-                Vector2 normal = Vector2.zero;
-                bool lost = false;
-                if (direction.x > .00001f)
-                {
-                    float d = (right - origin.x) / direction.x;
-                    if (d >= 0 && d <= distance) { distance = d; normal = Vector2.left; }
-                }
-                else if (direction.x < -.00001f)
-                {
-                    float d = (left - origin.x) / direction.x;
-                    if (d >= 0 && d <= distance) { distance = d; normal = Vector2.right; }
-                }
-                if (direction.y > .00001f)
-                {
-                    float d = (top - origin.y) / direction.y;
-                    if (d >= 0 && d <= distance) { distance = d; normal = Vector2.down; }
-                }
-                else if (direction.y < -.00001f)
-                {
-                    float d = (bottom - origin.y) / direction.y;
-                    if (d >= 0 && d <= distance) { distance = d; lost = true; }
-                }
-                bool sphereHit = false;
-                if (obstacles != null)
-                    foreach (var center in obstacles)
-                        if (Sweep(origin, direction, center, combinedRadius, distance, out float hit))
-                        { distance = hit; sphereHit = true; }
-                origin += direction * distance;
-                points.Add(origin); length -= distance;
-                if (sphereHit || lost || normal == Vector2.zero) break;
-                direction = Reflect(direction, normal).normalized;
-            }
-            return points;
+            return ProjectileSimulation.Trace(origin,direction,length,new ShotBounds(left,right,top,bottom),obstacles,combinedRadius,points);
         }
     }
 }

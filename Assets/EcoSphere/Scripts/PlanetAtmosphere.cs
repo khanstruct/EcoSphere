@@ -7,7 +7,7 @@ namespace EcoSphere
         MaterialPropertyBlock properties;
         public static PlanetAtmosphere Create(Transform globe)
         {
-            var style=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");
+            var style=PlanetVisualStyle.Current;
             if(!style || !style.atmosphereMaterial)return null;
             var go=GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name="Planet atmosphere";go.layer=globe.gameObject.layer;

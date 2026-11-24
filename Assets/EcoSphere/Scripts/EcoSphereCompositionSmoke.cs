@@ -8,7 +8,7 @@ namespace EcoSphere
 {
     public sealed partial class EcoSpherePrototype
     {
-        bool CompositionTesting => Array.IndexOf(Environment.GetCommandLineArgs(),"-compositionSmoke") >= 0;
+        bool CompositionTesting => LaunchFlags.Has("-compositionSmoke");
         IEnumerator CompositionSmokeRun()
         {
             yield return new WaitForSeconds(.3f);

@@ -7,7 +7,7 @@ namespace EcoSphere
     public sealed class CloudSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-cloudSmoke")>=0)new GameObject("Cloud checks").AddComponent<CloudSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-cloudSmoke"))new GameObject("Cloud checks").AddComponent<CloudSmoke>();}
         IEnumerator Start()
         {
             yield return null;yield return null;

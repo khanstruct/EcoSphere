@@ -23,7 +23,7 @@ namespace EcoSphere
         public Quaternion SurfaceRotation => globe ? globe.localRotation : Quaternion.identity;
         public void ConfigurePlanet(CompletedWorld world,Material planetMaterial,float spin=2)
         {
-            var style=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");
+            var style=PlanetVisualStyle.Current;
             surfaceMaterial=style ? style.Terrain(world.terrainStyleId,planetMaterial) : planetMaterial;planetStats=world.AppearanceStats;
             seaLevel=world.seaLevel;initialRotation=world.rotation;rotationSpeed=spin;
             stoneRuggedness=world.stoneRuggedness;iceCoverage=world.iceCoverage;fireHeat=world.fireHeat;
@@ -74,7 +74,7 @@ namespace EcoSphere
             var image=GetComponent<RawImage>();image.texture = target;
             if(surfaceMaterial)
             {
-                var style=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");
+                var style=PlanetVisualStyle.Current;
                 if(style && style.previewMaterial)image.material=style.previewMaterial;
             }
         }

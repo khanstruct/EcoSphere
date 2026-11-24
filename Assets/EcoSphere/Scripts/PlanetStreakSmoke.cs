@@ -69,7 +69,7 @@ namespace EcoSphere
     public sealed class PlanetStreakSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-planetStreakSmoke")>=0)new GameObject("Planet streak checks").AddComponent<PlanetStreakSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-planetStreakSmoke"))new GameObject("Planet streak checks").AddComponent<PlanetStreakSmoke>();}
         IEnumerator Start()
         {
             float previous=Time.captureDeltaTime;Time.captureDeltaTime=1f/120;

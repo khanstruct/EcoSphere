@@ -173,7 +173,7 @@ MonoBehaviour:
   shotSpeed: 13
   rotationDegrees: 24
   rotationDuration: 0.65
-  resourceGoal: 300
+  resourceGoal: 175
   abundanceGoal: 1000000
   tutorialFrame: {fileID: 21300000, guid: dfb41c8b962732f46affc4a0d1f4ae7a, type: 3}
   tutorialButtonPrefab: {fileID: 222641970439823138, guid: 543a0177d55e1994da1a9fa38be28b55, type: 3}

@@ -9,7 +9,7 @@ namespace EcoSphere
         internal void CheckAirGameplay()
         {
             var cells=new List<Vector2Int>();foreach(var cell in board.Cells)if(cell.Value==SphereIds.Air)cells.Add(cell.Key);
-            if(cells.Count!=15)throw new Exception("Air missing from selected procedural board");
+            if(cells.Count!=GameplayGeometry.CellCount(InitialRings)/activeSphereTypes.Length)throw new Exception("Air missing from selected procedural board");
             RemoveCells(new HashSet<Vector2Int>{cells[0]},12);
             var visual=visuals[cells[1]];RemoveCells(new HashSet<Vector2Int>{cells[1]},50,true);UpdateVisualizer();
             int index=displayedElements.IndexOf(ElementId.Air);var sphere=Definition(SphereIds.Air);
@@ -20,7 +20,7 @@ namespace EcoSphere
     public sealed class AirSphereSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-airSphereSmoke")>=0)new GameObject("Air checks").AddComponent<AirSphereSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-airSphereSmoke"))new GameObject("Air checks").AddComponent<AirSphereSmoke>();}
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;

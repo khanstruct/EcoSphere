@@ -17,6 +17,7 @@ MonoBehaviour:
   gameplayScene: FirstLight
   rules:
     requiredSpheres: 3
+    clusterRings: 3
     inclusionGoal: 1000000
     abundanceGoal: 3000000
     rotationDegrees: 24
@@ -26,7 +27,7 @@ MonoBehaviour:
     threeStarScore: 2500
   naturalSpheres:
   - sphereId: 3
-    cell: {x: 0, y: -4}
+    cell: {x: 0, y: -3}
   modifiers: []
   guaranteedSystem: 1
   guaranteedSlot: 1

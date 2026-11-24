@@ -11,7 +11,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-buttonAudioSmoke") >= 0)
+            if (LaunchFlags.Has("-buttonAudioSmoke"))
                 new GameObject("Button audio checks").AddComponent<ButtonAudioSmoke>();
         }
 

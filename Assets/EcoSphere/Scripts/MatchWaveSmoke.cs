@@ -51,7 +51,7 @@ namespace EcoSphere
     public sealed class MatchWaveSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-matchWaveSmoke")>=0)new GameObject("Match wave checks").AddComponent<MatchWaveSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-matchWaveSmoke"))new GameObject("Match wave checks").AddComponent<MatchWaveSmoke>();}
         IEnumerator Start()
         {
             // Synchronous screenshot readbacks must not turn the next simulated frame into a giant time step.

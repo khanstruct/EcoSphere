@@ -10,6 +10,11 @@ namespace EcoSphere
     [CreateAssetMenu(menuName="EcoSphere/Planet Visual Style")]
     public sealed class PlanetVisualStyle : ScriptableObject
     {
+        static PlanetVisualStyle current;
+        public static PlanetVisualStyle Current
+        {
+            get{if(!current)current=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");return current;}
+        }
         public Material atmosphereMaterial;
         public Material previewMaterial;
         public Material cloudMaterial;

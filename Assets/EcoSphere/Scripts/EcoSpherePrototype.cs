@@ -34,15 +34,15 @@ namespace EcoSphere
         int score;
         readonly HashSet<int> releasedNaturalSpheres=new HashSet<int>();
         bool stoneReleased=>releasedNaturalSpheres.Contains(StoneType);
-        public const float VisualScale = .6f;
-        public const float Radius = .44f * VisualScale;
-        const int InitialRings = 4;
-        const float Left = -4.35f, Right = 4.35f, Top = 6.5f, Bottom = -5.9f;
-        readonly Vector2 center = new Vector2(0, 1.6f);
+        public const float VisualScale = GameplayGeometry.SphereScale;
+        public const float Radius = GameplayGeometry.SphereRadius;
+        int InitialRings => preparedWorld?.rules.clusterRings ?? GameplayGeometry.DefaultClusterRings;
+        const float Left = GameplayGeometry.Left, Right = GameplayGeometry.Right, Top = GameplayGeometry.Top, Bottom = GameplayGeometry.Bottom;
+        readonly Vector2 center = GameplayGeometry.ClusterCenter;
         readonly BoardRules board = new BoardRules();
         readonly ShotSelector shotSelector = new ShotSelector();
         readonly Dictionary<Vector2Int, GameObject> visuals = new Dictionary<Vector2Int, GameObject>();
-        readonly List<Vector2> aimObstacles = new List<Vector2>();
+        readonly BoardCollisionSnapshot collisionSnapshot = new BoardCollisionSnapshot();
         readonly List<Vector2> aimPoints = new List<Vector2>(13);
         readonly double[] totals = new double[Enum.GetValues(typeof(ElementId)).Length];
         readonly float[] shown = new float[Enum.GetValues(typeof(ElementId)).Length];
@@ -76,8 +76,8 @@ namespace EcoSphere
 
         void Start()
         {
-            bool planetTesting = Array.IndexOf(Environment.GetCommandLineArgs(), "-planetSmoke") >= 0;
-            smoke = Array.IndexOf(Environment.GetCommandLineArgs(), "-ecosphereSmoke") >= 0 || LaserTesting || TutorialTesting || planetTesting || FirstTutorialTesting || SphereDataTesting || CompositionTesting;
+            bool planetTesting = LaunchFlags.Has("-planetSmoke");
+            smoke = LaunchFlags.Has("-ecosphereSmoke") || LaserTesting || TutorialTesting || planetTesting || FirstTutorialTesting || SphereDataTesting || CompositionTesting;
             InitializeSphereData();
             BuildWorld();
             levelAudio = GetComponent<LevelAudio>();
@@ -166,7 +166,7 @@ namespace EcoSphere
             var globe = GameObject.CreatePrimitive(PrimitiveType.Sphere); globe.name = "Receiving planet";
             globe.transform.position = new Vector3(0, 11.5f, 3); globe.transform.localScale = Vector3.one * 10;
             Destroy(globe.GetComponent<Collider>()); planet = globe.transform;
-            var planetStyle=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");
+            var planetStyle=PlanetVisualStyle.Current;
             if(planetStyle)receivingPlanetMaterial=planetStyle.Terrain(preparedWorld.terrainStyleId,receivingPlanetMaterial);
             var pm = receivingPlanetMaterial ? new Material(receivingPlanetMaterial) : Surface(null);
             if (receivingPlanetMaterial) materials.Add(pm);
@@ -307,12 +307,9 @@ namespace EcoSphere
             if (aim.enabled)
             {
                 Vector2 muzzle = (Vector2)loaded.transform.position + direction * (.55f * VisualScale);
-                aimObstacles.Clear();
-                aimObstacles.Add(center);
-                foreach (var cell in board.Cells.Keys)
-                    aimObstacles.Add(cluster.TransformPoint(BoardRules.Position(cell)));
-                var path = BoardRules.TraceAimPath(muzzle, direction, (Right - Left) * .75f,
-                    Left + Radius, Right - Radius, Top - Radius, Bottom, aimPoints, aimObstacles, Radius * 2);
+                collisionSnapshot.Refresh(board.Cells.Keys,cluster.localToWorldMatrix,center);
+                var path=ProjectileSimulation.Trace(muzzle,direction,(Right-Left)*.75f,
+                    new ShotBounds(Left+Radius,Right-Radius,Top-Radius,Bottom),collisionSnapshot.Centers,Radius*2,aimPoints);
                 aim.positionCount = path.Count;
                 for (int i = 0; i < path.Count; i++) aim.SetPosition(i, new Vector3(path[i].x, path[i].y, -2));
                 aim.startColor = aim.endColor = ColorFor(loadedType);
@@ -350,34 +347,16 @@ namespace EcoSphere
 
         void AdvanceProjectile(float remaining)
         {
-            // Exact swept collision, including several wall contacts within one frame. No rigidbody friction/spin.
-            for (int iteration = 0; iteration < 12 && remaining > .00001f && projectile; iteration++)
+            collisionSnapshot.Refresh(board.Cells.Keys,cluster.localToWorldMatrix,center);
+            var bounds=new ShotBounds(Left+Radius,Right-Radius,Top-Radius,Bottom);
+            for(int iteration=0;iteration<ProjectileSimulation.MaximumContacts && remaining>.00001f && projectile;iteration++)
             {
-                Vector2 origin = projectile.transform.position;
-                float nearest = remaining; bool hit = false, sphereHit = false, bottomHit = false;
-                Vector2 normal = Vector2.zero; Vector2Int hitCell = Vector2Int.zero;
-                float wall = float.PositiveInfinity;
-                if (projectileDirection.x > .00001f) { wall = (Right - Radius - origin.x) / projectileDirection.x; normal = Vector2.left; }
-                else if (projectileDirection.x < -.00001f) { wall = (Left + Radius - origin.x) / projectileDirection.x; normal = Vector2.right; }
-                if (wall >= 0 && wall <= nearest) { nearest = wall; hit = true; }
-                if (projectileDirection.y > .00001f)
-                {
-                    float top = (Top - Radius - origin.y) / projectileDirection.y;
-                    if (top >= 0 && top <= nearest) { nearest = top; normal = Vector2.down; hit = true; }
-                }
-                else if (projectileDirection.y < -.00001f)
-                {
-                    float bottom = (Bottom - origin.y) / projectileDirection.y;
-                    if (bottom >= 0 && bottom <= nearest) { nearest = bottom; hit = bottomHit = true; }
-                }
-                if (BoardRules.Sweep(origin, projectileDirection, center, Radius * 2, nearest, out float d))
-                { nearest = d; hit = sphereHit = true; bottomHit = false; }
-                foreach (var entry in board.Cells)
-                {
-                    Vector2 position = cluster.TransformPoint(BoardRules.Position(entry.Key));
-                    if (BoardRules.Sweep(origin, projectileDirection, position, Radius * 2, nearest, out d))
-                    { nearest = d; hitCell = entry.Key; hit = sphereHit = true; bottomHit = false; }
-                }
+                Vector2 origin=projectile.transform.position;
+                var contact=ProjectileSimulation.Sweep(origin,projectileDirection,remaining,bounds,collisionSnapshot.Centers,Radius*2);
+                float nearest=contact.Distance;
+                bool hit=contact.Kind!=ShotContactKind.None,sphereHit=contact.Kind==ShotContactKind.Sphere,bottomHit=contact.Kind==ShotContactKind.Bottom;
+                Vector2 normal=contact.Normal;
+                Vector2Int hitCell=sphereHit ? collisionSnapshot.CellAt(contact.SphereIndex) : Vector2Int.zero;
                 projectile.transform.position += (Vector3)(projectileDirection * nearest);
                 remaining -= nearest;
                 if (!hit) break;

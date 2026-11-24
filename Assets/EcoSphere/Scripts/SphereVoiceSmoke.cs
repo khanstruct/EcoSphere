@@ -10,7 +10,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-sphereVoiceSmoke") >= 0)
+            if (LaunchFlags.Has("-sphereVoiceSmoke"))
                 new GameObject("Sphere voice checks").AddComponent<SphereVoiceSmoke>();
         }
 

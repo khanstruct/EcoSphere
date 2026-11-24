@@ -11,7 +11,7 @@ namespace EcoSphere
     {
         internal void CheckProceduralBoard(WorldRecord expected,int[] selected)
         {
-            if(levelLayout!=LevelLayout.Procedural || preparedWorld!=expected || activeSphereTypes.Length!=expected.RequiredSpheres || board.Cells.Count!=60 || tutorialPaused)
+            if(levelLayout!=LevelLayout.Procedural || preparedWorld!=expected || activeSphereTypes.Length!=expected.RequiredSpheres || board.Cells.Count!=GameplayGeometry.CellCount(InitialRings) || tutorialPaused)
                 throw new Exception("Procedural gameplay did not apply its world or four-sphere loadout");
             var repeated=new BoardRules(); ProceduralCluster.Populate(repeated,selected,InitialRings,expected.seed,expected.rules.clustering);
             foreach(var cell in board.Cells)
@@ -39,7 +39,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"-proceduralSmoke")>=0)
+            if(LaunchFlags.Has("-proceduralSmoke"))
                 new GameObject("Procedural gameplay checks").AddComponent<ProceduralLevelSmoke>();
         }
         static void Expect(bool value,string message) {if(!value)throw new Exception("Procedural level: "+message);}

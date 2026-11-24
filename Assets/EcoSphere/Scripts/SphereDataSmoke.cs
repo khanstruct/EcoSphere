@@ -7,7 +7,7 @@ namespace EcoSphere
 {
     public sealed partial class EcoSpherePrototype
     {
-        bool SphereDataTesting => Array.IndexOf(Environment.GetCommandLineArgs(), "-sphereDataSmoke") >= 0;
+        bool SphereDataTesting => LaunchFlags.Has("-sphereDataSmoke");
 
         IEnumerator SphereDataSmokeRun()
         {

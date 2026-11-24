@@ -12,7 +12,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"-recipeRevealSmoke")>=0)
+            if(LaunchFlags.Has("-recipeRevealSmoke"))
                 new GameObject("Recipe reveal checks").AddComponent<RecipeRevealSmoke>();
         }
         static void Expect(bool value,string message) { if(!value)throw new Exception("Recipe reveal: "+message); }

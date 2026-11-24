@@ -31,6 +31,7 @@ MonoBehaviour:
   maximumProceduralSpheres: 4
   proceduralRules:
     requiredSpheres: 4
+    clusterRings: 3
     inclusionGoal: 500
     abundanceGoal: 1500
     clustering: 0.5

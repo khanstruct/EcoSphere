@@ -19,17 +19,17 @@ namespace EcoSphere.Editor
                 for(int seed=0;seed<64;seed++)
                 {
                     UnityEngine.Random.InitState(seed);
-                    var board=new BoardRules(); StoneTutorialLayout.Populate(board,types,4);
+                    var board=new BoardRules(); StoneTutorialLayout.Populate(board,types,GameplayGeometry.DefaultClusterRings);
                     int holder=StoneTutorialLayout.HolderType(types);
-                    var stone=StoneTutorialLayout.StoneCell(4);
-                    if(board.Cells.Count!=60 || board.Cells[stone]!=SphereIds.Stone || StoneTutorialLayout.Ring(stone)!=4)
+                    var stone=StoneTutorialLayout.StoneCell(GameplayGeometry.DefaultClusterRings);
+                    if(board.Cells.Count!=GameplayGeometry.CellCount(GameplayGeometry.DefaultClusterRings) || board.Cells[stone]!=SphereIds.Stone || StoneTutorialLayout.Ring(stone)!=GameplayGeometry.DefaultClusterRings)
                         throw new Exception("Stone must occupy the outer ring of the authored cluster");
                     foreach(int type in types)if(!board.Cells.ContainsValue(type))throw new Exception("Selected sphere missing from mixed interior");
                     foreach(var direction in BoardRules.Directions)
                         if(board.Cells.TryGetValue(stone+direction,out int neighbor) && neighbor!=holder)
                             throw new Exception("Stone has an uncontrolled connection to the cluster");
-                    var matched=board.MatchFrom(new Vector2Int(4,0));
-                    if(matched.Count<24 || !matched.Contains(StoneTutorialLayout.SupportCell(4)))
+                    var matched=board.MatchFrom(new Vector2Int(GameplayGeometry.DefaultClusterRings,0));
+                    if(matched.Count<GameplayGeometry.DefaultClusterRings*6 || !matched.Contains(StoneTutorialLayout.SupportCell(GameplayGeometry.DefaultClusterRings)))
                         throw new Exception("Outer match omitted the Stone support");
                     foreach(var cell in matched)board.Cells.Remove(cell);
                     var loose=board.Disconnected();

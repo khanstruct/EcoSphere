@@ -2,7 +2,7 @@
 
 The tutorial worlds are now named **Genesis Alpha** and **Genesis Beta**. Their identity, guaranteed System 1 placement, sphere requirements and numeric rules live in predefined-world assets; their specialized scene/layout code stays in place. See [Worlds.md](Worlds.md). “Tutorial 1/2” below identifies their lesson sequence and existing scene filenames.
 
-Current opening: Tutorial 1 defaults to Fire and Void, using the actual pair chosen in preparation. The 30/30 layout and default 620-unit outcomes remain the same. Fire + Void discovers the existing Sunlight sphere when both reach inclusion on a successful world. Tutorial 2 uses all three selected spheres; Stone supplies its authored points and scripted discovery, but naturally occurring-only elements do not appear on the visualizer. See [Spheres.md](Spheres.md) for shared definitions.
+Current opening: Tutorial 1 defaults to Fire and Void, using the actual pair chosen in preparation. The three-ring cluster has 18 spheres per half. Each intended shot matches 19 including ammo, yielding 380 raw points per half. Fire + Void discovers the existing Sunlight sphere when both reach inclusion on a successful world. Tutorial 2 uses all three selected spheres; Stone supplies its authored points and scripted discovery, but naturally occurring-only elements do not appear on the visualizer. See [Spheres.md](Spheres.md) for shared definitions.
 
 ## System — first selection
 
@@ -20,7 +20,7 @@ Genesis Alpha opens with “Your goal is to match and release elements to create
 
 Inclusion is 500 per element; excess is 1,500. A clean matching shot clears a half plus its projectile (31 × 20 = 620 points), allowing both elements to reach inclusion without reaching excess. Ammo uses the ordinary board-aware selector, so after one half is cleared only the remaining element loads. Fire + Void discovers Sunlight on successful completion. Genesis Beta's staged ammo and Stone messages do not run here.
 
-`FirstTutorialTools.Build` creates/updates the scene from the shared gameplay setup; `FirstTutorialTools.Smoke -firstTutorialSmoke` checks both opening messages, the cannon pointer, pause/input shielding, the exact 30/30 split, two real shots and 620 points for each element. `Logs/Tutorial1-preview.png` is a gameplay preview; `Logs/tutorial-welcome.png` and `Logs/tutorial-cannon.png` capture the intro overlays.
+`FirstTutorialTools.Build` creates/updates the scene from the shared gameplay setup; `FirstTutorialTools.Smoke -firstTutorialSmoke` checks both opening messages, the cannon pointer, pause/input shielding, the configured equal split, two real shots and weighted contributions from the matched sphere definitions. `Logs/Tutorial1-preview.png` is a gameplay preview; `Logs/tutorial-welcome.png` and `Logs/tutorial-cannon.png` capture the intro overlays.
 
 ## Genesis Beta — Stone discovery
 
@@ -47,3 +47,5 @@ After the new-sphere prompt is acknowledged and its collection animation finishe
 These optional messages and the next-world target ID are authored on PredefinedWorld. Seen flags are stored on CompletedWorld, separately from discovery rewards and history. The results lesson applies only to fresh results with an actual new discovery; the System followup is eligible after that lesson is acknowledged, provided its target is in the current system, unfinished, and selectable with the current collection. Both messages are one-time within progress and reset with development session progress. Revisited results do not repeat either lesson or reward.
 
 FirstTutorialTools.FollowupSmoke with -alphaFollowupSmoke verifies exact opening copy, result-message sequencing, pauses and click-through guards, the Beta pointer, history on revisit, suppression of repeated lessons, and navigation into Beta setup. Portrait and wide renders are saved as Logs/Alpha-results-lesson-*.png and Logs/Alpha-next-world-lesson-*.png in the validation project.
+
+Gameplay sphere scale is now .96 (1.6 times the original .6), with matching spacing/collision radius in GameplayGeometry. WorldRules.clusterRings defaults to 3, so starting clusters contain 36 spheres. Genesis Beta places Stone at (0,-3) on its new outer ring. Genesis Alpha's inclusion minimum is 175 to preserve its intended Sunlight discovery: its two-shot clear produces 285 Fire and 190 Void elemental points (760 raw points). The high excess threshold and general scoring/star thresholds are unchanged.

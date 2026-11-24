@@ -92,7 +92,7 @@ Shader "EcoSphere/UI/Energy Bar"
                 float distance=outside+min(max(q.x,q.y),0);
                 float aa=max(fwidth(distance),.2);
                 float fill=1-smoothstep(-aa,aa,distance);
-                float time=i.animation.z, phase=i.animation.w;
+                float time=i.animation.z>=0 ? i.animation.z : _Time.y, phase=i.animation.w;
                 float2 uv=i.uv*_TextureScale.xy;
                 uv.y-=time*_ScrollSpeed+phase;
                 float energy=tex2D(_EnergyTex,uv).r;

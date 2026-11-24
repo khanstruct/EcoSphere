@@ -8,7 +8,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if(System.Array.IndexOf(System.Environment.GetCommandLineArgs(),"-menuMusicSmoke")>=0)
+            if(LaunchFlags.Has("-menuMusicSmoke"))
                 new GameObject("Menu music checks").AddComponent<MenuMusicSmoke>();
         }
         IEnumerator Start()

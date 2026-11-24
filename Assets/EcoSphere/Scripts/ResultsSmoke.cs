@@ -12,7 +12,7 @@ namespace EcoSphere
     {
         internal void CompleteForResultsSmoke()
         {
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-resultsSmoke") < 0) throw new InvalidOperationException();
+            if (!LaunchFlags.Has("-resultsSmoke")) throw new InvalidOperationException();
             if(tutorialPaused) ContinueTutorial();
             RemoveCells(new HashSet<Vector2Int>(board.Cells.Keys), ElementScoring.Breakaway, true);
             complete = true; ready = false;
@@ -26,7 +26,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-resultsSmoke") >= 0)
+            if (LaunchFlags.Has("-resultsSmoke"))
                 new GameObject("Results checks").AddComponent<ResultsSmoke>();
         }
 

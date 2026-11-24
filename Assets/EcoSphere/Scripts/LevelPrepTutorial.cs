@@ -52,7 +52,7 @@ namespace EcoSphere
         }
         internal void DismissSetupTutorialForSmoke()
         {
-            if(!Array.Exists(Environment.GetCommandLineArgs(),arg=>arg.IndexOf("Smoke",StringComparison.OrdinalIgnoreCase)>=0))
+            if(!LaunchFlags.IsSmokeRun)
                 throw new InvalidOperationException("Test helper requires a smoke run");
             if(setupSteps==null)return;
             setupPopup.Close();

@@ -10,7 +10,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if(System.Array.IndexOf(System.Environment.GetCommandLineArgs(),"-responsiveSmoke")>=0)
+            if(LaunchFlags.Has("-responsiveSmoke"))
                 new GameObject("Responsive validation").AddComponent<ResponsiveSmoke>();
         }
         IEnumerator Start()

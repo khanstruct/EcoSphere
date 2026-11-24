@@ -10,7 +10,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"-worldRatingSmoke")>=0)
+            if(LaunchFlags.Has("-worldRatingSmoke"))
                 new GameObject("World rating checks").AddComponent<WorldRatingSmoke>();
         }
         static void Expect(bool condition,string message){if(!condition)throw new Exception("World rating: "+message);}

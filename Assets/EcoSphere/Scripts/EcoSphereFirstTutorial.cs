@@ -7,7 +7,7 @@ namespace EcoSphere
 {
     public sealed partial class EcoSpherePrototype
     {
-        bool FirstTutorialTesting => Array.IndexOf(Environment.GetCommandLineArgs(), "-firstTutorialSmoke") >= 0;
+        bool FirstTutorialTesting => LaunchFlags.Has("-firstTutorialSmoke");
 
         IEnumerator FirstTutorialSmokeRun()
         {
@@ -25,29 +25,31 @@ namespace EcoSphere
                 if (!board.Cells.TryGetValue(-cell.Key, out int opposite) || opposite == cell.Value)
                     throw new Exception("Tutorial 1 halves are not balanced about the core");
             }
-            if (ice != 30 || sunlight != 30 || board.MatchFrom(new Vector2Int(-4, 0)).Count != 30 ||
-                board.MatchFrom(new Vector2Int(4, 0)).Count != 30)
-                throw new Exception("Each tutorial half must be one connected group of 30 spheres");
+            int half=GameplayGeometry.CellCount(InitialRings)/2;
+            int matchPoints=(half+1)*ElementScoring.MatchRate(half+1);
+            if (ice != half || sunlight != half || board.MatchFrom(new Vector2Int(-InitialRings, 0)).Count != half ||
+                board.MatchFrom(new Vector2Int(InitialRings, 0)).Count != half)
+                throw new Exception("Each tutorial half must be one connected half of the configured cluster");
             CapturePreview();
             File.Copy(Path.Combine(Application.dataPath, "../Logs/EcoSphere-test-level.png"),
                 Path.Combine(Application.dataPath, "../Logs/Tutorial1-preview.png"), true);
             int firstAmmo = loadedType;
-            var expectedFirst=new double[totals.Length];Definition(firstAmmo).AddContributions(expectedFirst,620);
+            var expectedFirst=new double[totals.Length];Definition(firstAmmo).AddContributions(expectedFirst,matchPoints);
             direction = SmokeMatchingDirection(); gun.up = direction; Fire();
             float deadline = Time.realtimeSinceStartup + 15;
             while (!ready && !complete && Time.realtimeSinceStartup < deadline) yield return null;
-            if (!ready || complete || board.Cells.Count != 30 || loadedType == firstAmmo || totals[(int)Definition(firstAmmo).contributions[0].element] != expectedFirst[(int)Definition(firstAmmo).contributions[0].element] || tutorialPaused)
+            if (!ready || complete || board.Cells.Count != half || loadedType == firstAmmo || totals[(int)Definition(firstAmmo).contributions[0].element] != expectedFirst[(int)Definition(firstAmmo).contributions[0].element] || tutorialPaused)
                 throw new Exception("First tutorial shot did not clear its half and load the remaining element");
             direction = SmokeMatchingDirection(); gun.up = direction; Fire();
             deadline = Time.realtimeSinceStartup + 15;
             while (!complete && Time.realtimeSinceStartup < deadline) yield return null;
-            var expected=new double[totals.Length];Definition(first).AddContributions(expected,620);Definition(second).AddContributions(expected,620);
-            if (!complete || board.Cells.Count != 0 || totals[firstElement] != expected[firstElement] || totals[secondElement] != expected[secondElement] || score!=1240 || stoneReleased)
+            var expected=new double[totals.Length];Definition(first).AddContributions(expected,matchPoints);Definition(second).AddContributions(expected,matchPoints);
+            if (!complete || board.Cells.Count != 0 || totals[firstElement] != expected[firstElement] || totals[secondElement] != expected[secondElement] || score!=matchPoints*2 || stoneReleased)
                 throw new Exception($"Tutorial weighted totals: first={totals[firstElement]}, second={totals[secondElement]}, score={score}");
             UpdateComposition();
             var reward=GameServices.Progress.Complete(GameServices.Session.SystemNumber,GameServices.Session.PlanetIndex,-.02f,0,null,selectedElementTotals,composition.Ranked);
             if(!reward.discoveries.Contains(SphereIds.Sunlight))throw new Exception("Genesis Alpha's weighted opening clear must unlock Sunlight");
-            Debug.Log($"ECOSPHERE_TUTORIAL_ONE_SMOKE_PASSED: two actual shots, unchanged 1240 score, weighted Fire={totals[(int)ElementId.Fire]}, Void={totals[(int)ElementId.Void]}, recipe minimum={resourceGoal}; reduced yields may require tutorial balancing");
+            Debug.Log($"ECOSPHERE_TUTORIAL_ONE_SMOKE_PASSED: two actual shots, score={score}, weighted Fire={totals[(int)ElementId.Fire]}, Void={totals[(int)ElementId.Void]}, recipe minimum={resourceGoal}; reduced yields may require tutorial balancing");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

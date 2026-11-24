@@ -39,7 +39,7 @@ namespace EcoSphere
             prep.Begin.onClick.Invoke();
             yield return null; yield return null; yield return new WaitForSecondsRealtime(.3f);
             var game=FindAnyObjectByType<EcoSpherePrototype>();
-            if(SceneManager.GetActiveScene().name!="Tutorial1" || !game || game.levelLayout!=EcoSpherePrototype.LevelLayout.FirstTutorial || game.CellCount!=60 || Time.timeScale!=0)
+            if(SceneManager.GetActiveScene().name!="Tutorial1" || !game || game.levelLayout!=EcoSpherePrototype.LevelLayout.FirstTutorial || game.CellCount!=GameplayGeometry.CellCount(WorldLevels.Get(1,0).rules.clusterRings) || Time.timeScale!=0)
                 throw new System.Exception("Begin did not launch the playable first tutorial");
             if (!GameObject.Find("Tutorial message").GetComponent<TMPro.TMP_Text>().text.Equals("Your goal is to match and release elements to create a new planet."))
                 throw new System.Exception("Genesis Alpha did not start its welcome lesson after setup");

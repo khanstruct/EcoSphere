@@ -21,7 +21,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"-starRevealSmoke")>=0)
+            if(LaunchFlags.Has("-starRevealSmoke"))
                 new GameObject("Star reveal checks").AddComponent<StarRevealSmoke>();
         }
         static void Expect(bool value,string message){if(!value)throw new Exception("Star reveal: "+message);}

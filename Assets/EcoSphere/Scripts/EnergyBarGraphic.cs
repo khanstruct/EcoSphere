@@ -10,11 +10,12 @@ namespace EcoSphere
     {
         [SerializeField] bool leading, selfCombination;
         [SerializeField, Range(0,1)] float phase;
-        public bool Leading { get => leading; set { leading=value; SetVerticesDirty(); } }
-        public bool SelfCombination { get => selfCombination; set { selfCombination=value; SetVerticesDirty(); } }
-        public float Phase { get => phase; set { phase=value; SetVerticesDirty(); } }
+        public bool Leading { get => leading; set { if(leading==value)return;leading=value; SetVerticesDirty(); } }
+        public bool SelfCombination { get => selfCombination; set { if(selfCombination==value)return;selfCombination=value; SetVerticesDirty(); } }
+        public float Phase { get => phase; set { if(phase==value)return;phase=value; SetVerticesDirty(); } }
         // Negative means gameplay time. A fixed value supports deterministic previews.
-        public float PreviewTime { get; set; } = -1;
+        float previewTime=-1;
+        public float PreviewTime { get=>previewTime; set {if(previewTime==value)return;previewTime=value;SetVerticesDirty();} }
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -35,7 +36,6 @@ namespace EcoSphere
             var owner=GetComponentInParent<Canvas>();
             if (owner) owner.additionalShaderChannels |= AdditionalCanvasShaderChannels.TexCoord1 | AdditionalCanvasShaderChannels.TexCoord2;
         }
-        void Update() { SetVerticesDirty(); }
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             ConfigureCanvas();
@@ -49,7 +49,7 @@ namespace EcoSphere
                 var vertex=UIVertex.simpleVert;
                 vertex.position=new Vector3(right ? rect.xMax+padding : rect.xMin-padding,top ? rect.yMax+padding : rect.yMin-padding);
                 vertex.uv0=new Vector2(right ? 1+padding/rect.width : -padding/rect.width,top ? 1+padding/rect.height : -padding/rect.height);
-                vertex.uv1=new Vector4(rect.width,rect.height,PreviewTime>=0 ? PreviewTime : Time.time,phase);
+                vertex.uv1=new Vector4(rect.width,rect.height,PreviewTime,phase);
                 vertex.uv2=new Vector4(leading ? 1 : 0,leading && selfCombination ? 1 : 0,0,0);
                 vertex.color=color; vh.AddVert(vertex);
             }

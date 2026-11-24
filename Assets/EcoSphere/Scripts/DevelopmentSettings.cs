@@ -16,7 +16,7 @@ namespace EcoSphere
             get
             {
                 // Explicit override keeps normal progression/tutorial regression checks available.
-                if(Array.IndexOf(Environment.GetCommandLineArgs(),"-noDevMode")>=0)return false;
+                if(LaunchFlags.Has("-noDevMode"))return false;
                 if(!settings)settings=Resources.Load<DevelopmentSettings>("DevelopmentSettings");
                 return settings && settings.devModeEnabled;
             }

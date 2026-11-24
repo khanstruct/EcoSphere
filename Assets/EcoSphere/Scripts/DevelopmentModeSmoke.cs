@@ -10,15 +10,16 @@ namespace EcoSphere
     {
         internal void CheckDevelopmentWater()
         {
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"-devModeSmoke")<0)throw new InvalidOperationException();
+            if(!LaunchFlags.Has("-devModeSmoke"))throw new InvalidOperationException();
             if(tutorialPaused || Time.timeScale!=1 || Array.IndexOf(activeSphereTypes,SphereIds.Water)<0 || !displayedElements.Contains(ElementId.Water))
                 throw new Exception("DEV Water: chosen Water did not reach gameplay or tutorial paused it");
             var cells=new HashSet<Vector2Int>();
             foreach(var cell in board.Cells)if(cell.Value==SphereIds.Water)cells.Add(cell.Key);
             if(cells.Count==0 || LevelAudio.MatchVoice(SphereIds.Water,30)!=Definition(SphereIds.Water).resourceVoice)
                 throw new Exception("DEV Water: no board spheres or incorrect large-match voice");
+            int expectedPoints=cells.Count*ElementScoring.MatchRate(cells.Count);var expectedTotals=new double[totals.Length];Definition(SphereIds.Water).AddContributions(expectedTotals,expectedPoints);
             RemoveCells(cells,ElementScoring.MatchRate(cells.Count)); UpdateVisualizer();
-            if(totals[(int)ElementId.Water]!=450 || score!=600)throw new Exception("DEV Water: expected 75% elemental yield with unchanged score");
+            if(totals[(int)ElementId.Water]!=expectedTotals[(int)ElementId.Water] || score!=expectedPoints)throw new Exception("DEV Water: expected 75% elemental yield with unchanged score");
             foreach(var bar in energyBars)
                 if(bar.color!=Definition(SphereIds.Water).color && bar.color!=Definition(SphereIds.Ice).color)
                     throw new Exception("DEV Water: visualizer used the wrong loadout colors");
@@ -29,7 +30,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"-devModeSmoke")>=0)
+            if(LaunchFlags.Has("-devModeSmoke"))
                 new GameObject("Development mode checks").AddComponent<DevelopmentModeSmoke>();
         }
         static void Expect(bool value,string message) { if(!value)throw new Exception("Development mode: "+message); }

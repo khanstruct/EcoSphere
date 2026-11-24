@@ -11,7 +11,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-worldPrepSmoke") >= 0)
+            if (LaunchFlags.Has("-worldPrepSmoke"))
                 new GameObject("World preparation checks").AddComponent<WorldPreparationSmoke>();
         }
 

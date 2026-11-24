@@ -1,3 +1,5 @@
+Historical prototype notes: the current runtime uses the shared architecture in Architecture.md and three-ring, 36-sphere starting clusters. Gameplay spheres are now 1.6 times their original size. The legacy notes below describe the earlier prototype, not current scoring or discovery behavior.
+
 # First Light test level
 
 Open `Assets/EcoSphere/Scenes/FirstLight.unity` in Unity, then press Play. The scene is also available through **EcoSphere > Open Test Level**.

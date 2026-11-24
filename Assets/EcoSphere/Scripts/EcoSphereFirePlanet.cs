@@ -23,7 +23,7 @@ namespace EcoSphere
             var cases=new[]{"neutral","water","ice","light-frost","mixed-cold","ice-void","low-score-ice","low-score-second-ice","balanced","hot-desert","rocky-volcano","frozen-volcano","minor-fire"};
             foreach(string sample in cases)
             {
-                if(Array.IndexOf(Environment.GetCommandLineArgs(),"-frozenVolcanoOnly")>=0 && sample!="frozen-volcano")continue;
+                if(LaunchFlags.Has("-frozenVolcanoOnly") && sample!="frozen-volcano")continue;
                 Array.Clear(totals,0,totals.Length);
                 switch(sample)
                 {

@@ -9,7 +9,7 @@ namespace EcoSphere
         PlayerProfile active;
         readonly Dictionary<int,SystemRecord> systems=new Dictionary<int,SystemRecord>();
         public event Action Changed;
-        bool SmokeRun=>Array.Exists(Environment.GetCommandLineArgs(),s=>s.IndexOf("Smoke",StringComparison.OrdinalIgnoreCase)>=0);
+        bool SmokeRun=>LaunchFlags.IsSmokeRun;
         public bool PersistenceEnabled=>Application.isPlaying && WorldCatalog.Current.persistProgressBetweenSessions && !SmokeRun;
         public string SavePath=>System.IO.Path.Combine(Application.persistentDataPath,"worlds-v1.json");
         public PlayerProfile Active

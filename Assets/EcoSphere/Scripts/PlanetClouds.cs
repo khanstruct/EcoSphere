@@ -8,7 +8,7 @@ namespace EcoSphere
         float phase,speed;
         public static PlanetClouds Create(Transform globe)
         {
-            var style=Resources.Load<PlanetVisualStyle>("PlanetVisualStyle");
+            var style=PlanetVisualStyle.Current;
             if(!style || !style.cloudMaterial)return null;
             var go=GameObject.CreatePrimitive(PrimitiveType.Sphere);go.name="Planet clouds";go.layer=globe.gameObject.layer;
             go.transform.SetParent(globe,false);go.transform.localScale=Vector3.one*style.cloudShellScale;

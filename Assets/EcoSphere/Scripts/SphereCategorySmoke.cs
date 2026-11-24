@@ -114,7 +114,7 @@ namespace EcoSphere
     public sealed class SphereCategorySmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-sphereCategorySmoke")>=0)new GameObject("Category checks").AddComponent<SphereCategorySmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-sphereCategorySmoke"))new GameObject("Category checks").AddComponent<SphereCategorySmoke>();}
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;

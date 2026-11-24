@@ -38,11 +38,11 @@ namespace EcoSphere.Editor
             for(int seed=0;seed<64;seed++)foreach(float clustering in new[] {0f,.5f,1f})
             {
                 var first=new BoardRules(); var repeated=new BoardRules();
-                ProceduralCluster.Populate(first,types,4,seed,clustering);
-                ProceduralCluster.Populate(repeated,types,4,seed,clustering);
-                if(first.Cells.Count!=60 || first.Disconnected().Count!=0)throw new Exception("Procedural board must start full and attached to the core");
+                ProceduralCluster.Populate(first,types,GameplayGeometry.DefaultClusterRings,seed,clustering);
+                ProceduralCluster.Populate(repeated,types,GameplayGeometry.DefaultClusterRings,seed,clustering);
+                if(first.Cells.Count!=GameplayGeometry.CellCount(GameplayGeometry.DefaultClusterRings) || first.Disconnected().Count!=0)throw new Exception("Procedural board must start full and attached to the core");
                 foreach(int type in types)
-                    if(first.Cells.Count(cell=>cell.Value==type)!=15)throw new Exception("Clustering changed the selected sphere mix");
+                    if(first.Cells.Count(cell=>cell.Value==type)!=GameplayGeometry.CellCount(GameplayGeometry.DefaultClusterRings)/types.Length)throw new Exception("Clustering changed the selected sphere mix");
                 foreach(var cell in first.Cells)
                     if(!repeated.Cells.TryGetValue(cell.Key,out int other) || other!=cell.Value)throw new Exception("Seeded layout changed between identical generations");
                 if(clustering==0)low+=ProceduralCluster.NeighborSimilarity(first);

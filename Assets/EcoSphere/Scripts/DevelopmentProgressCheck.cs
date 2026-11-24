@@ -12,7 +12,7 @@ namespace EcoSphere
         static void Launch()
         {
             // Deliberately not a "Smoke" flag: exercise normal runtime persistence policy.
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-developmentProgressCheck") >= 0)
+            if (LaunchFlags.Has("-developmentProgressCheck"))
                 new GameObject("Development progress checks").AddComponent<DevelopmentProgressCheck>();
         }
 

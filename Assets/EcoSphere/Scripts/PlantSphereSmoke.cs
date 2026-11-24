@@ -10,7 +10,7 @@ namespace EcoSphere
         internal void CheckPlantGameplay()
         {
             var cells=new List<Vector2Int>();foreach(var cell in board.Cells)if(cell.Value==SphereIds.Plant)cells.Add(cell.Key);
-            if(cells.Count!=15 || !displayedElements.Contains(ElementId.Life) || !displayedElements.Contains(ElementId.Plant))throw new Exception("Plant sphere did not enter generated board/composition");
+            if(cells.Count!=GameplayGeometry.CellCount(InitialRings)/activeSphereTypes.Length || !displayedElements.Contains(ElementId.Life) || !displayedElements.Contains(ElementId.Plant))throw new Exception("Plant sphere did not enter generated board/composition");
             cells.RemoveAll(cell=>board.Infested.Contains(cell));
             int scoreBefore=score;
             RemoveCells(new HashSet<Vector2Int>{cells[0]},12);
@@ -31,7 +31,7 @@ namespace EcoSphere
     public sealed class PlantSphereSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-plantSphereSmoke")>=0)new GameObject("Plant sphere checks").AddComponent<PlantSphereSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-plantSphereSmoke"))new GameObject("Plant sphere checks").AddComponent<PlantSphereSmoke>();}
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;

@@ -14,7 +14,7 @@ namespace EcoSphere
             if (visuals.TryGetValue(cell, out var visual) && visual.TryGetComponent<LaserSphere>(out var laser))
                 laser.RotateClockwise();
         }
-        bool LaserTesting => System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-ecosphereLaserSmoke") >= 0;
+        bool LaserTesting => LaunchFlags.Has("-ecosphereLaserSmoke");
 
         IEnumerator LaserSmokeRun()
         {
@@ -62,9 +62,15 @@ namespace EcoSphere
             Expect(board.MatchFrom(cell).Count == 0, "Laser must not match");
             shots++; yield return ResolveLasers(); Expect(laser.turns == 2, "First subsequent turn");
             shots++; yield return ResolveLasers(); Expect(laser.turns == 1, "Second subsequent turn");
-            double before = totals[0];
+            var expected=(double[])totals.Clone();int expectedScore=score;
+            foreach(var target in board.Cells)
+            {
+                Definition(target.Value).AddContributions(expected,ElementScoring.Breakaway);
+                if(target.Value!=LaserType)expectedScore+=ElementScoring.Breakaway;
+            }
             shots++; yield return ResolveLasers();
-            Expect(board.Cells.Count == 0 && totals[0] == before + 150, "Beam consumes laser, pierces all targets and scores");
+            Expect(board.Cells.Count == 0 && score==expectedScore,"Beam consumes laser, pierces all targets and scores");
+            for(int i=0;i<totals.Length;i++)Expect(totals[i]==expected[i],"Beam uses the target definitions' weighted elemental yields");
             Debug.Log("ECOSPHERE_LASER_SMOKE_PASSED: first shot, placement grace, six aiming steps, core/wall stop, countdown, piercing, consumption, scoring.");
             #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);

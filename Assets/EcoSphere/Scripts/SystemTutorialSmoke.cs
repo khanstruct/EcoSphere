@@ -14,7 +14,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if (Array.IndexOf(Environment.GetCommandLineArgs(),"-systemTutorialSmoke") >= 0)
+            if (LaunchFlags.Has("-systemTutorialSmoke"))
                 new GameObject("System tutorial checks").AddComponent<SystemTutorialSmoke>();
         }
 

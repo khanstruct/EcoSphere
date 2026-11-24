@@ -149,7 +149,7 @@ namespace EcoSphere
     public sealed class InfestationSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-infestationSmoke")>=0)new GameObject("Infestation checks").AddComponent<InfestationSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-infestationSmoke"))new GameObject("Infestation checks").AddComponent<InfestationSmoke>();}
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);float previous=Time.captureDeltaTime;Time.captureDeltaTime=1f/120;

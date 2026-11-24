@@ -10,7 +10,7 @@ namespace EcoSphere
         internal void CheckMudGameplay()
         {
             var cells=new List<Vector2Int>();foreach(var cell in board.Cells)if(cell.Value==SphereIds.Mud)cells.Add(cell.Key);
-            if(cells.Count!=15 || !displayedElements.Contains(ElementId.Mud) || !displayedElements.Contains(ElementId.Water) || !displayedElements.Contains(ElementId.Stone))throw new Exception("Mud missing from board/composition");
+            if(cells.Count!=GameplayGeometry.CellCount(InitialRings)/activeSphereTypes.Length || !displayedElements.Contains(ElementId.Mud) || !displayedElements.Contains(ElementId.Water) || !displayedElements.Contains(ElementId.Stone))throw new Exception("Mud missing from board/composition");
             cells.RemoveAll(cell=>board.Infested.Contains(cell));
             int before=score;RemoveCells(new HashSet<Vector2Int>{cells[0]},12);
             var visual=visuals[cells[1]];RemoveCells(new HashSet<Vector2Int>{cells[1]},50,true);UpdateVisualizer();
@@ -48,7 +48,7 @@ namespace EcoSphere
     public sealed class MudSphereSmoke : MonoBehaviour
     {
         [RuntimeInitializeOnLoadMethod]
-        static void Launch(){if(Array.IndexOf(Environment.GetCommandLineArgs(),"-mudSphereSmoke")>=0)new GameObject("Mud sphere checks").AddComponent<MudSphereSmoke>();}
+        static void Launch(){if(LaunchFlags.Has("-mudSphereSmoke"))new GameObject("Mud sphere checks").AddComponent<MudSphereSmoke>();}
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;

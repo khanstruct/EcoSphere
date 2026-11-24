@@ -146,8 +146,8 @@ namespace EcoSphere
             Refresh();
             Reflow();
             InitializeSetupTutorial();
-            if(System.Array.IndexOf(System.Environment.GetCommandLineArgs(),"-setupTutorialSmoke")>=0) StartCoroutine(SetupTutorialSmoke());
-            if(!smokeStarted && System.Array.IndexOf(System.Environment.GetCommandLineArgs(),"-prepSmoke")>=0)
+            if(LaunchFlags.Has("-setupTutorialSmoke")) StartCoroutine(SetupTutorialSmoke());
+            if(!smokeStarted && LaunchFlags.Has("-prepSmoke"))
             { smokeStarted=true; StartCoroutine(Smoke()); }
         }
         void Update()

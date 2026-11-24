@@ -13,7 +13,7 @@ namespace EcoSphere
     {
         public Sprite tutorialFrame;
         public GameObject tutorialButtonPrefab;
-        static Vector2Int TutorialStoneCell => StoneTutorialLayout.StoneCell(InitialRings);
+        Vector2Int TutorialStoneCell => StoneTutorialLayout.StoneCell(InitialRings);
         int TutorialOuterType => StoneTutorialLayout.HolderType(activeSphereTypes);
         // 2: release Stone by clearing its outer support; 4: finish normally.
         int tutorialStage = 2, pendingTutorial = -1, tutorialMessage;
@@ -24,7 +24,7 @@ namespace EcoSphere
         TMP_Text tutorialText;
         Button tutorialContinue;
         Texture2D tutorialBackingTexture, tutorialSolidTexture;
-        bool TutorialTesting => StoneTutorial && Array.IndexOf(Environment.GetCommandLineArgs(), "-tutorialSmoke") >= 0;
+        bool TutorialTesting => StoneTutorial && LaunchFlags.Has("-tutorialSmoke");
         readonly string[] tutorialMessages = {
             "Your goal is to match and release elements to create a new planet.",
             "In the center of the cannon, you can see the sphere that is currently loaded. Aim, then tap to shoot. Connect 3 or more matching spheres to clear them.",
@@ -173,7 +173,7 @@ namespace EcoSphere
         IEnumerator TutorialSmokeRun()
         {
             yield return new WaitForSecondsRealtime(.3f);
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-tutorialTwoNavigationSmoke") >= 0 &&
+            if (LaunchFlags.Has("-tutorialTwoNavigationSmoke") &&
                 (activeSphereTypes[0] != SphereIds.Sunlight || activeSphereTypes[1] != SphereIds.Fire || activeSphereTypes[2] != SphereIds.Void))
                 throw new Exception("Tutorial 2 discarded the actual setup selection order");
             if (!tutorialFrame || !tutorialButtonPrefab || !Definition(StoneType).surface || !Definition(StoneType).icon)

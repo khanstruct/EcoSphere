@@ -10,7 +10,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if (Array.IndexOf(Environment.GetCommandLineArgs(), "-tutorialTwoNavigationSmoke") >= 0)
+            if (LaunchFlags.Has("-tutorialTwoNavigationSmoke"))
                 new GameObject("Tutorial 2 navigation checks").AddComponent<TutorialTwoNavigationSmoke>();
         }
 
@@ -39,7 +39,7 @@ namespace EcoSphere
             if (!prep.Begin.interactable || prep.Selected.Count != 3) throw new Exception("Tutorial 2 loadout did not enable Begin");
             prep.Begin.onClick.Invoke(); yield return null; yield return null;
             var game = FindAnyObjectByType<EcoSpherePrototype>();
-            if (SceneManager.GetActiveScene().name != "FirstLight" || !game || game.CellCount != 60 ||
+            if (SceneManager.GetActiveScene().name != "FirstLight" || !game || game.CellCount != GameplayGeometry.CellCount(WorldLevels.Get(1,1).rules.clusterRings) ||
                 game.levelLayout != EcoSpherePrototype.LevelLayout.StoneTutorial || Time.timeScale != 0 || !game.transform.Find("Tutorial overlay"))
                 throw new Exception("Tutorial 2 did not launch the guided Stone layout");
             if (!GameObject.Find("Title").GetComponent<TMPro.TMP_Text>().text.Contains("GENESIS BETA") || game.resourceGoal != WorldLevels.Get(1,1).rules.inclusionGoal)

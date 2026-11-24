@@ -25,7 +25,8 @@ namespace EcoSphere.Editor
             var game = UnityEngine.Object.FindAnyObjectByType<EcoSpherePrototype>();
             game.gameObject.name = "EcoSphere Genesis Alpha";
             game.levelLayout = EcoSpherePrototype.LevelLayout.FirstTutorial;
-            game.resourceGoal = 300; game.abundanceGoal = 1000000;
+            var rules=WorldCatalog.Current.Find("genesis-alpha").rules;
+            game.resourceGoal=rules.inclusionGoal;game.abundanceGoal=rules.abundanceGoal;
             EditorUtility.SetDirty(game); EditorSceneManager.SaveScene(scene);
             var existing = EditorBuildSettings.scenes.Where(s => s.path != ScenePath).ToList();
             int system = existing.FindIndex(s => s.path == SystemSceneTools.ScenePath);

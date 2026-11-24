@@ -13,7 +13,7 @@ namespace EcoSphere
         [RuntimeInitializeOnLoadMethod]
         static void Launch()
         {
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"-alphaFollowupSmoke")>=0)
+            if(LaunchFlags.Has("-alphaFollowupSmoke"))
                 new GameObject("Alpha followup checks").AddComponent<AlphaFollowupSmoke>();
         }
         static void Expect(bool value,string message) { if(!value)throw new Exception("Alpha followup: "+message); }
