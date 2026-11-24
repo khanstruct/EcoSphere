@@ -86,12 +86,24 @@ namespace EcoSphere
                 throw new Exception("Boundary attachment was allowed to match before losing");
             failed = false;
             board.Cells.Clear();
-            var cell = new Vector2Int(6, 3);
-            board.Cells[cell] = 0;
             cluster.rotation = Quaternion.identity;
+            // Derive the test cell from the current geometry: safe where it is, but touching a wall once rotated
+            // onto the +x axis. A fixed cell goes stale whenever sphere size or spacing changes.
+            Vector2Int cell = default; float losingAngle = 0; bool found = false;
+            for (int q = -12; q <= 12 && !found; q++)
+                for (int r = -12; r <= 12 && !found; r++)
+                {
+                    var candidate = new Vector2Int(q, r);
+                    if (candidate == Vector2Int.zero) continue;
+                    board.Cells.Clear(); board.Cells[candidate] = 0;
+                    Vector2 candidateOffset = BoardRules.Position(candidate);
+                    float angle = -Mathf.Atan2(candidateOffset.y, candidateOffset.x) * Mathf.Rad2Deg;
+                    if (CheckGameOver(true, 0) || !CheckGameOver(true, angle)) continue;
+                    cell = candidate; losingAngle = angle; found = true;
+                }
+            if (!found) throw new Exception("No cell is safe in place yet loses when rotated to a wall");
+            board.Cells.Clear(); board.Cells[cell] = 0;
             if (CheckGameOver()) throw new Exception("Safe pre-rotation cluster incorrectly lost");
-            Vector2 offset = BoardRules.Position(cell);
-            float losingAngle = -Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg;
             if (!CheckGameOver(true, losingAngle) || failed)
                 throw new Exception("Rotation preview must detect loss without ending the level early");
             cluster.rotation = Quaternion.Euler(0, 0, losingAngle);
@@ -142,7 +154,7 @@ namespace EcoSphere
             {
                 float degrees = step * .25f;
                 Vector2 candidate = new Vector2(Mathf.Sin(degrees * Mathf.Deg2Rad), Mathf.Cos(degrees * Mathf.Deg2Rad));
-                Vector2 origin = (Vector2)gun.position + candidate * (.57f * VisualScale);
+                Vector2 origin = GameplayGeometry.ShotOrigin(candidate);
                 float nearest = 20; int hitType = -1; Vector2 hitCenter = default;
                 foreach (var entry in board.Cells)
                     if (BoardRules.Sweep(origin, candidate, cluster.TransformPoint(BoardRules.Position(entry.Key)),

@@ -46,10 +46,19 @@ namespace EcoSphere
                 RemoveCells(new HashSet<Vector2Int> { cell }, ElementScoring.StandardMatch);
                 Expect(Math.Abs(totals[(int)ElementId.Void] - (5+12.5)) < 1e-10, "shared planet-wide element total did not accumulate");
                 UpdateVisualizer();
-                Expect(resourceLabels.Count == 6, "four contribution units plus two Void units must produce six real channels");
-                Expect(barTotals[3].text=="17" && barTotals[4].text=="17" && barTotals[5].text=="17", "duplicate resource channels must show the same truncated total");
-                for (int i = 0; i < 4; i++) Expect(energyBars[i].color == fire.color, "visualizer did not use the source sphere color");
-                Expect(energyBars[4].color == Definition(SphereIds.Void).color, "Void visualizer color");
+                // One channel per distinct contributed element (Docs/Element-composition.md), in first-appearance order.
+                var expectedElements = new List<ElementId>();
+                foreach (var definition in new[] { fire, Definition(SphereIds.Void) })
+                    foreach (var entry in definition.contributions)
+                        if (entry.amount > 0 && !expectedElements.Contains(entry.element)) expectedElements.Add(entry.element);
+                Expect(resourceLabels.Count == expectedElements.Count && System.Linq.Enumerable.SequenceEqual(displayedElements, expectedElements),
+                    "each distinct contributed element must have exactly one channel");
+                for (int i = 0; i < displayedElements.Count; i++)
+                {
+                    Expect(barTotals[i].text == Math.Truncate(totals[(int)displayedElements[i]]).ToString("0"), "channel did not show its element's truncated total");
+                    Expect(energyBars[i].color == (Catalog.ElementAppearance(displayedElements[i])?.color ?? Color.white), "element bar must use its namesake sphere color");
+                }
+                Expect(barTotals[displayedElements.IndexOf(ElementId.Void)].text == "17", "Void contributions from both spheres must share one channel");
                 yield return null;
                 foreach (var size in new[] { new Vector2Int(900, 1600), new Vector2Int(1600, 900) })
                 {

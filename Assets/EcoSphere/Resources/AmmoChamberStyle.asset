@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a47e980640459884b86e1a707e814bda, type: 3}
+  m_Name: AmmoChamberStyle
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.AmmoChamberStyle
+  frame: {fileID: 21300000, guid: 93a98db6930240143a6ac6fce35c9559, type: 3}
+  frameWidth: 1.699735
+  sphereScale: 0.85
+  firstOffset: {x: 2.0735052, y: -0.17466879}
+  connectorOverlap: 0.061708987
+  rowLength: 2
+  turnDuration: 0.16
+  cannonScale: 0.9
+  pivotHeight: 0.49247995
+  maxAimAngle: 65
+  cannonVerticalOffset: -0.12
+  cradle: {fileID: 21300000, guid: 1d087844686cf8f46a5a6729b608df19, type: 3}
+  cradleWidth: 2.27777
+  cradlePivot: {x: 0.42, y: 0.92}
+  cradleOffset: {x: -0.03576003, y: 0.058362305}
+  cradleConnector: {x: 1, y: 0.671}
+  cradleSortingOrder: 1
+  cradleDepth: 0.4
+  placeholderColor: {r: 0.45, g: 0.7, b: 0.95, a: 0.85}

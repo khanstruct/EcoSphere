@@ -82,6 +82,7 @@ namespace EcoSphere
             shootSource.PlayOneShot(shoot);
         }
         public void Ricochet() { if (ricochet) effectsSource.PlayOneShot(ricochet); }
+        public void AmmoSwap() { if (Settings.ammoSwap) effectsSource.PlayOneShot(Settings.ammoSwap); }
         public void Miss() { if (miss && effectsSource) effectsSource.PlayOneShot(miss); }
         public void AlienHit(AudioClip clip){if(clip && effectsSource)effectsSource.PlayOneShot(clip);}
 

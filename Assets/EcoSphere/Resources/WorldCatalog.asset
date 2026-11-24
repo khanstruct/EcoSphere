@@ -35,6 +35,7 @@ MonoBehaviour:
     inclusionGoal: 500
     abundanceGoal: 1500
     clustering: 0.5
+    ammoChambers: 1
     rotationDegrees: 24
     rotationDuration: 0.65
     oneStarScore: 500

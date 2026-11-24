@@ -8,7 +8,7 @@ namespace EcoSphere
     {
         public AudioClip music, shoot, ricochet, match, breakaway, miss, laser;
         public AudioClip worldComplete, creationFailed, impressive, ecosphere;
-        public AudioClip sphereCombine, starScore;
+        public AudioClip sphereCombine, starScore, ammoSwap;
         [Min(3),Tooltip("Match size setting the voice threshold. Equivalent earned points from matches/breakaways qualify each sphere type; multiple types use EcoSphere. Independent of recipes.")]
         public int minimumMatchedSpheresForVoice=6;
         static GameAudioSettings current;
@@ -26,7 +26,7 @@ namespace EcoSphere
         {
             if(minimumMatchedSpheresForVoice<3)throw new InvalidOperationException("Sphere voices require at least three matched spheres");
             if (!music || !shoot || !ricochet || !match || !breakaway || !miss || !laser ||
-                !worldComplete || !creationFailed || !impressive || !ecosphere || !sphereCombine)
+                !worldComplete || !creationFailed || !impressive || !ecosphere || !sphereCombine || !ammoSwap)
                 throw new InvalidOperationException("Shared game audio settings contain an unassigned clip");
         }
     }

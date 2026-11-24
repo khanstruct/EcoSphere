@@ -19,10 +19,10 @@ namespace EcoSphere.Editor
             foreach(int side in new[]{-1,1})
             {
                 bool found=false;
-                for(float angle=5;angle<=75 && !found;angle+=.2f)
+                for(float angle=5;angle<=GameplayGeometry.MaxAimAngle && !found;angle+=.2f)
                 {
                     var direction=new Vector2(side*Mathf.Sin(angle*Mathf.Deg2Rad),Mathf.Cos(angle*Mathf.Deg2Rad));
-                    Vector2 origin=new Vector2(0,-5.45f)+direction*(.57f*GameplayGeometry.SphereScale);
+                    Vector2 origin=GameplayGeometry.ShotOrigin(direction);
                     var first=ProjectileSimulation.Sweep(origin,direction,30,bounds,snapshot.Centers,GameplayGeometry.SphereRadius*2);
                     if(first.Kind!=ShotContactKind.Wall || Mathf.Abs(first.Normal.x)<.5f)continue;
                     bool above=false;

@@ -25,4 +25,5 @@ MonoBehaviour:
   ecosphere: {fileID: 8300000, guid: 1b45dcaa78ecc074782a04caf3e292d6, type: 3}
   sphereCombine: {fileID: 8300000, guid: 01e0b015348e6db4e873c8eb8811e6cb, type: 3}
   starScore: {fileID: 8300000, guid: 1a5cc94c7505f8e45aba04e48136ca93, type: 3}
+  ammoSwap: {fileID: 8300000, guid: 86051bad216af4548a5d9de6c8445db3, type: 3}
   minimumMatchedSpheresForVoice: 6

@@ -192,9 +192,12 @@ namespace EcoSphere
 
         void BuildGun()
         {
-            gun = new GameObject("Aiming cannon").transform; gun.position = new Vector3(0, -5.45f, -1);
+            // The aiming transform sits at the authored pivot; the artwork origin stays at the cannon base when straight.
+            var cannonStyle = AmmoChamberStyle.Current;
+            gun = new GameObject("Aiming cannon").transform; gun.position = (Vector3)cannonStyle.Pivot + new Vector3(0, 0, -1);
             gunArtwork = new GameObject("Scaled cannon artwork").transform;
-            gunArtwork.SetParent(gun, false); gunArtwork.localScale = Vector3.one * VisualScale;
+            gunArtwork.SetParent(gun, false); gunArtwork.localScale = Vector3.one * VisualScale * cannonStyle.cannonScale;
+            gunArtwork.localPosition = new Vector3(0, -cannonStyle.pivotHeight, 0);
             var backing = Line("Rigid interior backing", gunArtwork, new Color(.035f, .045f, .06f), .29f * VisualScale, 2);
             cannonBacking = backing;
             backing.positionCount = 33;
@@ -211,6 +214,7 @@ namespace EcoSphere
                     transform = part.transform, vertices = part.sprite.vertices, triangles = part.sprite.triangles });
             aim = Line("Loaded element aiming line", transform, ColorFor(activeSphereTypes[0]), .03f, 9);
             aim.positionCount = 2;
+            BuildChambers();
         }
 
         Transform MakeArm(string name, Sprite source, Vector3 position, Vector2 pivot)
@@ -275,11 +279,11 @@ namespace EcoSphere
         void LoadNext()
         {
             if (complete || failed) return;
-            if (shots == 0 && LaserTesting) loadedType = LaserType;
-            else if (StoneTutorial && !LaserTesting && !stoneReleased) loadedType = TutorialOuterType;
-            else if (!shotSelector.TryNext(ElementTypes(), out loadedType)) return;
-            loaded = MakeSphere("Loaded " + Definition(loadedType).displayName, loadedType, gun,
-                new Vector3(0, .57f * VisualScale, -.1f));
+            bool advanced = !(shots == 0 && LaserTesting);
+            if (!advanced) loadedType = LaserType;
+            else if (!TryLoadFromRing(out loadedType)) return;
+            loaded = MakeSphere("Loaded " + Definition(loadedType).displayName, loadedType, gun, LoadedLocal);
+            AfterLoad(advanced);
             ready = true; status.text = "AIM · CLICK TO FIRE";
             if (StoneTutorial && (!smoke || TutorialTesting) && pendingTutorial >= 0) ShowTutorial(pendingTutorial);
         }
@@ -291,20 +295,9 @@ namespace EcoSphere
             if (halo) halo.localScale = Vector3.one * (1.8f * VisualScale / coreHalo.bounds.size.x) * (1 + .035f * Mathf.Sin(Time.time * 2));
             if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame && !smoke)
                 GameServices.UI.Retry();
-            bool touching = Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed;
-            if (ready && !smoke && (Mouse.current != null || touching))
-            {
-                Vector2 pointer = touching ? Touchscreen.current.primaryTouch.position.ReadValue() : Mouse.current.position.ReadValue();
-                bool pressed = touching ? Touchscreen.current.primaryTouch.press.wasPressedThisFrame : Mouse.current.leftButton.wasPressedThisFrame;
-                Vector2 target = view.ScreenToWorldPoint(new Vector3(pointer.x, pointer.y, 25));
-                Vector2 delta = target - (Vector2)gun.position;
-                float angle = Mathf.Clamp(Mathf.Atan2(delta.x, delta.y) * Mathf.Rad2Deg, -75, 75);
-                gun.rotation = Quaternion.Euler(0, 0, -angle);
-                direction = gun.up;
-                if (pressed && playableScreen.Contains(pointer) && target.y > gun.position.y + .15f &&
-                    Mathf.Abs(target.x) <= 4.65f && target.y <= 7.8f) Fire();
-            }
-            aim.enabled = ready && loaded;
+            if (ready && !smoke) HandleShooterInput();
+            // Only show the guide once the cannon sphere has settled, not while the ring is turning.
+            aim.enabled = ready && loaded && !touchCancelled && ringTurn == null;
             if (aim.enabled)
             {
                 Vector2 muzzle = (Vector2)loaded.transform.position + direction * (.55f * VisualScale);
@@ -323,6 +316,7 @@ namespace EcoSphere
         void Fire()
         {
             if (tutorialPaused || !ready || !loaded || armBusy) return;
+            FinishRingTurn();
             ready = false; shots++;
             shotRicochets = 0; shotHasElementCallout = false;
             if (levelAudio) levelAudio.Shoot();
@@ -646,7 +640,8 @@ namespace EcoSphere
             resourcePanel = strip;
             BuildResourceVisualizer(strip);
             instructions = Label("Instructions", hud, new Vector2(.5f, 0), new Vector2(0, 485), new Vector2(850, 35),
-                Application.isMobilePlatform ? "Tap the playfield to aim and fire" : "Mouse to aim · Click to fire · R to restart", 18);
+                ShooterInstructions(), 18);
+            instructions.enableAutoSizing = true; instructions.fontSizeMin = 12; instructions.fontSizeMax = 18;
         }
 
         void OnDestroy()
@@ -654,6 +649,7 @@ namespace EcoSphere
             GameServices.Pause.Release(this);
             if (tutorialBackingTexture) Destroy(tutorialBackingTexture);
             if (tutorialSolidTexture) Destroy(tutorialSolidTexture);
+            if (placeholderChamberTexture) Destroy(placeholderChamberTexture);
             foreach (var material in materials) if (material) Destroy(material);
             foreach (var sprite in generatedSprites) if (sprite) Destroy(sprite);
         }
