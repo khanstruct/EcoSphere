@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameAudioSettings
   m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.GameAudioSettings
   music: {fileID: 8300000, guid: ef7c0a662fd416c40b0f6e6117144062, type: 3}
-  shoot: {fileID: 8300000, guid: 497075226ebe93c4badf44ca86db6f4e, type: 3}
+  shoot: {fileID: 8300000, guid: bf3a2608c05d3494e84d3b24446cd698, type: 3}
   ricochet: {fileID: 8300000, guid: 80743dc602c057145a647049fe5efa6f, type: 3}
   match: {fileID: 8300000, guid: af4372f7f8954dd4fab12cb51187ce7c, type: 3}
   breakaway: {fileID: 8300000, guid: 0842a3e281c3ab5489fa20b4759e08cf, type: 3}
@@ -26,4 +26,5 @@ MonoBehaviour:
   sphereCombine: {fileID: 8300000, guid: 01e0b015348e6db4e873c8eb8811e6cb, type: 3}
   starScore: {fileID: 8300000, guid: 1a5cc94c7505f8e45aba04e48136ca93, type: 3}
   ammoSwap: {fileID: 8300000, guid: 86051bad216af4548a5d9de6c8445db3, type: 3}
+  ammoSwapVolume: 0.3
   minimumMatchedSpheresForVoice: 6
