@@ -27,11 +27,28 @@ MonoBehaviour:
   - id: yellow-star
     displayName: Yellow Star
     sprite: {fileID: 21300000, guid: 4a244a87d5b1ebd4284379a29807b657, type: 3}
+    material: {fileID: 0}
+    displayScale: 1
     appearance:
       coreColor: {r: 1, g: 0.97, b: 0.8, a: 1}
       surfaceColor: {r: 1, g: 0.72, b: 0.2, a: 1}
       spotColor: {r: 0.6, g: 0.18, b: 0.02, a: 1}
       coronaColor: {r: 1, g: 0.78, b: 0.35, a: 1}
+      surfaceSpeed: 0.025
+      coronaSpeed: 0.032
+      surfaceContrast: 1.6
+      coronaStrength: 1.2
+      glowStrength: 0.8
+  - id: black-hole
+    displayName: Black Hole
+    sprite: {fileID: 21300000, guid: 9a42fcd0709aa164d9acdb0c466fce02, type: 3}
+    material: {fileID: 2100000, guid: 1d9266e97c1115a4c9054c016a064ec4, type: 2}
+    displayScale: 2.375
+    appearance:
+      coreColor: {r: 1, g: 0.96, b: 0.85, a: 1}
+      surfaceColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+      spotColor: {r: 0.45, g: 0.08, b: 0.02, a: 1}
+      coronaColor: {r: 1, g: 0.85, b: 0.6, a: 1}
       surfaceSpeed: 0.025
       coronaSpeed: 0.032
       surfaceContrast: 1.6

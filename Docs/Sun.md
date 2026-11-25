@@ -14,6 +14,33 @@ The System screen's sun is an animated shader on its existing UI Image (`EcoSphe
 
 The corona mask's dark disc ends at 0.475 of the image radius, which is the shader's `_DiscRadius`.
 
+## Black holes
+
+A sun type can name its own `material`; empty uses the catalog's animated sun material. The **Black Hole** type (`black-hole`) uses `Art/Suns/black-hole.mat` with `EcoSphere/UI/Black Hole` and two dedicated masks (256×256, linear):
+
+- `black-hole-disk-mask-v1.png` (clamp): a face-on swirling disk whose hole ends at 0.235 of the image radius (`_DiskMaskInner`), aligned with the disk's inner edge.
+- `black-hole-turbulence-mask-v1.png` (repeat): horizontal streaks. It tiles vertically but not perfectly horizontally, so the shader blends two samples half a repeat apart to hide the seam.
+
+- **Accretion disk:** a tilted ring (`_Tilt` 0.19) built from the disk mask in the disk's own plane. Two rigid copies turn at inner and outer speeds and blend by radius, so the inner disk spins faster without the spiral winding up over time. Turbulence streaks flow along the orbit, and the approaching (left) side is brighter.
+- **Lensing:** the disk's far side is bent into an arc around the horizon, strongest overhead, sampled from the same disk mask so its swirls match. A thin photon ring sits at the edge of the horizon.
+- **Event horizon:** an opaque black disc; the near side of the disk passes in front of it, the far side is hidden behind it.
+
+`SunTypeDefinition.displayScale` sizes a type relative to the System sun slot. The black hole uses 2.375 (sun `_DiscRadius` 0.475 ÷ horizon `_HorizonRadius` 0.2), so its black horizon is the same size as a sun's disc and the disk extends beyond the slot. `SunView` applies it as a local scale and turns off raycasts on the sun image, so an enlarged sun never blocks planet buttons.
+
+The same `SunAppearance` fields drive it: core/surface/spot colors are the disk's inner/middle/outer colors, corona color is the photon ring and glow, surface speed is disk rotation, corona speed is turbulence drift and corona strength is the lensed arc and ring.
+
+Per-system sun type: `SystemRecord.sunTypeId` is saved per system, but `WorldGeneration` currently assigns `WorldCatalog.defaultSunTypeId` (`yellow-star`) to every new system; there is no per-system selection yet. The Black Hole type is available in the catalog but is not chosen by generation.
+
+## Planned: sun selection during system generation
+
+Not implemented yet. Intended design:
+
+- When every planet in a system is complete, **Next** on the System screen generates a new system.
+- Generation chooses that system's sun type and/or color from other progress variables, such as unlocked spheres and achievements.
+- It then generates the system's planets/levels and their modifiers. Modifier selection is weighted by the system's sun type.
+
+Sun types, appearances and materials are already data (see above), so this should become an eligibility/weighting rule in shared generation data rather than per-sun code.
+
 ## Validation
 
 Checked in Play mode on the System scene: the Yellow Star renders through `SunView` with the animated material, its surface and corona visibly change over five seconds, and a blue appearance applied through the same path renders correctly (`Logs/Sun-compare.png`, `Logs/Sun-yellow-blue.png`, `Logs/Sun-final.png`). Not yet checked: mobile performance, and the portrait System layout (only a wide Game view was captured). Flares are not implemented.

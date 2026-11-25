@@ -9,6 +9,10 @@ namespace EcoSphere
         public string id,displayName;
         [Tooltip("Static fallback when no animated sun material is assigned on the catalog.")]
         public Sprite sprite;
+        [Tooltip("Optional material for this type (e.g. a black hole). Empty uses the catalog's animated sun material.")]
+        public Material material;
+        [Tooltip("Display size relative to the System sun slot. Use it to match core sizes across types, e.g. a black hole's horizon to a sun's disc.")]
+        [Min(.1f)] public float displayScale=1;
         public SunAppearance appearance=new SunAppearance();
     }
 

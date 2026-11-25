@@ -17,6 +17,9 @@ namespace EcoSphere
             Current = sun;
             var image = GetComponent<Image>();
             if (sun.sprite) image.sprite = sun.sprite;
+            // Scaling keeps the layout's slot size; a scaled-up sun may overlap planets, so it never takes clicks.
+            transform.localScale = Vector3.one * sun.displayScale;
+            image.raycastTarget = false;
             if (!template) { image.material = null; return; }
             if (!instance || instance.shader != template.shader)
             {
