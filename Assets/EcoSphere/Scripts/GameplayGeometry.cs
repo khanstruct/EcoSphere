@@ -9,6 +9,8 @@ namespace EcoSphere
         public const float CellSpacing=.9f*SphereScale;
         public const int DefaultClusterRings=3;
         public const float Left=-4.35f,Right=4.35f,Top=6.5f,Bottom=-5.9f;
+        // Width of the canonical 9:16 playfield rectangle the camera fits to the safe area.
+        public const float PlayfieldWidth=9.3f;
         public static readonly Vector2 ClusterCenter=new Vector2(0,1.6f);
         // The cannon artwork's origin sits at CannonBase; the loaded sphere rests CannonBodyLift above it (at full scale).
         // Its pivot, size and aim limit are authored on AmmoChamberStyle.

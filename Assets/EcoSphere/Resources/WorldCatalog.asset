@@ -55,6 +55,9 @@ MonoBehaviour:
       coronaStrength: 1.2
       glowStrength: 0.8
   animatedSunMaterial: {fileID: 2100000, guid: 42be39d41d56e51438e635123d579663, type: 2}
+  levelSunTopBelowCannon: 3.2
+  levelSunRadius: 7.5
+  levelSunCoronaReach: 0.85
   minimumProceduralSpheres: 4
   maximumProceduralSpheres: 4
   proceduralRules:

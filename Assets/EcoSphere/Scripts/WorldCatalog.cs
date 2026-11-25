@@ -45,6 +45,15 @@ namespace EcoSphere
         public List<SunTypeDefinition> sunTypes=new List<SunTypeDefinition>();
         [Tooltip("Shared animated sun material (EcoSphere/UI/Animated Sun) holding the plasma and corona masks. Each sun type tints its own instance.")]
         public Material animatedSunMaterial;
+        [Header("Sun in gameplay levels (a low arch behind the visualizer and cannon)")]
+        [Tooltip("How far below the cannon base the top of the sun's disc sits, in world units.")]
+        [Min(.1f)] public float levelSunTopBelowCannon=3.2f;
+        [Tooltip("Disc radius in world units. Larger makes a flatter arch (the playfield is 9.3 wide).")]
+        [Min(1)] public float levelSunRadius=7.5f;
+        [Tooltip("How far the full corona visibly extends beyond the disc, as a fraction of the disc radius. Used to shorten the corona so it just reaches the cannon base.")]
+        [Range(.1f,2)] public float levelSunCoronaReach=.85f;
+        // One rule for every scene: a type's own material, else the shared animated sun material.
+        public Material SunMaterial(SunTypeDefinition sun)=>sun!=null && sun.material ? sun.material : animatedSunMaterial;
         public SunTypeDefinition Sun(string id)=>sunTypes.Find(sun=>sun.id==id);
         [Min(4)] public int minimumProceduralSpheres = 4, maximumProceduralSpheres = 4;
         public WorldRules proceduralRules = new WorldRules();

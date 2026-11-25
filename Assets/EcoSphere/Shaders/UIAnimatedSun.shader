@@ -18,6 +18,7 @@ Shader "EcoSphere/UI/Animated Sun"
         _CoronaSpeed ("Corona turn speed",Float)=.02
         _CoronaStrength ("Corona strength",Float)=1.2
         _GlowStrength ("Glow strength",Float)=.8
+        _CoronaExtent ("Corona extent (1 = full mask)",Range(.1,1))=1
         _StencilComp ("Stencil Comparison",Float)=8
         _Stencil ("Stencil ID",Float)=0
         _StencilOp ("Stencil Operation",Float)=0
@@ -47,7 +48,7 @@ Shader "EcoSphere/UI/Animated Sun"
             struct v2f {float4 vertex:SV_POSITION;float4 color:COLOR;float2 uv:TEXCOORD0;float2 localPosition:TEXCOORD1;};
             sampler2D _PlasmaTex,_CoronaTex;
             float4 _Color,_ClipRect,_CoreColor,_SurfaceColor,_SpotColor,_CoronaColor;
-            float _DiscRadius,_SurfaceSpeed,_SurfaceContrast,_CoronaSpeed,_CoronaStrength,_GlowStrength;
+            float _DiscRadius,_SurfaceSpeed,_SurfaceContrast,_CoronaSpeed,_CoronaStrength,_GlowStrength,_CoronaExtent;
 
             v2f vert(appdata v)
             {
@@ -77,13 +78,15 @@ Shader "EcoSphere/UI/Animated Sun"
                 float disc=1-smoothstep(_DiscRadius-.006,_DiscRadius+.004,r);
 
                 // Corona: two copies of the mask turning opposite ways, with wisps flickering outward.
-                float c1=tex2D(_CoronaTex,Rotate(p,t*_CoronaSpeed)*.5+.5).r;
-                float c2=tex2D(_CoronaTex,Rotate(p,-t*_CoronaSpeed*.7)*.5*1.02+.5).r;
+                // _CoronaExtent pulls the corona in toward the disc (used for very large suns, e.g. in levels).
+                float2 cp=r>.0001 ? p/r*(_DiscRadius+max(r-_DiscRadius,0)/_CoronaExtent) : p;
+                float c1=tex2D(_CoronaTex,Rotate(cp,t*_CoronaSpeed)*.5+.5).r;
+                float c2=tex2D(_CoronaTex,Rotate(cp,-t*_CoronaSpeed*.7)*.5*1.02+.5).r;
                 float2 dir=r>.0001 ? p/r : float2(0,1);
                 float flicker=tex2D(_PlasmaTex,p*.7-dir*t*_CoronaSpeed*3).r;
                 float corona=(c1*.6+c2*.4)*lerp(.55,1.45,flicker);
                 float outside=smoothstep(_DiscRadius-.012,_DiscRadius+.006,r);
-                float glow=exp(-max(r-_DiscRadius,0)*9)*_GlowStrength;
+                float glow=exp(-max(r-_DiscRadius,0)*9/_CoronaExtent)*_GlowStrength;
                 float edgeFade=1-smoothstep(.62,.98,r);           // fade well inside the image so no circular edge shows
                 float3 halo=_CoronaColor.rgb*(corona*_CoronaStrength+glow)*outside*edgeFade;
 

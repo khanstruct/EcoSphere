@@ -31,13 +31,14 @@ namespace EcoSphere
             var boardSafe=new Rect(safe.x,safe.y+(panelHeight+20)*metrics.scale,safe.width,safe.height-(panelHeight+20)*metrics.scale);
             Rect field=ScreenLayout.Playfield(boardSafe);
             playableScreen=field;
-            float worldPerPixel=9.3f/field.width;
+            float worldPerPixel=GameplayGeometry.PlayfieldWidth/field.width;
             view.rect=new Rect(0,0,1,1);
             view.aspect=(float)width/height;
             view.orthographicSize=height*worldPerPixel*.5f;
             view.transform.position=new Vector3(-(field.center.x-width*.5f)*worldPerPixel,-(field.center.y-height*.5f)*worldPerPixel,-25);
             view.cullingMask=~0;
             view.clearFlags=CameraClearFlags.SolidColor;
+            PositionLevelSun();
             if(!gameplayCanvas)return;
             var m=ScreenLayout.Apply(gameplayCanvas,gameplayRoot,view);
             if(previousPresentation==new Vector2(m.width,m.height)&&previousPresentationSafe==safe)return;

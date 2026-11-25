@@ -31,6 +31,24 @@ The same `SunAppearance` fields drive it: core/surface/spot colors are the disk'
 
 Per-system sun type: `SystemRecord.sunTypeId` is saved per system, but `WorldGeneration` currently assigns `WorldCatalog.defaultSunTypeId` (`yellow-star`) to every new system; there is no per-system selection yet. The Black Hole type is available in the catalog but is not chosen by generation.
 
+## Sun in gameplay levels
+
+Every gameplay level shows its system's sun (`SystemRecord.sunTypeId`, falling back to the catalog default) as a reminder of the sun type. `EcoSphereLevelSun` creates a world-space sprite with the same material choice as the System screen (`WorldCatalog.SunMaterial`): in front of the starfield (depth 15, sorting order -50) and behind the cannon, with the HUD visualizer drawing over it.
+
+It forms a very low arch across the bottom of the screen, anchored to the cannon rather than the screen edge so every screen shape shows the same arch:
+
+- `levelSunRadius` (7.5 world units; the playfield is 9.3 wide) sets the disc size: larger is flatter.
+- `levelSunTopBelowCannon` (3.2) places the top of the disc below the cannon base, just above the visualizer frame in portrait.
+- The animated sun shader's `_CoronaExtent` shortens the corona for this large sun so it rises only to the cannon base: extent = top-below-cannon ÷ (radius × `levelSunCoronaReach`), where `levelSunCoronaReach` (0.85) is how far the full corona visibly extends beyond the disc as a fraction of its radius. The System screen keeps the full corona (extent 1).
+
+The sun type's `displayScale` keeps a black hole's horizon the same size as a sun's disc. The sun repositions whenever the camera refits.
+
+A black hole in a level keeps its full reach by design: its lensed arc sweeps up behind the cannon and its glow tints the lower playfield up to the cluster (the black hole shader has no extent setting; the sun's `_CoronaExtent` does not apply to it).
+
+Known follow-up: in portrait the HUD score line and control hints sit over the corona or lensed arc and are hard to read, especially with a black hole. Options are a text outline/shadow or a different color; the text may also be removed, since the visualizer already shows the important scores.
+
+Checked in Play mode on a procedural level in portrait (900×1600) and wide (1600×900) renders (`Logs/LevelSun-portrait.png`, `Logs/LevelSun-wide.png`). The black hole has not been checked in a level yet.
+
 ## Planned: sun selection during system generation
 
 Not implemented yet. Intended design:

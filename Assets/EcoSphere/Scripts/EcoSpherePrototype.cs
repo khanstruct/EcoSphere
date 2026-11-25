@@ -152,6 +152,7 @@ namespace EcoSphere
             spaceBackground = new GameObject("Space backdrop").AddComponent<SpaceBackground>();
             spaceBackground.gameObject.layer = 29;
             spaceBackground.Initialize(view, starfield, twinkleStar);
+            BuildLevelSun();
             var light = new GameObject("Upper-left soft light").AddComponent<Light>();
             light.type = LightType.Directional; light.intensity = 1.35f;
             light.transform.rotation = Quaternion.Euler(35, -30, 0);

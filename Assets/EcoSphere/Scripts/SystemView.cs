@@ -137,7 +137,7 @@ namespace EcoSphere
                     {
                         var view=image.GetComponent<SunView>();
                         if(!view)view=image.gameObject.AddComponent<SunView>();
-                        view.Show(sun,sun.material ? sun.material : WorldCatalog.Current.animatedSunMaterial);
+                        view.Show(sun,WorldCatalog.Current.SunMaterial(sun));
                     }
             for (int i = 0; i < planets.Length; i++)
             {
