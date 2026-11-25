@@ -75,12 +75,15 @@ namespace EcoSphere
             if(!GameServices.Profile.GrantSphere(discovery.sphereId))return;
             Pending.discoveries.Add(discovery.sphereId);Pending.discoveryDetails.Add(discovery);
         }
-        public WorldResult Complete(int system, int planet, float seaLevel, float rotation, IReadOnlyCollection<int> releasedNaturalSpheres, IReadOnlyList<double> elements = null, IReadOnlyList<ElementId> leaderOrder = null)
+        // channelCount: element bars that competed (sets the recipe thresholds). bonusScore: points outside the
+        // element totals (e.g. ricochets) that count toward the rating but never toward element shares.
+        public WorldResult Complete(int system, int planet, float seaLevel, float rotation, IReadOnlyCollection<int> releasedNaturalSpheres, IReadOnlyList<double> elements = null, IReadOnlyList<ElementId> leaderOrder = null, int channelCount = 0, double bonusScore = 0)
         {
             if (TryOpenCompletedResults(system, planet)) return Pending;
             var record = WorldLevels.Get(system,planet);
-            record.highestScore = Math.Max(record.highestScore,new ElementComposition(elements).Total);
-            var world = new CompletedWorld { system = system, planet = planet, seaLevel = seaLevel, rotation = rotation, score=new ElementComposition(elements).Total, terrainSeed=record.seed, terrainStyleId=record.terrainStyleId };
+            double levelScore = LevelScore.Combine(new ElementComposition(elements).Total, bonusScore);
+            record.highestScore = Math.Max(record.highestScore,levelScore);
+            var world = new CompletedWorld { system = system, planet = planet, seaLevel = seaLevel, rotation = rotation, score=levelScore, terrainSeed=record.seed, terrainStyleId=record.terrainStyleId };
             if(elements!=null)
             {
                 world.SetStats(PlanetStatCalculator.Evaluate(elements));
@@ -102,11 +105,11 @@ namespace EcoSphere
                     if(record.naturalSpheres.Exists(natural=>natural.sphereId==type))
                         Discover(new DiscoveryRecord{sphereId=type,kind=DiscoveryKind.Natural});
             // Use the same standings as the visualizer, including its incumbent-on-tie order.
-            if (elements != null)
+            if (elements != null && record.rules.recipeDiscoveries)
             {
-                var standings = new ElementStandings(); standings.Update(elements,leaderOrder);
+                var standings = new ElementStandings(); standings.Update(elements,leaderOrder,channelCount);
                 foreach (var recipe in SphereCatalog.Current.recipeBook.recipes)
-                    if (ElementRecipeBook.Qualifies(recipe,standings,record.rules.inclusionGoal)) Discover(new DiscoveryRecord{sphereId=recipe.output.id,kind=DiscoveryKind.Recipe,first=recipe.first,second=recipe.second});
+                    if (ElementRecipeBook.Qualifies(recipe,standings)) Discover(new DiscoveryRecord{sphereId=recipe.output.id,kind=DiscoveryKind.Recipe,first=recipe.first,second=recipe.second});
             }
             world.discoveries.AddRange(Pending.discoveries);
             world.discoveryDetails.AddRange(Pending.discoveryDetails);

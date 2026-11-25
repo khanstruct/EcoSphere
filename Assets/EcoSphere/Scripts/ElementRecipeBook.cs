@@ -40,9 +40,10 @@ namespace EcoSphere
             if(index.TryGetValue(new ElementPair(first,second),out var recipe)){result=recipe.output;return true;}
             result=null;return false;
         }
-        public static bool Qualifies(ElementRecipe recipe, ElementStandings standings, int minimum)
+        // Element shares alone decide: completion only happens on a cleared board, so totals are always full-board amounts.
+        public static bool Qualifies(ElementRecipe recipe, ElementStandings standings)
         {
-            return standings.MeetsRecipeMinimum(recipe.first,minimum) && standings.MeetsRecipeMinimum(recipe.second,minimum) &&
+            return standings.IsLeading(recipe.first) && standings.IsLeading(recipe.second) &&
                 (recipe.first != recipe.second || standings.CanSelfCombine(recipe.first));
         }
 

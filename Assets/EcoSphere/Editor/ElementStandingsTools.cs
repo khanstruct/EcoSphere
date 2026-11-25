@@ -41,26 +41,49 @@ namespace EcoSphere.Editor
             standings.Update(totals,order);
             var possible = new[] { ElementId.Fire,ElementId.Void,ElementId.Water,ElementId.Stone }; int eligible=0;
             for (int i=0;i<possible.Length;i++) for (int j=i;j<possible.Length;j++)
-                if (ElementRecipeBook.Qualifies(new ElementRecipe { first=possible[i],second=possible[j] },standings,500)) eligible++;
+                if (ElementRecipeBook.Qualifies(new ElementRecipe { first=possible[i],second=possible[j] },standings)) eligible++;
             Expect(eligible==1,"only the majority self-pair qualifies in a diluted composition");
-            Expect(!ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Stone },standings,500),"fourth element must not qualify despite reaching the minimum");
-            Expect(!ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Fire },standings,4000),"existing minimum still applies to self-pairs");
+            Expect(!ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Stone },standings),"an element under the recipe share must not qualify");
             var fractional = new double[totals.Length];
             fractional[(int)ElementId.Fire]=500.25; fractional[(int)ElementId.Void]=499.75;
             standings.Update(fractional,order);
             Expect(standings.CanSelfCombine(ElementId.Fire),"fractional majority must not be truncated before ranking");
-            Expect(!ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Void },standings,500),"499.75 must not round up to the inclusion minimum");
             Array.Clear(fractional,0,fractional.Length);
             fractional[(int)ElementId.Fire]=350; fractional[(int)ElementId.Void]=350; fractional[(int)ElementId.Water]=300;
             standings.Update(fractional,order);
             Expect(standings.IsLeading(ElementId.Fire) && standings.IsLeading(ElementId.Void) && !standings.IsLeading(ElementId.Water),"exactly 35 percent qualifies; 30 percent does not");
-            Expect(ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Void },standings,350),"two 35-percent ingredients at the minimum must qualify");
-            Expect(!ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Void },standings,351),"minimum still applies to a 35-percent leader");
+            Expect(ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Void },standings),"two 35-percent ingredients must qualify");
+            // No point minimum: tiny totals with the same shares qualify the same way.
+            for (int i=0;i<fractional.Length;i++) fractional[i]/=1000;
+            standings.Update(fractional,order);
+            Expect(ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Void },standings),"shares alone decide, whatever the point totals");
+            for (int i=0;i<fractional.Length;i++) fractional[i]*=1000;   // restore 350/350/300 for the next checks
             fractional[(int)ElementId.Fire]=349.999; fractional[(int)ElementId.Water]=300.001; standings.Update(fractional,order);
             Expect(!standings.IsLeading(ElementId.Fire),"just below 35 percent must not round up");
             fractional[(int)ElementId.Fire]=fractional[(int)ElementId.Void]=fractional[(int)ElementId.Water]=1;
             standings.Update(fractional,order);
             Expect(!standings.IsLeading(ElementId.Fire) && !standings.IsLeading(ElementId.Void) && !standings.IsLeading(ElementId.Water),"a three-way equal split has no leaders");
+
+            // Thresholds relative to the number of element bars (ScoringSettings): capped at 35% / 50% for few bars.
+            var scoring = ScoringSettings.Current;
+            Expect(Math.Abs(standings.RecipePercent - scoring.RecipePercent(3)) < 1e-9 && scoring.RecipePercent(2) <= scoring.maximumRecipePercent && scoring.RecipePercent(3) <= scoring.maximumRecipePercent,"two and three bars keep the capped threshold");
+            Expect(scoring.RecipePercent(4) < scoring.RecipePercent(3) && scoring.RecipePercent(5) < scoring.RecipePercent(4),"more bars must lower the recipe threshold");
+            Array.Clear(fractional,0,fractional.Length);
+            double four = scoring.RecipePercent(4);   // 30% by default
+            fractional[(int)ElementId.Fire]=four; fractional[(int)ElementId.Void]=four; fractional[(int)ElementId.Water]=100-2*four-1; fractional[(int)ElementId.Stone]=1;
+            standings.Update(fractional,order,4);
+            Expect(standings.IsLeading(ElementId.Fire) && standings.IsLeading(ElementId.Void) && ElementRecipeBook.Qualifies(new ElementRecipe { first=ElementId.Fire,second=ElementId.Void },standings),"exactly the four-bar threshold qualifies a pair");
+            fractional[(int)ElementId.Fire]=four-.001; fractional[(int)ElementId.Water]+=.001; standings.Update(fractional,order,4);
+            Expect(!standings.IsLeading(ElementId.Fire),"just below the four-bar threshold must not qualify");
+            double self4 = scoring.SelfPercent(4);    // 40% by default
+            Array.Clear(fractional,0,fractional.Length);
+            fractional[(int)ElementId.Fire]=self4; fractional[(int)ElementId.Void]=100-self4;
+            standings.Update(fractional,order,4);
+            Expect(!standings.CanSelfCombine(ElementId.Fire),"exactly the four-bar self threshold is not a self-pair");
+            fractional[(int)ElementId.Fire]=self4+.01; fractional[(int)ElementId.Void]=100-self4-.01; standings.Update(fractional,order,4);
+            Expect(standings.CanSelfCombine(ElementId.Fire) && standings.ChannelCount==4,"bars with zero points still count toward the threshold");
+            standings.Update(fractional,order);
+            Expect(standings.ChannelCount==2 && !standings.CanSelfCombine(ElementId.Fire),"without a bar count, only elements with points count");
             SphereCatalog.Current.Validate();
             Debug.Log("ECOSPHERE_ELEMENT_STANDINGS_CHECKS_PASSED "+checks+": distinct totals, stable incumbent ties, strict majority, overflow safety and shared recipe eligibility");
         }

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50655b3b84be84243a916440967d4a64, type: 3}
+  m_Name: ScoringSettings
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.ScoringSettings
+  matchPointsPerSphere: 20
+  streakBonusPerExtraSphere: 5
+  maximumMatchPointsPerSphere: 50
+  breakawayPoints: 75
+  ricochetBonus: 15
+  recipeShareMultiple: 1.1
+  maximumRecipePercent: 35
+  selfShareMultiple: 1.6
+  maximumSelfPercent: 50
+  oneStarPar: 0.3
+  twoStarPar: 0.46
+  threeStarPar: 0.6

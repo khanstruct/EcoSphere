@@ -36,7 +36,7 @@ namespace EcoSphere.Editor
             EditorUtility.SetDirty(system); EditorSceneManager.SaveScene(systemScene);
             var levelScene = EditorSceneManager.OpenScene(TestLevelTools.ScenePath);
             var game = UnityEngine.Object.FindAnyObjectByType<EcoSpherePrototype>();
-            game.resourceGoal = 1000000; game.abundanceGoal = 3000000;
+            game.abundanceGoal = 3000000;
             EditorUtility.SetDirty(game); EditorSceneManager.SaveScene(levelScene);
             var scenes = EditorBuildSettings.scenes.ToList();
             if (!scenes.Any(s => s.path == ScenePath)) scenes.Add(new EditorBuildSettingsScene(ScenePath, true));

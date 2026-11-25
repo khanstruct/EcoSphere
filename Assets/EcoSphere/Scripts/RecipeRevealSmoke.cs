@@ -29,7 +29,6 @@ namespace EcoSphere
                     new ElementRecipe { first=ElementId.Fire,second=ElementId.Fire,output=catalog.Get(SphereIds.Ice) } };
                 var amounts=new double[Enum.GetValues(typeof(ElementId)).Length]; amounts[(int)ElementId.Fire]=600; amounts[(int)ElementId.Void]=400;
                 WorldLevels.Get(3,0).naturalSpheres.Add(new NaturalSpherePlacement{sphereId=SphereIds.Stone,cell=Vector2Int.up});
-                WorldLevels.Get(3,0).rules.inclusionGoal=350;
                 award=GameServices.Progress.Complete(3,0,-.02f,0,new int[]{SphereIds.Stone},amounts);
             }
             finally { book.recipes=original; }

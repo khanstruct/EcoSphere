@@ -50,7 +50,7 @@ namespace EcoSphere.Editor
                 replaceEmpty ? NewSceneMode.Single : NewSceneMode.Additive);
             SceneManager.SetActiveScene(scene);
             var root = new GameObject("EcoSphere Test Level").AddComponent<EcoSpherePrototype>();
-            root.resourceGoal = 1000000; root.abundanceGoal = 3000000;
+            root.abundanceGoal = 3000000;
             root.uiFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontTools.FontAssetPath);
             root.receivingPlanetMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/EcoSphere/Art/Planets/barren-planet-v1.mat");
             root.tutorialFrame = Sprite("UI/Frames/panel-frame-v1.png");

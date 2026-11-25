@@ -15,9 +15,6 @@ MonoBehaviour:
   id: genesis-alpha
   displayName: Genesis Alpha
   gameplayScene: Tutorial1
-  discoveryTutorialMessage: Excellent work! An excess of Void and Fire on your world has unlocked a new element.
-  nextWorldTutorialMessage: With 3 elements now in your collection, you have enough for the next level.
-  nextWorldTutorialTarget: genesis-beta
   setupTutorial:
   - message: Each world requires a specific number of spheres. This level requires two, so it shows two empty slots.
     target: 0
@@ -31,17 +28,20 @@ MonoBehaviour:
   - message: Great work! Now tap the Begin button to play the level.
     target: 2
     waitForFullLoadout: 1
+  discoveryTutorialMessage: Excellent work! An excess of Void and Fire on your world has unlocked a new element.
+  nextWorldTutorialMessage: With 3 elements now in your collection, you have enough for the next level.
+  nextWorldTutorialTarget: genesis-beta
   rules:
     requiredSpheres: 2
     clusterRings: 3
-    inclusionGoal: 175
     abundanceGoal: 1000000
+    recipeDiscoveries: 1
+    clustering: 0.5
+    ammoChambers: 0
     rotationDegrees: 24
     rotationDuration: 0.65
-    oneStarScore: 500
-    twoStarScore: 1000
-    threeStarScore: 2500
   modifiers: []
+  naturalSpheres: []
   guaranteedSystem: 1
   guaranteedSlot: 0
   minimumSystem: 1

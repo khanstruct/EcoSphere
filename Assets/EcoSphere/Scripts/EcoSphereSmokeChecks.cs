@@ -115,11 +115,17 @@ namespace EcoSphere
 
         void SmokeScoringChecks()
         {
+            // Match points follow ScoringSettings: base rate for three, a streak bonus per extra sphere, then a cap.
+            var scoring = ScoringSettings.Current;
             int[] sizes = { 3, 4, 5, 6, 8, 10, 19 };
-            int[] expected = { 30, 48, 70, 96, 160, 200, 380 };
             for (int i = 0; i < sizes.Length; i++)
-                if (ElementScoring.MatchRate(sizes[i]) * sizes[i] != expected[i])
-                    throw new Exception("Incorrect capped match bonus");
+            {
+                int rate = Math.Min(scoring.maximumMatchPointsPerSphere, scoring.matchPointsPerSphere + scoring.streakBonusPerExtraSphere * (sizes[i] - 3));
+                if (ElementScoring.MatchRate(sizes[i]) != rate || (i > 0 && ElementScoring.MatchRate(sizes[i]) < ElementScoring.MatchRate(sizes[i - 1])))
+                    throw new Exception("Incorrect streak bonus or cap at " + sizes[i]);
+            }
+            if (ElementScoring.MatchRate(2) != 0 || ElementScoring.MatchRate(19) != scoring.maximumMatchPointsPerSphere) throw new Exception("Groups below three must not score; large groups must reach the cap");
+            int three = ElementScoring.MatchRate(3) * 3, breakaway = ElementScoring.Breakaway;
             board.Cells.Clear(); visuals.Clear();Array.Clear(totals,0,totals.Length);score=0;
             var matched = new HashSet<Vector2Int>();
             for (int i = 1; i <= 3; i++)
@@ -128,21 +134,21 @@ namespace EcoSphere
                 board.Cells[cell] = 0; visuals[cell] = new GameObject("Matched scoring test");
             }
             RemoveCells(matched, ElementScoring.MatchRate(matched.Count));
-            if (totals[(int)ElementId.Ice] != 15 || totals[(int)ElementId.Water]!=7.5 || score != 30) throw new Exception("Three Ice matches must split 30 score into 15 Ice / 7.5 Water / Null");
+            if (totals[(int)ElementId.Ice] != three * .5 || totals[(int)ElementId.Water] != three * .25 || score != three) throw new Exception("Three Ice matches must split their score into 1/2 Ice / 1/4 Water / 1/4 Null");
             var sun = new Vector2Int(0, 1); var stone = new Vector2Int(0, 2);
             board.Cells[sun] = 1; board.Cells[stone] = StoneType;
             visuals[sun] = new GameObject("Sunlight scoring test"); visuals[stone] = new GameObject("Stone scoring test");
             RemoveCells(new HashSet<Vector2Int> { sun, stone }, ElementScoring.Breakaway, true);
-            if (totals[(int)ElementId.Ice] != 15 || totals[(int)ElementId.Sunlight] != 25 || totals[(int)ElementId.Fire]!=12.5 || totals[(int)ElementId.Stone]!=37.5 || score != 130)
-                throw new Exception("Breakaways must award 50 each; Stone affects score without adding a resource bar");
+            if (totals[(int)ElementId.Ice] != three * .5 || totals[(int)ElementId.Sunlight] != breakaway * .5 || totals[(int)ElementId.Fire] != breakaway * .25 || totals[(int)ElementId.Stone] != breakaway * .75 || score != three + 2 * breakaway)
+                throw new Exception("Breakaways must award the breakaway value each; Stone affects score without adding a resource bar");
             board.Cells[sun] = 1; visuals[sun] = new GameObject("Threshold scoring test");
             RemoveCells(new HashSet<Vector2Int> { sun }, ElementScoring.Breakaway, true);
-            if (totals[(int)ElementId.Sunlight] != 50 || LevelAudio.ResourceCallout(new[] { 0, totals[(int)ElementId.Sunlight] }) != -1)
+            if (totals[(int)ElementId.Sunlight] != breakaway || LevelAudio.ResourceCallout(new[] { 0, totals[(int)ElementId.Sunlight] }) != -1)
                 throw new Exception("Two Sunlight breakaways must remain below the inclusion threshold");
-            UpdateVisualizer(); int initialGoal=resourceGoal, initialExcess=abundanceGoal;
+            UpdateVisualizer(); int initialExcess=abundanceGoal;
             for (int i = 0; i < totals.Length; i++) totals[i] = abundanceGoal * 4;
             UpdateVisualizer();
-            if (initialGoal!=resourceGoal || initialExcess!=abundanceGoal)
+            if (initialExcess!=abundanceGoal)
                 throw new Exception("Visualizer scaling changed the gameplay thresholds");
             if (barTotals[0].text != (abundanceGoal*4).ToString() || barTotals[1].text != (abundanceGoal*4).ToString())
                 throw new Exception("Full point totals must remain readable above the visual scale");
@@ -180,7 +186,7 @@ namespace EcoSphere
                 throw new Exception("Actual game-over checkpoint did not announce Creation Failed");
             var test = new GameObject("Win announcement test").AddComponent<LevelAudio>();
             test.voiceVolume = 0; test.musicVolume = 0; test.Initialize();
-            test.AnnounceResources(ElementScoring.Inclusion, ElementScoring.Inclusion + 50);
+            test.AnnounceResources(LevelAudio.SphereVoiceMinimumPoints, LevelAudio.SphereVoiceMinimumPoints + 50);
             var source = test.transform.Find("Level result announcer").GetComponent<AudioSource>();
             if (source.clip != mainAudio.ecosphere)
                 throw new Exception("Two qualifying resource gains did not announce EcoSphere");

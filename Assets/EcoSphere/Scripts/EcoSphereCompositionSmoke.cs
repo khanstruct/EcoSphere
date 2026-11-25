@@ -37,27 +37,29 @@ namespace EcoSphere
             float firstHeight=energyBars[0].rectTransform.sizeDelta.y;
             Expect(Mathf.Abs(energyBars[0].rectTransform.sizeDelta.y/maximumBarHeight-.85f)<.04f,"leader must occupy about 85 percent of available height");
             float oldHeight=energyBars[0].rectTransform.sizeDelta.y;
-            int savedGoal=resourceGoal,savedExcess=abundanceGoal;
-            resourceGoal=1000000; abundanceGoal=3000000; UpdateVisualizer();
-            Expect(!energyBars.Exists(bar=>bar.Leading || bar.SelfCombination),"Beta-level minimum must suppress every flare");
-            Expect(Mathf.Abs(energyBars[0].rectTransform.sizeDelta.y-oldHeight)<.1f,"authored thresholds must not shrink the visualizer");
-            resourceGoal=savedGoal; abundanceGoal=savedExcess; UpdateVisualizer();
+            // A world without recipe discoveries (e.g. Genesis Beta) shows no flares or recipe guides.
+            preparedWorld.rules.recipeDiscoveries=false; UpdateVisualizer();
+            Expect(!energyBars.Exists(bar=>bar.Leading || bar.SelfCombination) && !matchLine.gameObject.activeSelf,"a world without recipes must suppress every flare and guide");
+            Expect(Mathf.Abs(energyBars[0].rectTransform.sizeDelta.y-oldHeight)<.1f,"disabling recipes must not shrink the visualizer");
+            preparedWorld.rules.recipeDiscoveries=true; UpdateVisualizer();
             CaptureComposition("majority");
             yield return new WaitForSeconds(.5f); UpdateVisualizer();
             Expect(resourceValues[0].anchoredPosition==firstPosition && Mathf.Abs(energyBars[0].rectTransform.sizeDelta.y-firstHeight)<4.1f,"pulse moved the true value marker or exceeded its bound");
             CaptureComposition("majority-motion");
             totals[(int)ElementId.Fire]=60; totals[(int)ElementId.Void]=25; totals[(int)ElementId.Sunlight]=10; totals[(int)ElementId.Stone]=5;
             UpdateVisualizer();
-            Expect(!energyBars[0].Leading && !energyBars[0].SelfCombination,"majority below minimum must not flare");
-            totals[(int)ElementId.Sunlight]=100; totals[(int)ElementId.Fire]=500; totals[(int)ElementId.Void]=300; totals[(int)ElementId.Stone]=100; UpdateVisualizer();
-            Expect(!energyBars[0].SelfCombination && !composition.CanSelfCombine(ElementId.Fire),"exact 50 percent retained self marker");
+            Expect(energyBars[0].Leading && energyBars[0].SelfCombination,"shares alone decide: a small total with a large share must flare");
+            // With four bars the self-pair threshold is relative (ScoringSettings); exactly at it is not a self-pair.
+            double selfShare=composition.SelfPercent*10; // of a 1000-point total
+            totals[(int)ElementId.Fire]=selfShare; totals[(int)ElementId.Void]=300; totals[(int)ElementId.Sunlight]=(1000-selfShare-300)*.5; totals[(int)ElementId.Stone]=(1000-selfShare-300)*.5; UpdateVisualizer();
+            Expect(composition.ChannelCount==4 && !energyBars[0].SelfCombination && !composition.CanSelfCombine(ElementId.Fire),"exactly the four-bar self threshold retained the self marker");
             Expect(!composition.IsLeading(ElementId.Sunlight) && !composition.IsLeading(ElementId.Stone),"minority ingredients must not qualify through their rank");
             CaptureComposition("exact-half");
             totals[(int)ElementId.Stone]=101; UpdateVisualizer();
-            Expect(!composition.IsLeading(ElementId.Stone) && !energyBars[2].Leading,"overtaking third must not bypass the 35-percent rule");
+            Expect(!composition.IsLeading(ElementId.Stone) && !energyBars[2].Leading,"overtaking third must not bypass the recipe share rule");
             totals[(int)ElementId.Fire]=3000; totals[(int)ElementId.Void]=900; totals[(int)ElementId.Sunlight]=800; totals[(int)ElementId.Stone]=700;
             UpdateVisualizer();
-            Expect(!energyBars[2].Leading && !energyBars[3].Leading,"ingredients under 35 percent must not flare even above the minimum");
+            Expect(!energyBars[2].Leading && !energyBars[3].Leading,"ingredients under the recipe share must not flare even above the minimum");
             foreach (int groupCount in new[] { 4,5 })
             {
                 displayedElements.Clear();
@@ -90,9 +92,14 @@ namespace EcoSphere
                 gains[(int)ElementId.Fire]=501; gains[(int)ElementId.Void]=499;
                 var majority=GameServices.Progress.Complete(9,1,-.02f,0,null,gains);
                 Expect(majority.discoveries.Contains(SphereIds.Ice),"authored self-recipe did not unlock above 50 percent");
+                // Bonus points raise the saved score and stars but never change which recipes qualify.
+                gains[(int)ElementId.Fire]=500; gains[(int)ElementId.Void]=500;
+                var bonus=GameServices.Progress.Complete(9,2,-.02f,0,null,gains,null,0,300);
+                Expect(bonus.world.score==1300 && WorldLevels.Get(9,2).highestScore==1300,"bonus points missing from the saved level score");
+                Expect(!bonus.discoveries.Contains(SphereIds.Ice),"bonus points changed recipe eligibility");
             }
             finally { book.recipes=original; }
-            Debug.Log("ECOSPHERE_COMPOSITION_SMOKE_PASSED: live highlights, percentages, duplicate channels, incumbent ties, strict 50-percent marker and actual self-recipe unlock");
+            Debug.Log("ECOSPHERE_COMPOSITION_SMOKE_PASSED: live highlights, percentages, duplicate channels, incumbent ties, relative self-pair marker and actual self-recipe unlock");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

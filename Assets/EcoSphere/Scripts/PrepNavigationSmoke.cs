@@ -43,7 +43,7 @@ namespace EcoSphere
                 throw new System.Exception("Begin did not launch the playable first tutorial");
             if (!GameObject.Find("Tutorial message").GetComponent<TMPro.TMP_Text>().text.Equals("Your goal is to match and release elements to create a new planet."))
                 throw new System.Exception("Genesis Alpha did not start its welcome lesson after setup");
-            if (!GameObject.Find("Title").GetComponent<TMPro.TMP_Text>().text.Contains("GENESIS ALPHA") || game.resourceGoal != WorldLevels.Get(1,0).rules.inclusionGoal)
+            if (!GameObject.Find("Title").GetComponent<TMPro.TMP_Text>().text.Contains("GENESIS ALPHA") || game.RecipesEnabled != WorldLevels.Get(1,0).rules.recipeDiscoveries)
                 throw new System.Exception("Genesis Alpha did not apply its authored name and rules");
             if(FindAnyObjectByType<MenuMusic>())throw new System.Exception("Menu music continued into Tutorial 1 gameplay");
             Debug.Log("ECOSPHERE_PREP_NAVIGATION_PASSED: planet click, Tutorial 1 name, context, Back, selection gating, playable Tutorial1 and music transition.");

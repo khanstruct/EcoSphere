@@ -18,7 +18,7 @@ namespace EcoSphere.Editor
             var scene=EditorSceneManager.OpenScene(ScenePath);
             var game=UnityEngine.Object.FindAnyObjectByType<EcoSpherePrototype>();
             game.levelLayout=EcoSpherePrototype.LevelLayout.Procedural; game.startingSphereTypes=Array.Empty<int>();
-            game.resourceGoal=ElementScoring.Inclusion; game.abundanceGoal=ElementScoring.Abundance;
+            game.abundanceGoal=ElementScoring.Abundance;
             EditorUtility.SetDirty(game); EditorSceneManager.SaveScene(scene);
             var catalog=WorldCatalog.Current;
             catalog.minimumProceduralSpheres=catalog.maximumProceduralSpheres=4;

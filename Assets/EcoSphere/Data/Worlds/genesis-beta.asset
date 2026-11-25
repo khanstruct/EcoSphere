@@ -15,20 +15,23 @@ MonoBehaviour:
   id: genesis-beta
   displayName: Genesis Beta
   gameplayScene: FirstLight
+  setupTutorial: []
+  discoveryTutorialMessage: 
+  nextWorldTutorialMessage: 
+  nextWorldTutorialTarget: 
   rules:
     requiredSpheres: 3
     clusterRings: 3
-    inclusionGoal: 1000000
     abundanceGoal: 3000000
+    recipeDiscoveries: 0
+    clustering: 0.5
+    ammoChambers: 0
     rotationDegrees: 24
     rotationDuration: 0.65
-    oneStarScore: 500
-    twoStarScore: 1000
-    threeStarScore: 2500
+  modifiers: []
   naturalSpheres:
   - sphereId: 3
     cell: {x: 0, y: -3}
-  modifiers: []
   guaranteedSystem: 1
   guaranteedSlot: 1
   minimumSystem: 1

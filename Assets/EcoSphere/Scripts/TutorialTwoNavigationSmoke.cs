@@ -42,7 +42,7 @@ namespace EcoSphere
             if (SceneManager.GetActiveScene().name != "FirstLight" || !game || game.CellCount != GameplayGeometry.CellCount(WorldLevels.Get(1,1).rules.clusterRings) ||
                 game.levelLayout != EcoSpherePrototype.LevelLayout.StoneTutorial || Time.timeScale != 0 || !game.transform.Find("Tutorial overlay"))
                 throw new Exception("Tutorial 2 did not launch the guided Stone layout");
-            if (!GameObject.Find("Title").GetComponent<TMPro.TMP_Text>().text.Contains("GENESIS BETA") || game.resourceGoal != WorldLevels.Get(1,1).rules.inclusionGoal)
+            if (!GameObject.Find("Title").GetComponent<TMPro.TMP_Text>().text.Contains("GENESIS BETA") || game.RecipesEnabled != WorldLevels.Get(1,1).rules.recipeDiscoveries)
                 throw new Exception("Genesis Beta did not apply its authored name and rules");
             Debug.Log("ECOSPHERE_TUTORIAL_TWO_NAVIGATION_PASSED: System planet 2, three-slot gating, Sunlight/Fire/Void selection and guided gameplay launch");
             Destroy(gameObject);

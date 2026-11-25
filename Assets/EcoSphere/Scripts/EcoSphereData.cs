@@ -56,7 +56,7 @@ namespace EcoSphere
                 preparedWorld = WorldLevels.Get(GameServices.Session.SystemNumber, GameServices.Session.PlanetIndex);
             if (preparedWorld != null)
             {
-                resourceGoal = preparedWorld.rules.inclusionGoal; abundanceGoal = preparedWorld.rules.abundanceGoal;
+                abundanceGoal = preparedWorld.rules.abundanceGoal;
                 rotationDegrees = preparedWorld.rules.rotationDegrees; rotationDuration = preparedWorld.rules.rotationDuration;
             }
             if(preparedWorld==null)throw new InvalidOperationException("Gameplay must be initialized from a world record");
@@ -91,7 +91,7 @@ namespace EcoSphere
         {
             Array.Clear(selectedElementTotals,0,selectedElementTotals.Length);
             foreach(var element in displayedElements) selectedElementTotals[(int)element]=totals[(int)element];
-            composition.Update(selectedElementTotals,displayedElements);
+            composition.Update(selectedElementTotals,displayedElements,displayedElements.Count);
             if (planet) planet.GetComponent<PlanetSurface>().ApplyComposition(selectedElementTotals);
         }
         void BuildResourceVisualizer(RectTransform strip)
@@ -172,7 +172,7 @@ namespace EcoSphere
                 // Motion stays close to the element's actual value.
                 float pulse=totals[(int)element]>0 ? Mathf.Sin(Time.time*2.2f+(int)element*.83f)*Mathf.Min(2,height*visualizerStyle.pulseFraction) : 0;
                 rect.sizeDelta=new Vector2(rect.sizeDelta.x,Mathf.Clamp(height+pulse,2,maximumBarHeight));
-                bar.Leading=composition.MeetsRecipeMinimum(element,resourceGoal);
+                bar.Leading=RecipesEnabled && composition.IsLeading(element);
                 bar.SelfCombination=bar.Leading && composition.CanSelfCombine(element);
                 string name=Catalog.ElementName(element);
                 resourceLabels[i].text=name;

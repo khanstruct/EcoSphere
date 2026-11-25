@@ -38,13 +38,16 @@ namespace EcoSphere
                 visuals[cell] = MakeSphere("Mixed fire smoke", SphereIds.Fire, cluster, BoardRules.Position(cell));
                 var released = visuals[cell];
                 RemoveCells(new HashSet<Vector2Int> { cell }, ElementScoring.Breakaway, true);
-                Expect(Math.Abs(totals[(int)ElementId.Fire] - 12.5) < 1e-10 && Math.Abs(totals[(int)ElementId.Water] - 12.5) < 1e-10 &&
-                    Math.Abs(totals[(int)ElementId.Stone] - 12.5) < 1e-10 && Math.Abs(totals[(int)ElementId.Void] - 12.5) < 1e-10, "breakaway omitted an element or used a sphere ID as an element ID");
+                double quarter = ElementScoring.Breakaway / 4.0;   // four equal contribution units
+                Expect(Math.Abs(totals[(int)ElementId.Fire] - quarter) < 1e-10 && Math.Abs(totals[(int)ElementId.Water] - quarter) < 1e-10 &&
+                    Math.Abs(totals[(int)ElementId.Stone] - quarter) < 1e-10 && Math.Abs(totals[(int)ElementId.Void] - quarter) < 1e-10, "breakaway omitted an element or used a sphere ID as an element ID");
                 Expect(released.GetComponent<TrailRenderer>().startColor == fire.color, "streak did not use the definition color");
                 cell = new Vector2Int(2, 0); board.Cells[cell] = SphereIds.Void;
                 visuals[cell] = MakeSphere("Void smoke", SphereIds.Void, cluster, BoardRules.Position(cell));
                 RemoveCells(new HashSet<Vector2Int> { cell }, ElementScoring.StandardMatch);
-                Expect(Math.Abs(totals[(int)ElementId.Void] - (5+12.5)) < 1e-10, "shared planet-wide element total did not accumulate");
+                var voidSphere = Definition(SphereIds.Void);
+                double voidFromMatch = 0; var voidOnly = new double[totals.Length]; voidSphere.AddContributions(voidOnly, ElementScoring.StandardMatch); voidFromMatch = voidOnly[(int)ElementId.Void];
+                Expect(Math.Abs(totals[(int)ElementId.Void] - (voidFromMatch + quarter)) < 1e-10, "shared planet-wide element total did not accumulate");
                 UpdateVisualizer();
                 // One channel per distinct contributed element (Docs/Element-composition.md), in first-appearance order.
                 var expectedElements = new List<ElementId>();
@@ -58,7 +61,7 @@ namespace EcoSphere
                     Expect(barTotals[i].text == Math.Truncate(totals[(int)displayedElements[i]]).ToString("0"), "channel did not show its element's truncated total");
                     Expect(energyBars[i].color == (Catalog.ElementAppearance(displayedElements[i])?.color ?? Color.white), "element bar must use its namesake sphere color");
                 }
-                Expect(barTotals[displayedElements.IndexOf(ElementId.Void)].text == "17", "Void contributions from both spheres must share one channel");
+                Expect(barTotals[displayedElements.IndexOf(ElementId.Void)].text == Math.Truncate(voidFromMatch + quarter).ToString("0"), "Void contributions from both spheres must share one channel");
                 yield return null;
                 foreach (var size in new[] { new Vector2Int(900, 1600), new Vector2Int(1600, 900) })
                 {

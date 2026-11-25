@@ -37,11 +37,11 @@ namespace EcoSphere
             LevelPrepView.SystemNumber = 2; LevelPrepView.PlanetIndex = 1;
             foreach(var natural in WorldLevels.Get(1,1).naturalSpheres)WorldLevels.Get(2,1).naturalSpheres.Add(natural.Copy());
             var game = FindAnyObjectByType<EcoSpherePrototype>();
-            if (game.resourceGoal < 1000000 || game.abundanceGoal < 3000000)
-                throw new Exception("Temporary tutorial thresholds were not raised");
+            if (game.RecipesEnabled || game.abundanceGoal < 3000000)
+                throw new Exception("Genesis Beta must award no recipes and keep its raised excess threshold");
             var expectedMaterial = game.receivingPlanetMaterial;
             var announcements = game.GetComponent<LevelAudio>();
-            announcements.AnnounceResources(ElementScoring.Inclusion, 0);
+            announcements.AnnounceResources(LevelAudio.SphereVoiceMinimumPoints, 0);
             announcements.transform.Find("Level result announcer").GetComponent<AudioSource>().pitch = .85f;
             game.CompleteForResultsSmoke();
             float deadline = Time.realtimeSinceStartup + 20;

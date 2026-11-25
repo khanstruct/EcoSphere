@@ -6,8 +6,11 @@ namespace EcoSphere
     // One planet-wide ranking, independent of the spheres delivering each element.
     public sealed class ElementStandings
     {
-        public const double LeadershipPercent = 35;
         readonly List<ElementId> ranked = new List<ElementId>();
+        // Recipe thresholds are relative to how many element bars compete (see ScoringSettings).
+        public int ChannelCount { get; private set; }
+        public double RecipePercent => ScoringSettings.Current.RecipePercent(ChannelCount);
+        public double SelfPercent => ScoringSettings.Current.SelfPercent(ChannelCount);
         readonly Comparison<ElementId> comparison;
         IReadOnlyList<double> amounts;
         double[] integerBuffer=Array.Empty<double>();
@@ -17,9 +20,12 @@ namespace EcoSphere
 
         public ElementStandings() { comparison = Compare; }
 
-        public void Update(IReadOnlyList<double> totals, IReadOnlyList<ElementId> firstAppearanceOrder = null)
+        // channelCount is the number of element bars competing; zero means every element with points.
+        public void Update(IReadOnlyList<double> totals, IReadOnlyList<ElementId> firstAppearanceOrder = null, int channelCount = 0)
         {
             amounts = totals; Total = new ElementComposition(totals).Total;
+            if (channelCount <= 0) { channelCount = 0; for (int i = 0; i < totals.Count; i++) if (ElementComposition.PositiveFinite(totals[i]) > 0) channelCount++; }
+            ChannelCount = channelCount;
             if (previousPriority.Length != totals.Count) previousPriority = new int[totals.Count];
             for (int i = 0; i < totals.Count; i++) previousPriority[i] = int.MaxValue;
             for (int i = ranked.Count-1; i >= 0; i--) if (Amount(ranked[i]) == 0) ranked.RemoveAt(i);
@@ -30,11 +36,11 @@ namespace EcoSphere
             ranked.Sort(comparison);
         }
 
-        public void Update(IReadOnlyList<int> totals, IReadOnlyList<ElementId> order = null)
+        public void Update(IReadOnlyList<int> totals, IReadOnlyList<ElementId> order = null, int channelCount = 0)
         {
             if(integerBuffer.Length!=totals.Count)integerBuffer=new double[totals.Count];
             for (int i=0;i<integerBuffer.Length;i++) integerBuffer[i]=totals[i];
-            Update(integerBuffer,order);
+            Update(integerBuffer,order,channelCount);
         }
 
         int Compare(ElementId first, ElementId second)
@@ -45,9 +51,9 @@ namespace EcoSphere
         }
         public double Amount(ElementId element) => amounts != null && (int)element >= 0 && (int)element < amounts.Count ? ElementComposition.PositiveFinite(amounts[(int)element]) : 0;
         public int Rank(ElementId element) { int index = ranked.IndexOf(element); return index < 0 ? 0 : index+1; }
-        public bool IsLeading(ElementId element) => Total > 0 && Amount(element)*100 >= Total*LeadershipPercent;
-        public bool MeetsRecipeMinimum(ElementId element,int minimum) => IsLeading(element) && Amount(element)>=Math.Max(1,minimum);
+        public bool IsLeading(ElementId element) => Total > 0 && Amount(element)*100 >= Total*RecipePercent;
         public float Percentage(ElementId element) => Total > 0 ? (float)(Amount(element)*100.0/Total) : 0;
-        public bool CanSelfCombine(ElementId element) => Total > 0 && Amount(element)*2L > Total;
+        // Strictly above the self threshold (with two or three bars, a strict majority, as before).
+        public bool CanSelfCombine(ElementId element) => Total > 0 && Amount(element)*100 > Total*SelfPercent;
     }
 }

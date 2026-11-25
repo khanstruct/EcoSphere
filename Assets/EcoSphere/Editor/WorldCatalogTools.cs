@@ -23,8 +23,9 @@ namespace EcoSphere.Editor
                 catalog = ScriptableObject.CreateInstance<WorldCatalog>();
                 AssetDatabase.CreateAsset(catalog, CatalogPath);
             }
-            AddWorld(catalog, "genesis-alpha", "Genesis Alpha", "Tutorial1", 0, 2, 175, 1000000);
-            AddWorld(catalog, "genesis-beta", "Genesis Beta", "FirstLight", 1, 3, 1000000, 3000000);
+            AddWorld(catalog, "genesis-alpha", "Genesis Alpha", "Tutorial1", 0, 2, true, 1000000);
+            // Genesis Beta teaches the natural Stone discovery only, so it awards no recipes.
+            AddWorld(catalog, "genesis-beta", "Genesis Beta", "FirstLight", 1, 3, false, 3000000);
             AddModifier(catalog, "close-to-sun", "Close to the Sun", "Sunlight and Fire are more effective.", "close-to-sun-v1.png");
             AddModifier(catalog, "continuous-rotation", "Continuous Rotation", "The cluster rotates throughout play.", "continuous-rotation-v1.png");
             InfestationTools.EnsureModifier(catalog);
@@ -35,7 +36,7 @@ namespace EcoSphere.Editor
             Debug.Log("ECOSPHERE_WORLD_CATALOG_CONFIGURED: Genesis Alpha/Beta, guaranteed slots, procedural requirements and modifier pool");
         }
 
-        static void AddWorld(WorldCatalog catalog, string id, string label, string scene, int slot, int spheres, int goal, int excess)
+        static void AddWorld(WorldCatalog catalog, string id, string label, string scene, int slot, int spheres, bool recipes, int excess)
         {
             string path = Folder + id + ".asset";
             var world = AssetDatabase.LoadAssetAtPath<PredefinedWorld>(path);
@@ -44,7 +45,7 @@ namespace EcoSphere.Editor
                 world = ScriptableObject.CreateInstance<PredefinedWorld>();
                 world.id = id; world.displayName = label; world.gameplayScene = scene;
                 world.guaranteedSystem = 1; world.guaranteedSlot = slot;
-                world.rules.requiredSpheres = spheres; world.rules.inclusionGoal = goal; world.rules.abundanceGoal = excess;
+                world.rules.requiredSpheres = spheres; world.rules.recipeDiscoveries = recipes; world.rules.abundanceGoal = excess;
                 if(scene=="FirstLight")world.naturalSpheres.Add(new NaturalSpherePlacement{sphereId=SphereIds.Stone,cell=StoneTutorialLayout.StoneCell(GameplayGeometry.DefaultClusterRings)});
                 AssetDatabase.CreateAsset(world, path);
             }

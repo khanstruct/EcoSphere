@@ -18,11 +18,13 @@ namespace EcoSphere
         {
             yield return null;yield return null;
             var view=FindAnyObjectByType<SystemView>();
-            double[] scores={499.75,500,1000,2500};
+            // Each world's thresholds are shared fractions of its par; test just below one star, then exactly at each star.
+            var scores=new double[4];
             for(int i=0;i<scores.Length;i++)
             {
                 var record=WorldLevels.Get(1,i);
-                Expect(record.rules.oneStarScore==500 && record.rules.twoStarScore==1000 && record.rules.threeStarScore==2500,"default thresholds missing");
+                scores[i]=i==0 ? record.rules.StarScore(1)-.25 : record.rules.StarScore(i);
+                Expect(record.rules.StarScore(1)>0 && record.rules.StarScore(2)>record.rules.StarScore(1) && record.rules.StarScore(3)>record.rules.StarScore(2),"star thresholds must increase");
                 var amounts=new double[ElementComposition.Capacity];amounts[(int)ElementId.Void]=scores[i]*.25;amounts[(int)ElementId.Fire]=scores[i]*.75;
                 GameServices.Progress.Complete(1,i,0,0,null,amounts);
                 Expect(record.highestScore==scores[i] && record.EarnedStars==i,"score or threshold boundary incorrect");
@@ -39,8 +41,9 @@ namespace EcoSphere
                 Expect(badges.Find("Sphere Icon").gameObject.activeSelf && !badges.Find("World Stars").gameObject.activeSelf,"stale completed badges in another system");
             }
             view.SetSystemNumber(1);view.RefreshSystemHeading();Check(view);
-            var rules=WorldLevels.Get(1,1).rules;rules.twoStarScore=500;view.RefreshSystemHeading();
-            Expect(WorldLevels.Get(1,1).EarnedStars==2,"rating ignored per-world thresholds");
+            // A smaller starting cluster has a smaller par, so the same saved score earns more stars.
+            var rules=WorldLevels.Get(1,1).rules;rules.clusterRings=2;view.RefreshSystemHeading();
+            Expect(WorldLevels.Get(1,1).EarnedStars==2,"rating ignored the world's board size");
             CheckStars(view.planets[1].transform,2);
             Capture(view);
             Debug.Log("ECOSPHERE_WORLD_RATING_PASSED: fractional elemental scores, threshold boundaries, saved highest scores/rules, result revisits, completed badge replacement and system switching");

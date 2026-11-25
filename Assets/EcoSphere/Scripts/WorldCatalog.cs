@@ -143,12 +143,11 @@ namespace EcoSphere
         static void ValidateRules(WorldRules rules)
         {
             if(rules!=null && (rules.clusterRings<2 || rules.clusterRings>GameplayGeometry.MaximumSafeRings))throw new InvalidOperationException("Cluster rings exceed the playable geometry");
-            if (rules == null || rules.requiredSpheres < 1 || rules.inclusionGoal < 1 || rules.abundanceGoal <= rules.inclusionGoal || rules.rotationDuration <= 0 || float.IsNaN(rules.clustering) || rules.clustering<0 || rules.clustering>1)
+            if (rules == null || rules.requiredSpheres < 1 || rules.abundanceGoal < 1 || rules.rotationDuration <= 0 || float.IsNaN(rules.clustering) || rules.clustering<0 || rules.clustering>1)
                 throw new InvalidOperationException("Invalid world rules");
             if(rules.ammoChambers<0 || rules.ammoChambers>AmmoRing.MaximumChambers)
                 throw new InvalidOperationException("Ammo chamber count must be between 0 and "+AmmoRing.MaximumChambers);
-            if(rules.oneStarScore<0 || rules.twoStarScore<=rules.oneStarScore || rules.threeStarScore<=rules.twoStarScore)
-                throw new InvalidOperationException("World star thresholds must increase from one to three stars");
+            ScoringSettings.Current.Validate();   // star thresholds are shared fractions of par
         }
     }
 }

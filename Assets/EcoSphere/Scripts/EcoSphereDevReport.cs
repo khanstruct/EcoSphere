@@ -16,7 +16,7 @@ namespace EcoSphere
         void ReportComposition(string outcome,bool keepForResults)
         {
             if(smoke || startingNeutralTotals==null || !DevelopmentMode.Enabled)return;
-            string report=CompositionReport.Build("DEV composition - "+outcome,displayedElements,startingNeutralTotals,totals);
+            string report=CompositionReport.Build("DEV composition - "+outcome,displayedElements,startingNeutralTotals,totals)+"\n"+ScoreBreakdown();
             Debug.Log(report);
             if(keepForResults)GameServices.Session.SetDevReport(report);
         }

@@ -58,8 +58,8 @@ namespace EcoSphere
             }
         }
 
-        int[] StarScores => new[] { preparedWorld.rules.oneStarScore, preparedWorld.rules.twoStarScore, preparedWorld.rules.threeStarScore };
-        float ScoreRange => Mathf.Max(1, preparedWorld.rules.threeStarScore * visualizerStyle.scoreRangePastThreeStars);
+        float[] StarScores => new[] { (float)preparedWorld.rules.StarScore(1), (float)preparedWorld.rules.StarScore(2), (float)preparedWorld.rules.StarScore(3) };
+        float ScoreRange => Mathf.Max(1, (float)preparedWorld.rules.StarScore(3) * visualizerStyle.scoreRangePastThreeStars);
 
         void LayoutVisualizerOverlays(float available)
         {
@@ -80,9 +80,11 @@ namespace EcoSphere
             // Threshold guides share the bars' eased scale, so a bar crossing a line really meets that share.
             double shownTotal = 0;
             foreach (var element in displayedElements) shownTotal += shown[(int)element];
-            float inclusion = Mathf.Max(1, resourceGoal);
-            float matchValue = Mathf.Max((float)(shownTotal * ElementStandings.LeadershipPercent / 100), inclusion);
-            float selfValue = Mathf.Max((float)(shownTotal * .5), inclusion);
+            float matchValue = (float)(shownTotal * composition.RecipePercent / 100);
+            float selfValue = (float)(shownTotal * composition.SelfPercent / 100);
+            // Worlds without recipe discoveries show no recipe guides.
+            foreach (var guide in new Component[] { matchZone, selfZone, matchLine, selfLine, matchLineLabel, selfLineLabel })
+                if (guide.gameObject.activeSelf != RecipesEnabled) guide.gameObject.SetActive(RecipesEnabled);
             bool empty = visualizerScale <= 0;
             float top = barBaseline + maximumBarHeight;
             float matchY = empty ? top : Mathf.Min(top, barBaseline + matchValue / scale * maximumBarHeight);
@@ -100,16 +102,16 @@ namespace EcoSphere
             // When both lines pin to the top, the labels sit side by side instead of on top of each other.
             matchLineLabel.rectTransform.anchoredPosition = new Vector2(guideRight - 4 - (selfPinned && matchPinned ? 70 : 0), matchY + 2);
             selfLineLabel.rectTransform.anchoredPosition = new Vector2(guideRight - 4, selfY + 2);
-            selfLineLabel.gameObject.SetActive(!Mathf.Approximately(matchY, selfY) || selfPinned);
+            selfLineLabel.gameObject.SetActive(RecipesEnabled && (!Mathf.Approximately(matchY, selfY) || selfPinned));
 
             // Star score strip: eased fill, stars switch to the rating star as their thresholds are passed.
-            // Uses the same score the world rating is earned from (the selected elemental total that completion saves
-            // as highestScore), not the raw per-sphere points.
-            float ratingScore = (float)composition.Total;
+            // Uses the same score the world rating is earned from (LevelScore: elemental total plus bonuses, which
+            // completion saves as highestScore), not the raw per-sphere points.
+            float ratingScore = (float)RatingScore;
             shownScore = Mathf.Lerp(shownScore, ratingScore, 1 - Mathf.Exp(-Time.deltaTime * 6));
             if (Mathf.Abs(shownScore - ratingScore) < .5f) shownScore = ratingScore;
             scoreFill.sizeDelta = new Vector2(scoreTrack.sizeDelta.x * Mathf.Clamp01(shownScore / ScoreRange), scoreTrack.sizeDelta.y);
-            scoreLabel.text = System.Math.Truncate(composition.Total).ToString("N0");
+            scoreLabel.text = System.Math.Truncate(RatingScore).ToString("N0");
             var scores = StarScores;
             for (int i = 0; i < scoreStars.Count; i++)
             {
@@ -117,7 +119,8 @@ namespace EcoSphere
                 if (lit == scoreStarsLit[i]) continue;
                 scoreStarsLit[i] = lit;
                 scoreStars[i].sprite = lit ? WorldCatalog.Current.ratingStar : visualizerStyle.emptyStar;
-                if (lit) { StartCoroutine(PopStar(scoreStars[i].transform)); if (levelAudio) levelAudio.StarReached(); }
+                // Silent pop: the star-score sound stays reserved for the end-of-level rating.
+                if (lit) StartCoroutine(PopStar(scoreStars[i].transform));
             }
         }
 
@@ -125,11 +128,13 @@ namespace EcoSphere
         {
             for (float t = 0; t < .35f; t += Time.deltaTime)
             {
+                // The visualizer can rebuild mid-pop (e.g. the bar count changes); stop if this star is gone.
+                if (!star) yield break;
                 float p = t / .35f;
                 star.localScale = Vector3.one * (1 + .6f * Mathf.Sin(p * Mathf.PI) * (1 - p * .4f));
                 yield return null;
             }
-            star.localScale = Vector3.one;
+            if (star) star.localScale = Vector3.one;
         }
     }
 }

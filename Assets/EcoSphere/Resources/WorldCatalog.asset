@@ -63,15 +63,12 @@ MonoBehaviour:
   proceduralRules:
     requiredSpheres: 4
     clusterRings: 3
-    inclusionGoal: 500
     abundanceGoal: 1500
+    recipeDiscoveries: 1
     clustering: 0.5
     ammoChambers: 1
     rotationDegrees: 24
     rotationDuration: 0.65
-    oneStarScore: 500
-    twoStarScore: 1000
-    threeStarScore: 2500
   minimumClustering: 0.1
   maximumClustering: 0.9
   clusterGroups:

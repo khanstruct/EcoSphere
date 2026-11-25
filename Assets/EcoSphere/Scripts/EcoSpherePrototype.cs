@@ -29,8 +29,9 @@ namespace EcoSphere
         public float rotationDegrees = 24;
         public float rotationDuration = .65f;
         [Header("Level resource target")]
-        [Min(1)] public int resourceGoal = ElementScoring.Inclusion;
         [Min(1)] public int abundanceGoal = ElementScoring.Abundance;
+        // Whether this world can award recipe discoveries (its flares and threshold guides follow the same rule).
+        public bool RecipesEnabled => preparedWorld == null || preparedWorld.rules.recipeDiscoveries;
         int score;
         readonly HashSet<int> releasedNaturalSpheres=new HashSet<int>();
         bool stoneReleased=>releasedNaturalSpheres.Contains(StoneType);
@@ -422,6 +423,7 @@ namespace EcoSphere
             lastMatch = matches.Count; matchedCount += matches.Count;
             RemoveCells(matches, ElementScoring.MatchRate(matches.Count),matchOrigin:chosen,voicePoints:resolutionSpherePoints);
             var released = board.Disconnected(); lastRelease = released.Count;
+            RecordResolution(lastMatch, lastRelease, shotRicochets);
             AdvanceTutorial(released);
             RemoveCells(released, ElementScoring.Breakaway, true,voicePoints:resolutionSpherePoints);
             if (levelAudio) levelAudio.Resolve(lastMatch, lastRelease);
@@ -551,7 +553,8 @@ namespace EcoSphere
             UpdateComposition();
             ReportComposition("completed",true);
             GameServices.Progress.Complete(GameServices.Session.SystemNumber, GameServices.Session.PlanetIndex,
-                appearance ? appearance.TargetSeaLevel : -.02f, planet.eulerAngles.y, releasedNaturalSpheres, selectedElementTotals, composition.Ranked);
+                appearance ? appearance.TargetSeaLevel : -.02f, planet.eulerAngles.y, releasedNaturalSpheres, selectedElementTotals, composition.Ranked,
+                displayedElements.Count, levelScore.Bonus);
             GameServices.Session.Phase=GamePhase.Rating;
             var rating=new GameObject("Level star rating").AddComponent<StarRatingPresentation>();
             yield return rating.Present(preparedWorld.EarnedStars,WorldCatalog.Current.ratingStar,tutorialButtonPrefab,uiFont);
@@ -590,6 +593,7 @@ namespace EcoSphere
                 ReportComposition("failed",false);
                 Array.Clear(totals, 0, totals.Length); Array.Clear(shown, 0, shown.Length);
                 score = matchedCount = lastMatch = lastRelease = 0;
+                ResetScoreTracking();
                 if (levelAudio) levelAudio.CancelResolution();
                 if (levelAudio) levelAudio.AnnounceResult(false);
                 aim.enabled = false;

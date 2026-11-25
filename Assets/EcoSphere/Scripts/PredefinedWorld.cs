@@ -9,17 +9,25 @@ namespace EcoSphere
     {
         [Min(1)] public int requiredSpheres = 4;
         [Min(2)] public int clusterRings=GameplayGeometry.DefaultClusterRings;
-        [Min(1)] public int inclusionGoal = 500, abundanceGoal = 1500;
+        [Min(1)] public int abundanceGoal = 1500;
+        [Tooltip("Whether completing this world can award recipe discoveries. Recipes qualify on element shares alone (see ScoringSettings).")]
+        public bool recipeDiscoveries = true;
         [Range(0,1)] public float clustering=.5f;
         // Reserve chambers beside the cannon; zero disables the ammo ring (the Genesis tutorials).
         [Range(0,AmmoRing.MaximumChambers)] public int ammoChambers;
         public float rotationDegrees = 24;
         [Min(.01f)] public float rotationDuration = .65f;
-        [Min(0)] public int oneStarScore = 500, twoStarScore = 1000, threeStarScore = 2500;
-        public int StarsForScore(double score) => score >= threeStarScore ? 3 : score >= twoStarScore ? 2 : score >= oneStarScore ? 1 : 0;
-        public WorldRules Copy() => new WorldRules { requiredSpheres = requiredSpheres, clusterRings=clusterRings, inclusionGoal = inclusionGoal,
-            abundanceGoal = abundanceGoal, clustering=clustering, ammoChambers=ammoChambers, rotationDegrees = rotationDegrees, rotationDuration = rotationDuration,
-            oneStarScore=oneStarScore, twoStarScore=twoStarScore, threeStarScore=threeStarScore };
+        // Star thresholds are shared fractions of par (starting cluster cells x breakaway points; see ScoringSettings),
+        // so they follow board size and point values instead of fixed numbers per world.
+        public double Par => ScoringSettings.Current.Par(GameplayGeometry.CellCount(clusterRings));
+        public double StarScore(int stars)
+        {
+            var scoring = ScoringSettings.Current;
+            return Math.Round(Par * (stars <= 1 ? scoring.oneStarPar : stars == 2 ? scoring.twoStarPar : scoring.threeStarPar));
+        }
+        public int StarsForScore(double score) => score >= StarScore(3) ? 3 : score >= StarScore(2) ? 2 : score >= StarScore(1) ? 1 : 0;
+        public WorldRules Copy() => new WorldRules { requiredSpheres = requiredSpheres, clusterRings=clusterRings, recipeDiscoveries = recipeDiscoveries,
+            abundanceGoal = abundanceGoal, clustering=clustering, ammoChambers=ammoChambers, rotationDegrees = rotationDegrees, rotationDuration = rotationDuration };
     }
 
     [CreateAssetMenu(menuName = "EcoSphere/Predefined World")]
