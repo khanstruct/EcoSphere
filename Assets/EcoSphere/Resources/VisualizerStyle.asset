@@ -16,4 +16,18 @@ MonoBehaviour:
   frame: {fileID: 21300000, guid: dcbee05e750e42b8984be4bab5c038de, type: 3}
   maximumBarWidth: 82
   minimumGap: 12
+  leaderHeightFraction: 0.85
   pulseFraction: 0.025
+  matchZoneColor: {r: 0.45, g: 0.85, b: 1, a: 0.07}
+  selfZoneColor: {r: 1, g: 0.78, b: 0.3, a: 0.09}
+  matchLineColor: {r: 0.55, g: 0.9, b: 1, a: 0.55}
+  selfLineColor: {r: 1, g: 0.8, b: 0.35, a: 0.65}
+  guideLineThickness: 2
+  matchLabel: MATCH
+  selfLabel: SELF
+  emptyStar: {fileID: 21300000, guid: d1d5cd1e06f4bae458829ff4ebf42116, type: 3}
+  scoreStripHeight: 30
+  starSize: 28
+  scoreRangePastThreeStars: 1.15
+  scoreTrackColor: {r: 1, g: 1, b: 1, a: 0.08}
+  scoreFillColor: {r: 1, g: 0.78, b: 0.3, a: 0.85}

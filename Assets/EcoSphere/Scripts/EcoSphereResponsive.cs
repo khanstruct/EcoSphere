@@ -53,7 +53,6 @@ namespace EcoSphere
                 ScreenLayout.Place(gameplayTitle.rectTransform,new Vector2(side,90),new Vector2(-x,halfH-100));
                 ScreenLayout.Place(status.rectTransform,new Vector2(side,100),new Vector2(-x,100));
                 ScreenLayout.Place(TemperatureLabel.rectTransform,new Vector2(side,60),new Vector2(-x,halfH-190));
-                ScreenLayout.Place(detail.rectTransform,new Vector2(side,100),new Vector2(-x,-20));
                 ScreenLayout.Place(instructions.rectTransform,new Vector2(side,100),new Vector2(-x,-170));
             }
             else
@@ -61,7 +60,6 @@ namespace EcoSphere
                 ScreenLayout.Place(gameplayTitle.rectTransform,new Vector2(850,60),new Vector2(0,halfH-45));
                 ScreenLayout.Place(status.rectTransform,new Vector2(850,45),new Vector2(0,halfH-100));
                 ScreenLayout.Place(TemperatureLabel.rectTransform,new Vector2(850,35),new Vector2(0,halfH-185));
-                ScreenLayout.Place(detail.rectTransform,new Vector2(850,42),new Vector2(0,-halfH+355));
                 ScreenLayout.Place(instructions.rectTransform,new Vector2(850,35),new Vector2(0,-halfH+315));
 
 

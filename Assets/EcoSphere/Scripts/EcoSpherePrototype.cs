@@ -69,7 +69,7 @@ namespace EcoSphere
         }
         readonly List<CannonContactPart> cannonContacts = new List<CannonContactPart>();
         float spinAngle;
-        TMP_Text status, detail;
+        TMP_Text status;
         TMP_FontAsset font;
         bool smoke;
         public int CellCount => board.Cells.Count;
@@ -253,7 +253,7 @@ namespace EcoSphere
         void BuildBoard()
         {
             releasedNaturalSpheres.Clear();
-            if(ProceduralLayout)ProceduralCluster.Populate(board,activeSphereTypes,InitialRings,preparedWorld.seed,preparedWorld.rules.clustering);
+            if(ProceduralLayout)ProceduralCluster.Populate(board,activeSphereTypes,InitialRings,preparedWorld.seed,preparedWorld.rules.clustering,WorldCatalog.Current.clusterGroups);
             else if(StoneTutorial)StoneTutorialLayout.Populate(board,activeSphereTypes,InitialRings);
             else
             {
@@ -636,7 +636,6 @@ namespace EcoSphere
             gameplayTitle = Label("Title", hud, new Vector2(.5f, 1), new Vector2(0, -45), new Vector2(850, 60), "ECOSPHERE / " + worldName.ToUpperInvariant(), 29);
             status = Label("Turn", hud, new Vector2(.5f, 1), new Vector2(0, -100), new Vector2(850, 45), "", 21);
             TemperatureLabel=Label("Average temperature",hud,new Vector2(.5f,1),new Vector2(0,-185),new Vector2(850,35),PlanetTemperatureDisplay.Average(59),22);
-            detail = Label("Counters", hud, new Vector2(.5f, 0), new Vector2(0, 525), new Vector2(850, 42), "", 18);
             var strip = Panel("Resource visualizer", hud, new Vector2(.5f, 0), new Vector2(0, 110), new Vector2(860, 210), new Color(.01f, .018f, .035f, .96f));
             resourcePanel = strip;
             BuildResourceVisualizer(strip);

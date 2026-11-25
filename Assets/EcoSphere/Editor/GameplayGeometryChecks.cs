@@ -10,7 +10,7 @@ namespace EcoSphere.Editor
             if(GameplayGeometry.CellSpacing<GameplayGeometry.SphereRadius*2 || GameplayGeometry.MaximumSafeRings<GameplayGeometry.DefaultClusterRings)
                 throw new Exception("Sphere geometry overlaps neighbors or exceeds initial bounds");
             var board=new BoardRules();var types=new[]{SphereIds.Fire,SphereIds.Void,SphereIds.Water,SphereIds.Air};
-            ProceduralCluster.Populate(board,types,GameplayGeometry.DefaultClusterRings,123,.5f);
+            ProceduralCluster.Populate(board,types,GameplayGeometry.DefaultClusterRings,123,.5f,WorldCatalog.Current.clusterGroups);
             // A starting cluster must leave room for a whole projectile, not only fit itself.
             float sideGap=(GameplayGeometry.Right-GameplayGeometry.Left)*.5f-GameplayGeometry.DefaultClusterRings*GameplayGeometry.CellSpacing-GameplayGeometry.SphereRadius;
             if(sideGap<=GameplayGeometry.SphereRadius*2)throw new Exception("Starting cluster blocks the side bank-shot corridors");

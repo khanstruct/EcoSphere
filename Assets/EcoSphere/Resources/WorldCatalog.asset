@@ -74,6 +74,15 @@ MonoBehaviour:
     threeStarScore: 2500
   minimumClustering: 0.1
   maximumClustering: 0.9
+  clusterGroups:
+    sizeWeights:
+    - 20
+    - 40
+    - 28
+    - 6
+    clusteringTilt: 0.5
+    minimumMergeChance: 0.02
+    maximumMergeChance: 0.12
   proceduralGameplayScene: Procedural
   planetsPerSystem: 5
   nameOpenings:

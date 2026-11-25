@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3a9791432f2bd5c40ae868c65aa8ce8a
+guid: d1d5cd1e06f4bae458829ff4ebf42116
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 83869481854527992
-    second: sphere-requirement-v1_0
+      213: -4254785732179072217
+    second: star-empty_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -42,7 +42,7 @@ TextureImporter:
     mipBias: 0
     wrapU: 1
     wrapV: 1
-    wrapW: 1
+    wrapW: 0
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
@@ -115,13 +115,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: sphere-requirement-v1_0
+      name: star-empty_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1254
-        height: 1254
+        width: 256
+        height: 256
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -130,8 +130,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8f96f6179d6f92100800000000000000
-      internalID: 83869481854527992
+      spriteID: 72be01e5be6f3f4c0800000000000000
+      internalID: -4254785732179072217
       vertices: []
       indices: 
       edges: []

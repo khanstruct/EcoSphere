@@ -103,6 +103,7 @@ namespace EcoSphere
             var frame=Panel("Shared visualizer frame",strip,Vector2.one*.5f,Vector2.zero,Vector2.zero,Color.white);
             frame.anchorMin=Vector2.zero; frame.anchorMax=Vector2.one; frame.offsetMin=frame.offsetMax=Vector2.zero;
             var image=frame.GetComponent<Image>(); image.sprite=visualizerStyle.frame; image.type=Image.Type.Sliced; image.fillCenter=false; image.raycastTarget=false;
+            BuildThresholdGuides(strip);
             for (int i=0;i<displayedElements.Count;i++)
             {
                 var bar=new GameObject("Element bar",typeof(RectTransform),typeof(CanvasRenderer),typeof(EnergyBarGraphic)).GetComponent<EnergyBarGraphic>();
@@ -116,6 +117,7 @@ namespace EcoSphere
                 var marker=Panel("True element value",strip,new Vector2(.5f,0),Vector2.zero,new Vector2(50,1),new Color(1,1,1,.45f));
                 marker.GetComponent<Image>().raycastTarget=false; resourceValues.Add(marker);
             }
+            BuildScoreStrip(strip);
             LayoutResourceChannels();
         }
         void LayoutResourceChannels()
@@ -127,7 +129,8 @@ namespace EcoSphere
             float gap=count>1 ? (available-width*count)/(count-1) : 0;
             float used=width*count+gap*Mathf.Max(0,count-1);
             float x=-used*.5f+width*.5f;
-            barBaseline=38; maximumBarHeight=Mathf.Max(24,resourcePanel.sizeDelta.y-barBaseline-38);
+            // The top of the frame is reserved for the star score strip.
+            barBaseline=38; maximumBarHeight=Mathf.Max(24,resourcePanel.sizeDelta.y-barBaseline-38-visualizerStyle.scoreStripHeight);
             for(int i=0;i<count;i++)
             {
                 var rect=energyBars[i].rectTransform;
@@ -138,6 +141,7 @@ namespace EcoSphere
                 barTotals[i].rectTransform.sizeDelta=new Vector2(width+Mathf.Min(gap*.5f,24),24);
                 x+=width+gap;
             }
+            LayoutVisualizerOverlays(available);
         }
         void UpdateVisualizer()
         {
@@ -177,8 +181,7 @@ namespace EcoSphere
                 barTotals[i].rectTransform.anchoredPosition=new Vector2(rect.anchoredPosition.x,barBaseline+rect.sizeDelta.y+17);
                 resourceValues[i].anchoredPosition=new Vector2(rect.anchoredPosition.x,barBaseline+Mathf.Clamp((float)totals[(int)element]/scale*maximumBarHeight,2,maximumBarHeight));
             }
-            detail.text=$"Score {score} · Matched {lastMatch} · Released {lastRelease}";
-
+            UpdateVisualizerOverlays(scale);
         }
     }
 }

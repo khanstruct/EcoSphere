@@ -6,6 +6,18 @@ Standings belong to **elements**, not sphere types or visualizer groups. Multipl
 
 `ElementStandings` supplies the shared ranking and composition calculation. Ranking uses actual accumulated amounts rather than animated bar heights. Equal amounts preserve the previous order: the incumbent third-place element remains highlighted until a challenger strictly exceeds it. Initial ties without an incumbent follow the visualizer's first-appearance order. Gameplay passes its final order into discovery evaluation so completion does not choose different tie winners.
 
+## Threshold guides and star score strip
+
+Bars stay scaled to the leader (85% of the available height) so they don't sit at the bottom. Because every bar shares that scale, the recipe thresholds are single heights that apply to all bars, drawn behind them (`EcoSphereVisualizerGuides`):
+
+- **Match line:** the higher of 35% of the selected elemental total and the world's inclusion minimum. A bar above it qualifies for a recipe.
+- **Self-match line:** the higher of 50% of the total and the inclusion minimum.
+- A muted zone fills the space between the lines and a gold zone sits above the self line. Lines and zones follow the bars' eased scale. A line above the frame pins to the top with a `^` (the UI font has no ▲ glyph). Labels sit at the right end, behind the bars, so bar totals stay readable where they meet. The existing flares still mark fully qualified bars.
+
+A slim strip along the top of the frame shows the level's rating score, the same value the world's stars are earned from: the selected elemental total (`ElementStandings.Total`, the sum of the bar totals) that completion saves as `highestScore`. It deliberately does not show the raw per-sphere `score`, which also counts points that never become displayed elemental points and can exceed a star threshold the rating doesn't reach. The strip has an eased fill, the score number, and three stars at the world's `oneStarScore`/`twoStarScore`/`threeStarScore`, on a track ending 15% past three stars. Each star switches from `Art/UI/star-empty.png` (source 1254 px; imported at the 256 px limit) to the catalog's rating star with a short pop and the shared star-score sound as the fill passes it. The "Score · Matched · Released" counters line above the visualizer was removed.
+
+Colors, line thickness, labels, strip height, star size and the track's range are on `VisualizerStyle`. Checked in portrait and wide renders at a fresh start and with injected mid-game totals (`Logs/Visualizer-start-zoom.png`, `Logs/Visualizer-progress-zoom.png`, `Logs/Visualizer-progress-wide-zoom.png`).
+
 ## Recipe eligibility
 
 - Both recipe inputs must individually have at least 35% of selected elemental points and meet the world’s existing minimum inclusion amount. Exactly 35% qualifies; values below it are not rounded up.

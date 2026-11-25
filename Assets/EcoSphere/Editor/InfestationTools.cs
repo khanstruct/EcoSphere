@@ -71,7 +71,7 @@ namespace EcoSphere.Editor
             var counts=new HashSet<int>();
             for(int seed=0;seed<100;seed++)
             {
-                var board=new BoardRules();ProceduralCluster.Populate(board,new[]{SphereIds.Fire,SphereIds.Void,SphereIds.Water,SphereIds.Mud},4,seed,.5f);
+                var board=new BoardRules();ProceduralCluster.Populate(board,new[]{SphereIds.Fire,SphereIds.Void,SphereIds.Water,SphereIds.Mud},4,seed,.5f,WorldCatalog.Current.clusterGroups);
                 var before=new Dictionary<Vector2Int,int>(board.Cells);InfestationRules.Populate(board,modifier,seed);
                 if(board.Infested.Count<8 || board.Infested.Count>12 || board.Infested.Contains(Vector2Int.zero))throw new Exception("Infestation count/core exclusion");
                 counts.Add(board.Infested.Count);var original=new HashSet<Vector2Int>(board.Infested);InfestationRules.Populate(board,modifier,seed);
