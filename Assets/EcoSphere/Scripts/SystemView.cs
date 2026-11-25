@@ -131,8 +131,14 @@ namespace EcoSphere
             displayedSystem = systemNumber;
             var generated = GameServices.Progress.GetSystem(systemNumber);
             var sun=WorldCatalog.Current.Sun(generated.sunTypeId);
-            if(sun!=null && sun.sprite)
-                foreach(var image in GetComponentsInChildren<Image>())if(image.name=="Yellow Sun")image.sprite=sun.sprite;
+            if(sun!=null)
+                foreach(var image in GetComponentsInChildren<Image>())
+                    if(image.name=="Yellow Sun")
+                    {
+                        var view=image.GetComponent<SunView>();
+                        if(!view)view=image.gameObject.AddComponent<SunView>();
+                        view.Show(sun,WorldCatalog.Current.animatedSunMaterial);
+                    }
             for (int i = 0; i < planets.Length; i++)
             {
                 planets[i].gameObject.SetActive(i < generated.worlds.Count);

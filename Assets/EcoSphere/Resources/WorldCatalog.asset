@@ -27,6 +27,17 @@ MonoBehaviour:
   - id: yellow-star
     displayName: Yellow Star
     sprite: {fileID: 21300000, guid: 4a244a87d5b1ebd4284379a29807b657, type: 3}
+    appearance:
+      coreColor: {r: 1, g: 0.97, b: 0.8, a: 1}
+      surfaceColor: {r: 1, g: 0.72, b: 0.2, a: 1}
+      spotColor: {r: 0.6, g: 0.18, b: 0.02, a: 1}
+      coronaColor: {r: 1, g: 0.78, b: 0.35, a: 1}
+      surfaceSpeed: 0.025
+      coronaSpeed: 0.032
+      surfaceContrast: 1.6
+      coronaStrength: 1.2
+      glowStrength: 0.8
+  animatedSunMaterial: {fileID: 2100000, guid: 42be39d41d56e51438e635123d579663, type: 2}
   minimumProceduralSpheres: 4
   maximumProceduralSpheres: 4
   proceduralRules:

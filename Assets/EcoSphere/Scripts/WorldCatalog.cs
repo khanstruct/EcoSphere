@@ -7,7 +7,26 @@ namespace EcoSphere
     [System.Serializable] public sealed class SunTypeDefinition
     {
         public string id,displayName;
+        [Tooltip("Static fallback when no animated sun material is assigned on the catalog.")]
         public Sprite sprite;
+        public SunAppearance appearance=new SunAppearance();
+    }
+
+    // Per-sun look for the shared animated sun shader. Every sun type uses the same textures and shader.
+    [System.Serializable] public sealed class SunAppearance
+    {
+        public Color coreColor=new Color(1,.97f,.8f),surfaceColor=new Color(1,.72f,.2f),spotColor=new Color(.6f,.18f,.02f),coronaColor=new Color(1,.78f,.35f);
+        [Min(0)] public float surfaceSpeed=.025f,coronaSpeed=.032f;
+        [Min(0)] public float surfaceContrast=1.6f,coronaStrength=1.2f,glowStrength=.8f;
+
+        public void Apply(Material material)
+        {
+            material.SetColor("_CoreColor",coreColor);material.SetColor("_SurfaceColor",surfaceColor);
+            material.SetColor("_SpotColor",spotColor);material.SetColor("_CoronaColor",coronaColor);
+            material.SetFloat("_SurfaceSpeed",surfaceSpeed);material.SetFloat("_CoronaSpeed",coronaSpeed);
+            material.SetFloat("_SurfaceContrast",surfaceContrast);material.SetFloat("_CoronaStrength",coronaStrength);
+            material.SetFloat("_GlowStrength",glowStrength);
+        }
     }
     [CreateAssetMenu(menuName = "EcoSphere/World Catalog")]
     public sealed class WorldCatalog : ScriptableObject
@@ -20,6 +39,8 @@ namespace EcoSphere
         public Sprite ratingStar;
         public string defaultSunTypeId="yellow-star",defaultTerrainStyleId="barren-v1";
         public List<SunTypeDefinition> sunTypes=new List<SunTypeDefinition>();
+        [Tooltip("Shared animated sun material (EcoSphere/UI/Animated Sun) holding the plasma and corona masks. Each sun type tints its own instance.")]
+        public Material animatedSunMaterial;
         public SunTypeDefinition Sun(string id)=>sunTypes.Find(sun=>sun.id==id);
         [Min(4)] public int minimumProceduralSpheres = 4, maximumProceduralSpheres = 4;
         public WorldRules proceduralRules = new WorldRules();
