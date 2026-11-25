@@ -38,6 +38,9 @@ namespace EcoSphere
         [Tooltip("The element this sphere represents. Independent of the elements it contributes.")]
         public ElementId namesakeElement=(ElementId)(-1);
         public string displayName;
+        [TextArea(2,4), Tooltip("Short player-facing text explaining how this sphere behaves in play. Don't list element yields here: ContributionSummary builds them from Contributions.")]
+        public string description;
+        public const int MaximumDescriptionLength=160;
         public SphereCategory category;
         public Texture2D surface;
         public Sprite icon;
@@ -72,6 +75,26 @@ namespace EcoSphere
                     throw new InvalidOperationException(name + ": contributions must be positive and use distinct elements");
             if (ContributionUnits + unallocatedWeight > 4) throw new InvalidOperationException(name + ": at most four contribution units including unallocated units");
             if (color.a <= 0) throw new InvalidOperationException(name + ": the streak/visualizer color must be visible");
+            if (string.IsNullOrWhiteSpace(description) || description.Length > MaximumDescriptionLength)
+                throw new InvalidOperationException(name + ": a description of 1 to " + MaximumDescriptionLength + " characters is required");
+        }
+
+        // Share of each earned point that reaches an element (0-1). Unallocated units take their share without reaching any element.
+        public float ContributionShare(ElementContribution entry) => TotalContributionUnits > 0 ? entry.amount / (float)TotalContributionUnits : 0;
+
+        // Readable element yield, built from Contributions so the text can never disagree with scoring,
+        // e.g. "Ice 50% · Water 25%". Largest share first; ties keep authored order. Core contributes nothing.
+        public string ContributionSummary()
+        {
+            if (role == SphereRole.Core) return "";
+            var ordered = new List<ElementContribution>(contributions);
+            for (int i = 1; i < ordered.Count; i++)
+                for (int j = i; j > 0 && ordered[j].amount > ordered[j - 1].amount; j--)
+                    (ordered[j], ordered[j - 1]) = (ordered[j - 1], ordered[j]);
+            var parts = new List<string>();
+            foreach (var entry in ordered)
+                parts.Add(SphereCatalog.Current.ElementName(entry.element) + " " + Mathf.RoundToInt(ContributionShare(entry) * 100) + "%");
+            return string.Join(" · ", parts);
         }
 
         public void AddContributions(double[] totals, int rate)

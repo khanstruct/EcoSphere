@@ -15,6 +15,7 @@ MonoBehaviour:
   id: 9
   namesakeElement: 52
   displayName: Mud
+  description: "A wet, earthy element: mostly Mud, with equal parts Water and Stone."
   category: 0
   surface: {fileID: 2800000, guid: e62518428eca43a598dc161026a6aaea, type: 3}
   icon: {fileID: 21300000, guid: 8a6de9ef0bd5486e8d7380b64d8f4727, type: 3}

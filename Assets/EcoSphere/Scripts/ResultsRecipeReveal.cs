@@ -21,7 +21,8 @@ namespace EcoSphere
         RectTransform recipeStage,flareRect;
         Material flareMaterial;
         Image screenWash;
-        TMP_Text revealTitle,revealName;
+        TMP_Text revealTitle,revealName,revealDescription;
+        public string RevealedDescription => revealDescription ? revealDescription.text : "";
         AudioSource revealAudio,combineAudio;
         public int CombinePlayCount { get; private set; }
         public double CombineAudioStart { get; private set; }
@@ -68,6 +69,7 @@ namespace EcoSphere
                 label.gameObject.SetActive(false); settledNames.Add(label);
             }
             revealName=Text("Revealed element",modal,"",34,new Vector2(700,55),new Vector2(0,-155));
+            revealDescription=DescriptionText("Revealed description",modal,"");
             OkButton=Button("Continue",modal,()=> { if(RevealPhase==DiscoveryRevealPhase.Ready)StartCoroutine(CollectRevealedDiscovery()); });
             OkButton.interactable=false;
             flightLayer=Rect("Discovery animation",overlay,Vector2.zero,Vector2.zero);
@@ -98,7 +100,7 @@ namespace EcoSphere
         }
         IEnumerator RevealNextDiscovery()
         {
-            OkButton.interactable=false; merge=shake=whiten=0; revealName.text="";
+            OkButton.interactable=false; merge=shake=whiten=0; revealName.text=revealDescription.text="";
             foreach(var item in ingredients)Destroy(item.gameObject);
             foreach(var item in ingredientNames)Destroy(item.gameObject);
             ingredients.Clear(); ingredientMaterials.Clear(); ingredientNames.Clear();
@@ -165,7 +167,8 @@ namespace EcoSphere
                 yield return AnimateReveal(.35f,t=> { graphic.color=new Color(1,1,1,t); });
             }
             material.SetFloat("_Whiten",0); material.SetFloat("_Glow",0); flareMaterial.SetFloat("_Opacity",0);
-            revealTitle.text="Sphere Discovered"; revealName.text=SphereCatalog.Current.Get(record.sphereId).displayName;
+            var revealed=SphereCatalog.Current.Get(record.sphereId);
+            revealTitle.text="Sphere Discovered"; revealName.text=revealed.displayName; revealDescription.text=revealed.description;
             yield return AnimateReveal(revealStyle.revealHold,t=> { });
             RevealPhase=DiscoveryRevealPhase.Ready; OkButton.interactable=true;
         }
@@ -228,13 +231,15 @@ namespace EcoSphere
         }
         void LayoutRecipeReveal(ScreenLayout.Metrics m)
         {
-            float width=Mathf.Min(820,m.width-50),height=Mathf.Min(620,m.height-110);
+            // Title, stage, name, description (beneath the sphere), then the button.
+            float width=Mathf.Min(820,m.width-50),height=Mathf.Min(740,m.height-110);
             ScreenLayout.Place(modal,new Vector2(width,height),Vector2.zero);
             ((RectTransform)modal.Find("Backing")).sizeDelta=modal.sizeDelta-Vector2.one*42;
             ScreenLayout.Place(revealTitle.rectTransform,new Vector2(width-80,70),new Vector2(0,height*.5f-65));
-            ScreenLayout.Place(recipeStage,new Vector2(width-90,height-230),new Vector2(0,20));
+            ScreenLayout.Place(recipeStage,new Vector2(width-90,height-290),new Vector2(0,20));
             flareRect.sizeDelta=Vector2.one*Mathf.Min(620,width-60);
-            ScreenLayout.Place(revealName.rectTransform,new Vector2(width-80,55),new Vector2(0,-height*.5f+155));
+            ScreenLayout.Place(revealName.rectTransform,new Vector2(width-80,55),new Vector2(0,-height*.5f+235));
+            ScreenLayout.Place(revealDescription.rectTransform,new Vector2(Mathf.Min(620,width-120),64),new Vector2(0,-height*.5f+165));
             ScreenLayout.Place(OkButton.GetComponent<RectTransform>(),new Vector2(360,120),new Vector2(0,-height*.5f+75));
             ApplyRecipePose();
         }

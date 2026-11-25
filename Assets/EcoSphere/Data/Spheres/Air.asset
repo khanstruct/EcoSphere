@@ -15,6 +15,7 @@ MonoBehaviour:
   id: 10
   namesakeElement: 8
   displayName: Air
+  description: "A light element that fills the skies and builds the atmosphere."
   category: 0
   surface: {fileID: 2800000, guid: ce556e2d14995ae4f83489747865c85d, type: 3}
   icon: {fileID: 21300000, guid: 6f66339750c6a8b4c9fe7e39c1c4922f, type: 3}

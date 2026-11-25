@@ -55,6 +55,9 @@ namespace EcoSphere
             if (results.DiscoveryPlayCount != 1 || results.ContinueButton.interactable || results.Settled)
                 throw new Exception("Discovery sound or Continue gating incorrect");
             CheckGlobe(results, expectedMaterial);
+            var stoneDescription = GameObject.Find("Stone description")?.GetComponent<TMPro.TMP_Text>();
+            if (!stoneDescription || !stoneDescription.gameObject.activeInHierarchy || stoneDescription.text != SphereCatalog.Current.Get(SphereIds.Stone).description)
+                throw new Exception("Discovered sphere description missing from the discovery overlay");
             Capture(results, "stone-overlay", 900, 1600);
             Capture(results, "stone-overlay-wide", 1600, 900);
             int clicks = UIClickAudio.PlayCount;

@@ -162,6 +162,10 @@ namespace EcoSphere.Editor
                 foreach (var entry in sphere.contributions)
                     Expect(totals[(int)entry.element] == (sphere.role == SphereRole.Core ? 0 : ElementScoring.Breakaway * (entry.amount / TotalWeight(sphere))), sphere.displayName + " breakaway amount");
             }
+            // Readable yields come from contributions: largest share first, unallocated units omitted, Core empty.
+            Expect(catalog.Get(SphereIds.Ice).ContributionSummary()=="Ice 50% · Water 25%","Ice contribution summary");
+            Expect(catalog.Get(SphereIds.Mud).ContributionSummary()=="Mud 50% · Water 25% · Stone 25%","Mud contribution summary");
+            Expect(catalog.Get(SphereIds.Core).ContributionSummary()=="","Core must not list contributions");
             var constrained=UnityEngine.Object.Instantiate(catalog.Get(SphereIds.Fire));
             try
             {

@@ -15,6 +15,7 @@ MonoBehaviour:
   id: 6
   namesakeElement: 5
   displayName: Water
+  description: "A flowing element that fills oceans and aids in humidity."
   category: 0
   surface: {fileID: 2800000, guid: 29e37275ab254a72a1fbf87240b14c93, type: 3}
   icon: {fileID: 21300000, guid: 298d902cc2fc42c081b98d4677329cf4, type: 3}

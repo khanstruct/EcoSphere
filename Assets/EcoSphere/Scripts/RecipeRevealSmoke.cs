@@ -60,6 +60,7 @@ namespace EcoSphere
                     yield return null;
                 }
                 Expect(results.RevealPhase==DiscoveryRevealPhase.Ready && results.RevealIndex==index,"reveal timed out");
+                Expect(results.RevealedDescription==SphereCatalog.Current.Get(results.CurrentDiscovery.sphereId).description,"revealed sphere description missing");
                 if(index==2) Expect(results.CurrentDiscovery.first==ElementId.Fire && results.CurrentDiscovery.second==ElementId.Fire,"self recipe lost its identical inputs");
                 if(index==1)Capture(results,"revealed");
                 if(index>0)

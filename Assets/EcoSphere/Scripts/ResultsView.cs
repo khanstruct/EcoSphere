@@ -29,6 +29,7 @@ namespace EcoSphere
         readonly List<RectTransform> slots = new List<RectTransform>();
         readonly List<TMP_Text> names = new List<TMP_Text>();
         readonly List<TMP_Text> settledNames = new List<TMP_Text>();
+        readonly List<TMP_Text> descriptions = new List<TMP_Text>();
         RectTransform worldGlobe, descriptionFrame, collectionFrame, overlay, modal, header, planetLabel, flightLayer;
         CanvasGroup modalGroup;
         WorldResult result;
@@ -58,6 +59,14 @@ namespace EcoSphere
             label.font = font; label.text = value; label.fontSize = size;
             label.alignment = TextAlignmentOptions.Center; label.color = new Color(1, .97f, .86f);
             label.raycastTarget = false;
+            return label;
+        }
+        // One style for a discovered sphere's description, shared by the recipe reveal and the discovery modal.
+        TMP_Text DescriptionText(string name, Transform parent, string value)
+        {
+            var label = Text(name, parent, value, 26, new Vector2(600, 70), Vector2.zero);
+            label.color = new Color(.85f, .88f, .9f); label.textWrappingMode = TextWrappingModes.Normal;
+            label.enableAutoSizing = true; label.fontSizeMin = 16; label.fontSizeMax = 26;
             return label;
         }
         RectTransform Frame(string name, Transform parent)
@@ -153,6 +162,8 @@ namespace EcoSphere
                 DiscoverySpheres.Add(sphere);
                 var name = Text(art.displayName + " name", modal, art.displayName, 36, new Vector2(430, 80), Vector2.zero);
                 name.alignment = TextAlignmentOptions.Left; names.Add(name);
+                var description = DescriptionText(art.displayName + " description", modal, art.description);
+                description.alignment = TextAlignmentOptions.TopLeft; descriptions.Add(description);
                 var slot = Rect(art.displayName + " collected", collectionFrame, Vector2.one * 100, new Vector2((i - (count - 1) * .5f) * 190, -10));
                 slots.Add(slot);
                 var settledName = Text(art.displayName + " collected name", slot, art.displayName, 25, new Vector2(170, 40), new Vector2(0, -75));
@@ -291,8 +302,12 @@ namespace EcoSphere
                         DiscoverySpheres[i].anchoredPosition = new Vector2(-modal.sizeDelta.x * .28f,y);
                         DiscoverySpheres[i].sizeDelta = Vector2.one*Mathf.Min(170,rowHeight-10);
                     }
-                    ScreenLayout.Place(names[i].rectTransform, new Vector2(modal.sizeDelta.x * .5f, 80), new Vector2(modal.sizeDelta.x * .12f, y));
+                    // Name above, description below, both beside the sphere in its row.
+                    float lineHeight = rowHeight * .4f;
+                    ScreenLayout.Place(names[i].rectTransform, new Vector2(modal.sizeDelta.x * .5f, lineHeight), new Vector2(modal.sizeDelta.x * .12f, y + lineHeight * .5f));
                     names[i].fontSize = Mathf.Min(36,rowHeight*.23f);
+                    ScreenLayout.Place(descriptions[i].rectTransform, new Vector2(modal.sizeDelta.x * .5f, rowHeight * .5f), new Vector2(modal.sizeDelta.x * .12f, y - rowHeight * .25f));
+                    descriptions[i].fontSizeMax = Mathf.Min(26, rowHeight * .16f);
                 }
                 if (OkButton) ScreenLayout.Place(OkButton.GetComponent<RectTransform>(), new Vector2(360, 120), new Vector2(0, -height * .5f + 70));
             }
