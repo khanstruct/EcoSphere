@@ -142,8 +142,11 @@ namespace EcoSphere
                 }
                 hit.Add(cell);
                 status.text = "LASER FIRING";
-                RemoveCells(hit, ElementScoring.Breakaway, true);
-                RemoveCells(board.Disconnected(), ElementScoring.Breakaway, true);
+                using (Elements.Batch())
+                {
+                    RemoveCells(hit, ElementScoring.Breakaway, true);
+                    RemoveCells(board.Disconnected(), ElementScoring.Breakaway, true);
+                }
                 yield return LaserBeam(origin, origin + direction * distance);
             }
         }

@@ -8,17 +8,7 @@ namespace EcoSphere.Editor
     {
         public static void Configure()
         {
-            AssetDatabase.Refresh();
-            string stem="Assets/EcoSphere/Art/Spheres/Air/air-";
-            foreach(string kind in new[]{"surface","icon"})
-            {
-                var importer=(TextureImporter)AssetImporter.GetAtPath(stem+kind+"-v1.png");
-                importer.textureType=kind=="icon" ? TextureImporterType.Sprite : TextureImporterType.Default;
-                importer.spriteImportMode=SpriteImportMode.Single;importer.maxTextureSize=256;
-                importer.alphaIsTransparency=kind=="icon";importer.mipmapEnabled=kind=="surface";
-                importer.wrapMode=kind=="surface" ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
-                importer.textureCompression=TextureImporterCompression.Uncompressed;importer.SaveAndReimport();
-            }
+            SphereCatalogTools.ImportSphereArt("Air");
             SphereCatalogTools.Configure();SphereCatalogTools.Validate();
             var sphere=SphereCatalog.Current.Get(SphereIds.Air);
             var totals=new double[ElementComposition.Capacity];sphere.AddContributions(totals,12);sphere.AddContributions(totals,50);

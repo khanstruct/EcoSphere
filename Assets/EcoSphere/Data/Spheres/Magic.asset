@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6221ada88df1f8f4b92be8060335312f, type: 3}
+  m_Name: Magic
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereDefinition
+  id: 13
+  namesakeElement: 48
+  displayName: Magic
+  description: Fills the world with wonder, tinting its plant life and city lights in strange colors.
+  category: 5
+  surface: {fileID: 2800000, guid: 3ad144106912e1d4da06987a50b795e3, type: 3}
+  icon: {fileID: 21300000, guid: 2179cd8e1b6adae47b12b1e7f663fcdb, type: 3}
+  color: {r: 0.20784314, g: 0.79607844, b: 0.7137255, a: 1}
+  shape: 0
+  glowColor: {r: 1, g: 1, b: 1, a: 1}
+  glowStrength: 0
+  resourceVoice: {fileID: 8300000, guid: c73c46f1908090f45a15a95defe596db, type: 3}
+  role: 0
+  availableAtStart: 0
+  selectable: 1
+  unlit: 0
+  contributions:
+  - element: 48
+    amount: 3
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  - element: 4
+    amount: 1
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  unallocatedWeight: 0
+  deflectedHits: 0
+  deflectSound: {fileID: 0}
+  breakSound: {fileID: 0}

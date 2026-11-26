@@ -27,14 +27,46 @@ Material:
         m_Texture: {fileID: 2800000, guid: f76f5aa10d291004a92d2694a57989d1, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _CityLightsDenseMask:
+        m_Texture: {fileID: 2800000, guid: bf3b598cdce50c24687a8ed4f4448e4f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _CityLightsMask:
+        m_Texture: {fileID: 2800000, guid: 7066ac69e7a64fe4ea1b09e4ad7b8532, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _HeightMap:
         m_Texture: {fileID: 2800000, guid: b7baab7d15d454c449af40b5e114a259, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _CityLightIntensity: 0
+    - _CityLightsDayVisibility: 0.75
+    - _CityLightsUrbanShade: 0.35
+    - _Civilization: 0
+    - _FireHeat: 0
+    - _FreezeStart: 0
+    - _FullyFrozen: -1
+    - _GeologicalActivity: 0
+    - _IceCoverage: 0
+    - _Moisture: 0
     - _SeaLevel: -0.02
+    - _Sediment: 0
+    - _Soil: 0
+    - _StoneRuggedness: 0
+    - _Temperature: 0
+    - _Vegetation: 0
     m_Colors:
+    - _CityLightsBrightness: {r: 0.6, g: 3, b: 0, a: 0}
+    - _CityLightsColor: {r: 1, g: 0.72, b: 0.37999994, a: 1}
+    - _CityLightsSharpness: {r: 0.04, g: 1.6, b: 2.5, a: 0}
+    - _CityLightsTiling: {r: 3, g: 3, b: 0, a: 0}
+    - _CityLightsTint: {r: 0, g: 0, b: 0, a: 0}
+    - _LandTint: {r: 0, g: 0, b: 0, a: 0}
+    - _TerrainBounds: {r: 0, g: 1, b: 0, a: 0}
+    - _VegetationTint: {r: 0, g: 0, b: 0, a: 0}
     - _WaterColor: {r: 0.025, g: 0.15999997, b: 0.31999996, a: 1}
+    - _WaterTint: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

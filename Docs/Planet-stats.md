@@ -82,3 +82,91 @@ CloudTools.Configure installs the rendering assets and seeds only those three cl
 Element profiles still accumulate percentage-based, point-buildup-weighted contributions. PlanetStatCatalog.responses then maps the combined raw contribution into visual strength, independently for every PlanetStat. contributionForFullEffect and negativeContributionForFullEffect are editable per-stat saturation thresholds; zero stays zero and opposing signed effects combine before this mapping. Initial full-effect inputs: CloudCover .45; BiologicalCoverage and AtmosphereDensity .3; CloudThickness .35; AtmosphereExpansion .6; other visual channels .45. Temperature retains full input 1 and its existing Fahrenheit/freezing calibration. At mature scores, 50% Air + 50% Water yields raw coverage .475, now full coverage. The cloud shader also closes remaining mask gaps at full coverage to allow a genuinely overcast globe. Water area, relief, soil, sediment, moisture, vegetation source strength, geology, cloud darkness and future global channels use the same response pipeline. Vegetation suitability and other environmental interactions still apply afterward. These are visual settings only: score, elemental percentages and recipe eligibility are unchanged. Completed PlanetStats snapshots store resolved output, so changing responses does not reevaluate old worlds.
 
 PlanetResponseTools.Configure seeds only the response settings. Validate checks every stat's endpoints, mixed-composition saturation, early point buildup, independent cloud darkness and snapshot stability. Existing PlanetStatChecks cover temperature and environmental distinctions.
+
+
+## Color traits
+
+Element profiles can tint four planet colors: **Water**, **Vegetation**, **Land** and **City Lights** (see City lights below) (`PlanetColorTrait`, append-only). Each entry in a profile's `colors` list names a trait, a color and a strength (0–1). For each trait, every contributing element is weighted by `strength × its influence`, using the same whole-planet influence as the other stats. The blended hue is the weighted average of those colors. The tint amount is the total weight passed through that trait's `colorResponses` entry: `contributionForFullEffect` sets how much weight reaches the maximum, and `maximumAmount` caps how much of the base color can be replaced (both default to .3 / .85). This is the same weighted blending the atmosphere already uses. Several tints mix their hues; a single strong one dominates.
+
+The shader receives each trait as `_<Trait>Tint` (rgb = color, a = amount):
+- **Land** recolors rock luminance toward the hue after soil and sand, before heat, snow, foliage and lava. An sRGB mid-gray hue keeps brightness, dark hues darken and pale hues brighten, and the rock detail survives.
+- **Vegetation** recolors the canopy and keeps its light/dark variation. Vegetation coverage is unchanged.
+- **Water** recolors the ocean and keeps its shallow-to-deep variation.
+
+Colors are authored in sRGB and converted by `SetColor` (the project renders in linear space).
+
+Default tints, all editable in `PlanetStatCatalog.asset`:
+
+| Element | Water | Vegetation | Land |
+|---|---|---|---|
+| Plant | faint green (the former WaterGreenness) | | |
+| Algae | green | teal | |
+| Mud | brown | | |
+| Swamp | olive | | |
+| Poison | sickly green | yellow-green | |
+| Oil | black | | |
+| Smoke | murky gray | | |
+| Magic | | violet | |
+| Crystal | | pale violet | pink-magenta |
+| Fungus | | mauve | |
+| Flower | | warm orange | |
+| Salt | | | white |
+| Clay | | | red-orange |
+| Coal | | | near-black |
+| Ash | | | gray |
+| Metal | | | blue-gray |
+| Glass | | | pale teal |
+
+`PlanetStat.WaterGreenness` is obsolete. Plant's water tint now comes from its Water color trait. The channel keeps its index so completed worlds saved before color traits still render their green water through `PlanetStats.AppliedTint`. Color traits are saved in completed-world snapshots (`PlanetStats.colorTraits`) and copied to previews. A tint that fades in during play starts at its own hue rather than from black.
+
+`SeedColorTraits` is the single authored default list, used by both `PopulateDefaults` and `PlanetColorTools.Configure`. Configure seeds the asset without touching other tuning and removes the old Plant WaterGreenness effect. `PlanetColorTools.Validate` checks:
+- untinted defaults stay untinted;
+- the Crystal, Magic and Plant directions are right;
+- weighted hue blending and the maximum amounts hold;
+- snapshot round trips keep the tints;
+- legacy green water still draws;
+- tints fade in at their own hue;
+- the shader compiles.
+
+`PlanetColorTools.Smoke` with `-planetColorSmoke` (run in DEV mode so the test level's tutorial does not pause time) renders the live planet for several mixes. Each mix is rendered with and without its tints, so only the color traits differ. It checks that Plant leaves land and vegetation untouched, Crystal turns land pink, Magic turns vegetation and water violet, Mud browns the water and Coal darkens the land. It also checks that a completed world and its preview keep all three tints. Renders are saved to `Logs/planet-color-*.png`.
+
+Not yet covered: the atmosphere color. The atmosphere still uses its own `atmosphereColor`/`atmosphereStrength` fields, because its strength also drives atmosphere density and older saves store it separately. It could become a color trait later.
+
+
+## City lights
+
+City lights are drawn by the planet shader from two 256×128 linear grayscale masks in `Art/Planets`: `city-lights-mask-v1.png` (scattered settlements) and `city-lights-dense-mask-v1.png` (dense urban networks). Three independent controls drive them:
+
+- **Coverage: `Civilization`.** Regions light up in a stable, noise-defined order as civilization rises (`revealAt = .72 − .9 × civilization`), so a small civilization shows a few settlements and about 0.6 lights every region. Civilization only ever shows the scattered mask, boosted by `_CityLightsSharpness.z` (2.5) so sprawl reads as clear points.
+- **Dense networks: technology only.** As `CityLightIntensity` rises from 0.45 to 1, the scattered mask blends into the dense mask, reaching a nearly city-covered land surface. Abundant Technology is required; Civilization never triggers it.
+- **Brightness: `CityLightIntensity`** (new stat, appended). This sets brightness between `_CityLightsBrightness.x` (0.6, so lights without technology stay modest) and `.y` (3) on the material. Defaults: Technology 1, City 0.6, Energy 0.4; Human adds none. Coverage comes from the Civilization element (1) as well as Human 0.25, Technology 0.7 and City 1.
+- **Color: the `CityLights` color trait.** It shifts the material's default warm color (`_CityLightsColor`, sodium gold) through the shared color-trait blend. Technology pulls it toward cool white (strength 0.5) and Magic toward violet (0.8).
+
+Lights appear only on exposed land: never on liquid water, ice or volcanic crust. They're full strength past the terminator. The game, Results and System cameras light the planet from the front, so most of the visible face is daylit; `_CityLightsDayVisibility` (default 0.75) keeps the lights readable there, and `_CityLightsUrbanShade` (0.35) darkens built-up land under the network, so the points keep their contrast in daylight. Each small cell (about 1/60 of the globe) twinkles on its own phase, so the network never pulses together. The cloud shell is drawn over the surface, so clouds naturally dim the lights beneath them.
+
+The masks are tiled `_CityLightsTiling` = 3×3 around the globe. One 256×128 mask stretched once around the planet gives about 3 screen pixels per texel and smears into a glaze; tiled, each texel is about one pixel. `_CityLightsSharpness` (floor 0.04, gain 1.6) turns the soft mask into points. Because they tile on both axes, `GameArtImportRules` exempts `/city-lights-` textures from the planet rule that clamps V; surface maps still clamp at the poles. All of these settings live on the planet material.
+
+`SeedCityLights` is the one authored list of brightness effects, used by both `PopulateDefaults` and `CityLightTools.Configure`. Configure:
+- imports the masks (linear, repeat on both axes, 256 max) and assigns them to every terrain material listed in `PlanetVisualStyle`;
+- adds the CityLightIntensity response;
+- seeds the effects and runs `PlanetColorTools.Configure`.
+
+The first texture assignment after a planet shader reimport can be dropped while the material reloads, so Configure assigns again and confirms. Validate checks:
+- size, repeat wrap and material assignment;
+- no lights without civilization;
+- Human < City coverage and Technology brightness;
+- the default warm color and Magic violet;
+- snapshots and the shader.
+
+`CityLightTools.Smoke` with `-cityLightSmoke` (DEV mode) renders the live planet lit from the side, so the left half is night. Each case renders with and without its lights, so only the lights differ. It checks:
+- none without civilization;
+- Human settlements appear, and full City covers far more;
+- night is stronger than day, with lights still visible by day;
+- the default color is warm, Technology is brighter and Magic is violet;
+- clouds dim the lights, and twinkle is local while the total glow stays steady;
+- lights are visible under the game's own lighting;
+- a completed world's preview keeps its inputs.
+
+Add `-cityLightLooks` to render every case and log failed checks instead of stopping, for tuning. Renders: `Logs/city-lights-*.png`.
+
+A higher-resolution mask would sharpen the lights further, but it needs an explicit exception to the 256px texture rule.

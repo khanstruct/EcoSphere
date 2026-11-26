@@ -52,9 +52,9 @@ namespace EcoSphere
             Array.Clear(input,0,input.Length);input[(int)ElementId.Plant]=600;input[(int)ElementId.Life]=300;input[(int)ElementId.Water]=300;
             surface.ApplyComposition(input);yield return new WaitForSeconds(3.6f);
             var block=new MaterialPropertyBlock();renderer.GetPropertyBlock(block);
-            float tint=block.GetFloat("_WaterGreenness");
+            var tintColor=block.GetColor("_WaterTint");float tint=tintColor.a;
             var tinted=Capture("water-tint");
-            block.SetFloat("_WaterGreenness",0);renderer.SetPropertyBlock(block);var untinted=Capture("water-plain");
+            block.SetColor("_WaterTint",Color.clear);renderer.SetPropertyBlock(block);var untinted=Capture("water-plain");
             double delta=0;int count=0;
             for(int y=80;y<432;y++)for(int x=80;x<432;x++)
             {
@@ -65,12 +65,12 @@ namespace EcoSphere
             if(tint<=0 || count<100 || delta/count<=.00001 || delta/count>.02)throw new Exception($"Water tint must be very subtle and positive: delta={delta/count}, pixels={count}");
             var completed=GameServices.Progress.Complete(8,0,surface.TargetSeaLevel,planet.eulerAngles.y,null,input).world;
             var copy=JsonUtility.FromJson<CompletedWorld>(JsonUtility.ToJson(completed));
-            if(copy.planetStats.VegetationPotential!=surface.Stats.VegetationPotential || copy.planetStats[PlanetStat.WaterGreenness]!=tint)throw new Exception("Saved foliage appearance mismatch");
+            if(copy.planetStats.VegetationPotential!=surface.Stats.VegetationPotential || Mathf.Abs(copy.planetStats[PlanetColorTrait.Water].a-tint)>.001f)throw new Exception("Saved foliage appearance mismatch");
             var ui=new GameObject("Saved foliage preview",typeof(RectTransform),typeof(RawImage));var preview=ui.AddComponent<SpherePreview>();
             preview.surfaceMaterial=receivingPlanetMaterial;preview.planetStats=copy.planetStats;preview.seaLevel=copy.seaLevel;preview.initialRotation=copy.rotation;preview.rotationSpeed=0;
             yield return null;preview.PreviewCamera.Render();
             var previewBlock=new MaterialPropertyBlock();preview.BodyRenderer.GetPropertyBlock(previewBlock);
-            if(previewBlock.GetFloat("_Vegetation")!=copy.planetStats.VegetationPotential || previewBlock.GetFloat("_WaterGreenness")!=tint || previewBlock.GetVector("_TerrainBounds")!=PlanetSurface.TerrainBounds(receivingPlanetMaterial))throw new Exception("Saved preview lost foliage/tint/terrain parameters");
+            if(previewBlock.GetFloat("_Vegetation")!=copy.planetStats.VegetationPotential || Mathf.Abs(previewBlock.GetColor("_WaterTint").a-copy.planetStats.AppliedTint(PlanetColorTrait.Water).a)>.0001f || previewBlock.GetVector("_TerrainBounds")!=PlanetSurface.TerrainBounds(receivingPlanetMaterial))throw new Exception("Saved preview lost foliage/tint/terrain parameters");
             Destroy(ui);view.targetTexture=null;target.Release();Destroy(target);
             Debug.Log($"ECOSPHERE_FOLIAGE_SMOKE_PASSED clustered growth, mid-height preference, hot/cold reduction, ocean mask, subtle water tint delta={delta/count}, saved preview stats");
 #if UNITY_EDITOR

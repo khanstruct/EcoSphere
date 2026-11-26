@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
@@ -15,7 +15,7 @@ namespace EcoSphere
         Air, Soil, Sand, Life, Steam, Cloud, Rain, Snow, Wind, Lightning, Lava, Smoke,
         Ash, Dust, Poison, Clay, Salt, Metal, Crystal, Glass, Coal, Oil, Wood, Gravity,
         Plant, Algae, Moss, Fungus, Flower, Tree, Bacteria, Insect, Fish, Bird, Reptile,
-        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud }
+        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud, Civilization, Spirit }
     public enum SphereRole { Element, Laser, Core }
     // Append categories only: sphere definitions serialize these values. All is a UI filter, not a category.
     public enum SphereCategory { Basic = 0, Forces = 1, Weather = 2, Life = 3, Technology = 4, Beyond = 5 }
@@ -25,7 +25,15 @@ namespace EcoSphere
     {
         public ElementId element;
         [Range(1,4)] public int amount;
-        public ElementContribution(ElementId element, int amount) { this.element = element; this.amount = amount; }
+        [Tooltip("Caps the total this sphere type has added of this element at the planet's total of Limited By (times Limit Ratio). Yield past the cap is lost; score is unaffected.")]
+        public bool limited;
+        public ElementId limitedBy;
+        [Min(0)] public float limitRatio;
+        public ElementContribution(ElementId element, int amount) { this.element = element; this.amount = amount; limited = false; limitedBy = default; limitRatio = 0; }
+        public ElementContribution(ElementId element, int amount, ElementId limitedBy, float limitRatio = 1) : this(element, amount)
+        { limited = true; this.limitedBy = limitedBy; this.limitRatio = limitRatio; }
+        // The planet-wide amount that caps this line's accumulated yield. Unlimited lines have no cap.
+        public double Cap(double[] totals) => limited ? totals[(int)limitedBy] * limitRatio : double.PositiveInfinity;
     }
 
     [CreateAssetMenu(menuName = "EcoSphere/Sphere Definition")]
@@ -82,6 +90,8 @@ namespace EcoSphere
             foreach (var entry in contributions)
                 if (!Enum.IsDefined(typeof(ElementId), entry.element) || entry.amount < 1 || entry.amount > 4 || !seen.Add(entry.element))
                     throw new InvalidOperationException(name + ": contributions must be positive and use distinct elements");
+                else if (entry.limited && (!Enum.IsDefined(typeof(ElementId), entry.limitedBy) || entry.limitedBy == entry.element || !(entry.limitRatio > 0)))
+                    throw new InvalidOperationException(name + ": a limited contribution needs a different, valid limiting element and a positive ratio");
             if (ContributionUnits + unallocatedWeight > 4) throw new InvalidOperationException(name + ": at most four contribution units including unallocated units");
             if (deflectedHits < 0 || deflectedHits > 10 || (deflectedHits > 0 && (!Matchable || !deflectSound || !breakSound)))
                 throw new InvalidOperationException(name + ": deflecting spheres must be elements with deflect and break sounds (0 to 10 hits)");
@@ -92,6 +102,10 @@ namespace EcoSphere
 
         // Share of each earned point that reaches an element (0-1). Unallocated units take their share without reaching any element.
         public float ContributionShare(ElementContribution entry) => TotalContributionUnits > 0 ? entry.amount / (float)TotalContributionUnits : 0;
+        // Uncapped yield of one contribution line for `rate` earned points. ElementLedger applies limits on top of this.
+        public double ContributionYield(ElementContribution entry, double rate) => TotalContributionUnits > 0 ? rate * (entry.amount / (double)TotalContributionUnits) : 0;
+        // Core is structural; Laser is collected when consumed but still never forms matches.
+        public bool Contributes => role != SphereRole.Core;
 
         // Readable element yield, built from Contributions so the text can never disagree with scoring,
         // e.g. "Ice 50% · Water 25%". Largest share first; ties keep authored order. Core contributes nothing.
@@ -108,14 +122,12 @@ namespace EcoSphere
             return string.Join(" · ", parts);
         }
 
+        // Raw yield, ignoring contribution limits (those depend on planet state; gameplay adds through ElementLedger).
         public void AddContributions(double[] totals, int rate)
         {
-            // Core is structural; Laser is collected when consumed but still never forms matches.
-            if (role == SphereRole.Core) return;
-            double weight = TotalContributionUnits;
-            if (weight <= 0) return;
+            if (!Contributes) return;
             foreach (var entry in contributions)
-                totals[(int)entry.element] += rate * (entry.amount / weight);
+                totals[(int)entry.element] += ContributionYield(entry, rate);
         }
     }
 }

@@ -36,6 +36,7 @@ MonoBehaviour:
       amount: 0.2
     - stat: 19
       amount: 0.6
+    colors: []
     atmosphereColor: {r: 1, g: 0.25, b: 0.035, a: 1}
     atmosphereStrength: 0.12
   - element: 0
@@ -48,6 +49,7 @@ MonoBehaviour:
       amount: 0.3
     - stat: 17
       amount: -0.5
+    colors: []
     atmosphereColor: {r: 0.88, g: 0.95, b: 1, a: 1}
     atmosphereStrength: 0.18
   - element: 5
@@ -62,6 +64,7 @@ MonoBehaviour:
       amount: 0.2
     - stat: 10
       amount: 0.6
+    colors: []
     atmosphereColor: {r: 0.72, g: 0.87, b: 1, a: 1}
     atmosphereStrength: 0.14
   - element: 2
@@ -70,16 +73,19 @@ MonoBehaviour:
       amount: 1
     - stat: 15
       amount: 0.25
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 1
     effects:
     - stat: 0
       amount: 1
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 4
     effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 8
@@ -90,6 +96,7 @@ MonoBehaviour:
       amount: 0.6
     - stat: 9
       amount: 0.75
+    colors: []
     atmosphereColor: {r: 0.45, g: 0.72, b: 1, a: 1}
     atmosphereStrength: 0.5
   - element: 9
@@ -98,6 +105,7 @@ MonoBehaviour:
       amount: 1
     - stat: 5
       amount: 0.15
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 10
@@ -106,6 +114,7 @@ MonoBehaviour:
       amount: 1
     - stat: 4
       amount: 0.1
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 11
@@ -114,6 +123,7 @@ MonoBehaviour:
       amount: 0.5
     - stat: 4
       amount: 0.2
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 12
@@ -128,6 +138,7 @@ MonoBehaviour:
       amount: 0.5
     - stat: 17
       amount: 0.4
+    colors: []
     atmosphereColor: {r: 0.9, g: 0.94, b: 1, a: 1}
     atmosphereStrength: 0.3
   - element: 13
@@ -138,6 +149,7 @@ MonoBehaviour:
       amount: 0.8
     - stat: 5
       amount: 0.4
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 14
@@ -152,6 +164,7 @@ MonoBehaviour:
       amount: 0.6
     - stat: 11
       amount: 0.6
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 15
@@ -162,12 +175,14 @@ MonoBehaviour:
       amount: 0.6
     - stat: 5
       amount: 0.4
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 16
     effects:
     - stat: 11
       amount: 1
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 17
@@ -176,6 +191,7 @@ MonoBehaviour:
       amount: 1
     - stat: 11
       amount: 0.5
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 18
@@ -186,6 +202,7 @@ MonoBehaviour:
       amount: 1
     - stat: 1
       amount: 0.4
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 19
@@ -196,6 +213,10 @@ MonoBehaviour:
       amount: 0.3
     - stat: 17
       amount: 0.3
+    colors:
+    - trait: 0
+      color: {r: 0.18, g: 0.17, b: 0.14, a: 1}
+      strength: 0.35
     atmosphereColor: {r: 0.38, g: 0.34, b: 0.3, a: 1}
     atmosphereStrength: 0.35
   - element: 20
@@ -206,6 +227,10 @@ MonoBehaviour:
       amount: 0.35
     - stat: 14
       amount: 0.25
+    colors:
+    - trait: 2
+      color: {r: 0.3, g: 0.29, b: 0.28, a: 1}
+      strength: 0.4
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 21
@@ -214,6 +239,7 @@ MonoBehaviour:
       amount: 0.8
     - stat: 14
       amount: 0.3
+    colors: []
     atmosphereColor: {r: 0.78, g: 0.64, b: 0.45, a: 1}
     atmosphereStrength: 0.2
   - element: 22
@@ -222,6 +248,13 @@ MonoBehaviour:
       amount: 1
     - stat: 6
       amount: -0.35
+    colors:
+    - trait: 0
+      color: {r: 0.25, g: 0.32, b: 0.05, a: 1}
+      strength: 0.7
+    - trait: 1
+      color: {r: 0.55, g: 0.55, b: 0.12, a: 1}
+      strength: 0.6
     atmosphereColor: {r: 0.65, g: 0.8, b: 0.4, a: 1}
     atmosphereStrength: 0.25
   - element: 23
@@ -232,6 +265,10 @@ MonoBehaviour:
       amount: 0.4
     - stat: 5
       amount: 0.3
+    colors:
+    - trait: 2
+      color: {r: 0.8, g: 0.38, b: 0.2, a: 1}
+      strength: 0.6
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 24
@@ -240,12 +277,20 @@ MonoBehaviour:
       amount: 0.6
     - stat: 3
       amount: 0.35
+    colors:
+    - trait: 2
+      color: {r: 0.92, g: 0.9, b: 0.86, a: 1}
+      strength: 0.6
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 25
     effects:
     - stat: 15
       amount: 0.8
+    colors:
+    - trait: 2
+      color: {r: 0.55, g: 0.6, b: 0.66, a: 1}
+      strength: 0.4
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 26
@@ -254,46 +299,69 @@ MonoBehaviour:
       amount: 1
     - stat: 1
       amount: 0.2
+    colors:
+    - trait: 2
+      color: {r: 0.89, g: 0.42, b: 0.95, a: 1}
+      strength: 0.7
+    - trait: 1
+      color: {r: 0.75, g: 0.45, b: 0.85, a: 1}
+      strength: 0.25
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 27
     effects:
     - stat: 15
       amount: 0.6
+    colors:
+    - trait: 2
+      color: {r: 0.6, g: 0.78, b: 0.8, a: 1}
+      strength: 0.35
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 28
     effects:
     - stat: 15
       amount: 0.4
+    colors:
+    - trait: 2
+      color: {r: 0.12, g: 0.11, b: 0.11, a: 1}
+      strength: 0.6
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 29
     effects:
     - stat: 14
       amount: 0.3
+    colors:
+    - trait: 0
+      color: {r: 0.06, g: 0.05, b: 0.04, a: 1}
+      strength: 0.7
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 30
     effects:
     - stat: 6
       amount: 0.4
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 31
     effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 32
     effects:
     - stat: 6
       amount: 0.8
-    - stat: 18
-      amount: 0.04
     - stat: 17
       amount: 0.12
     - stat: 4
       amount: 0.25
+    colors:
+    - trait: 0
+      color: {r: 0.2209163, g: 0.516881, b: 0.5370987, a: 1}
+      strength: 0.026
     atmosphereColor: {r: 0.56, g: 0.85, b: 0.85, a: 1}
     atmosphereStrength: 0.08
   - element: 33
@@ -302,6 +370,13 @@ MonoBehaviour:
       amount: 0.6
     - stat: 5
       amount: 0.4
+    colors:
+    - trait: 0
+      color: {r: 0.05, g: 0.3, b: 0.2, a: 1}
+      strength: 0.8
+    - trait: 1
+      color: {r: 0.1, g: 0.45, b: 0.4, a: 1}
+      strength: 0.6
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 34
@@ -310,6 +385,7 @@ MonoBehaviour:
       amount: 0.5
     - stat: 5
       amount: 0.35
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 35
@@ -318,12 +394,20 @@ MonoBehaviour:
       amount: 0.5
     - stat: 5
       amount: 0.3
+    colors:
+    - trait: 1
+      color: {r: 0.55, g: 0.42, b: 0.5, a: 1}
+      strength: 0.6
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 36
     effects:
     - stat: 6
       amount: 0.6
+    colors:
+    - trait: 1
+      color: {r: 0.75, g: 0.45, b: 0.3, a: 1}
+      strength: 0.3
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 37
@@ -332,38 +416,46 @@ MonoBehaviour:
       amount: 1
     - stat: 4
       amount: 0.2
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 38
     effects:
     - stat: 6
       amount: 0.2
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 39
     effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 40
     effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 41
     effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 42
     effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 43
     effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 44
     effects:
     - stat: 13
       amount: 0.25
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 45
@@ -372,6 +464,7 @@ MonoBehaviour:
       amount: 1
     - stat: 5
       amount: 1
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 46
@@ -384,6 +477,10 @@ MonoBehaviour:
       amount: 0.8
     - stat: 6
       amount: 0.6
+    colors:
+    - trait: 0
+      color: {r: 0.12, g: 0.15, b: 0.06, a: 1}
+      strength: 0.6
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 47
@@ -392,12 +489,22 @@ MonoBehaviour:
       amount: 0.25
     - stat: 12
       amount: 0.5
+    - stat: 20
+      amount: 0.4
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 48
     effects:
     - stat: 16
       amount: 1
+    colors:
+    - trait: 1
+      color: {r: 0.5, g: 0.2, b: 0.75, a: 1}
+      strength: 0.8
+    - trait: 3
+      color: {r: 0.85, g: 0.6, b: 1, a: 1}
+      strength: 0.8
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 49
@@ -408,10 +515,17 @@ MonoBehaviour:
       amount: 0.3
     - stat: 14
       amount: 0.15
+    - stat: 20
+      amount: 1
+    colors:
+    - trait: 3
+      color: {r: 0.8, g: 0.9, b: 1, a: 1}
+      strength: 0.5
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 50
     effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 51
@@ -420,12 +534,31 @@ MonoBehaviour:
       amount: 1
     - stat: 14
       amount: 0.3
+    - stat: 20
+      amount: 0.6
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 52
     effects:
     - stat: 4
       amount: 1
+    colors:
+    - trait: 0
+      color: {r: 0.2, g: 0.14, b: 0.07, a: 1}
+      strength: 0.45
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 53
+    effects:
+    - stat: 13
+      amount: 1
+    colors: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
+  - element: 54
+    effects: []
+    colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   responses:
@@ -489,3 +622,19 @@ MonoBehaviour:
   - stat: 19
     contributionForFullEffect: 0.45
     negativeContributionForFullEffect: 0.45
+  - stat: 20
+    contributionForFullEffect: 0.45
+    negativeContributionForFullEffect: 0.45
+  colorResponses:
+  - trait: 0
+    contributionForFullEffect: 0.3
+    maximumAmount: 0.85
+  - trait: 1
+    contributionForFullEffect: 0.3
+    maximumAmount: 0.85
+  - trait: 2
+    contributionForFullEffect: 0.3
+    maximumAmount: 0.85
+  - trait: 3
+    contributionForFullEffect: 0.3
+    maximumAmount: 0.85

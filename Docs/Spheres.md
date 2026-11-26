@@ -21,6 +21,9 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Mud | 9 | Water: 1, Stone: 1, Mud: 2 | Element; DEV available, Stone + Water recipe |
 | Air | 10 | Air: 3, Null: 1 | Element; DEV available |
 | Crystal | 11 | Stone: 1, Magic: 1, Crystal: 2 | Element; faceted crystal shape, DEV available, Stone + Magic recipe |
+| Civilization | 12 | Human: 1, Civilization: 2, Null: 1 | Element; sandstone #E8B772, Technology category, politosphere voice, DEV available, no recipe yet |
+| Magic | 13 | Magic: 3, Void: 1 | Element; turquoise #35CBB6, Beyond category, arcanosphere voice, DEV available, Human + Void or Plant + Spirit recipes |
+| Technology | 14 | Civilization: 1, Technology: 2, Null: 1 | Element; electric blue #0D98ED, Technology category, technosphere voice, DEV available, no recipe yet |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -48,6 +51,18 @@ Recipes live separately in `Assets/EcoSphere/Data/ElementRecipes.asset`. Each ha
 4. Run **EcoSphere / Validate Sphere Catalog**. Startup also validates missing art, invalid amounts, duplicate IDs/elements, invalid opening pairs and duplicate recipes.
 
 **EcoSphere / Configure Sphere Catalog** creates missing built-in assets without resetting existing contributions, colors, artwork or recipes. Sphere textures and icons retain the 256px import limit.
+
+### Limited contributions
+
+A contribution line can be limited by another element. In the Inspector, tick `limited` on the line, choose `limitedBy` and set `limitRatio`; the tooling constructor is `new ElementContribution(ElementId.Life, 2, ElementId.Water)`. The rule is: the total of that element this sphere type has added may not exceed the planet's current `limitedBy` total × `limitRatio`. For example, a Fish whose Life is limited by Water can never have added more Life than the planet has Water.
+
+- **Per sphere type.** Only that sphere type's own limited yield counts against its cap. Life from Plant or Life spheres never uses up Fish's budget.
+- **Excess is lost.** Yield above the cap is discarded. It is not converted or stored for later.
+- **Score is unaffected.** The cap only clips element yield; match and breakaway points are unchanged, as with unallocated units.
+- **Caps rise first.** One shot (its match plus its breakaway) or one laser firing resolves as a batch. Unlimited yield lands first and limited lines are checked when the batch ends, so Water gained anywhere in the same shot raises the cap before Fish's Life is checked, regardless of removal order. Totals only increase during a level, so a cap never takes back yield.
+- **Notice.** When a line is clipped, the visualizer shows `Not enough <element>` in that limiting element's visualizer color (`SphereCatalog.ElementColor`). It rises above the capped element's bar and fades. Repeats restart the notice instead of stacking. Text, size, timing, offset and outline live in `VisualizerStyle`.
+
+`ElementLedger` (`Scripts/ElementLedger.cs`) is the only gameplay path from earned points to element totals; `RemoveCells` adds through it, and losing calls `ElementLedger.Clear`, which also resets limited yields. `SphereDefinition.ContributionYield` is the single per-line formula. `AddContributions` stays the raw, uncapped yield used for previews and expectations. Validation rejects a line limited by its own element, an undefined element, or a non-positive ratio. `ContributionLimitTools.Smoke` with `-contributionLimitSmoke` temporarily gives Fire a Fish-style line and checks the rules through a real mouse shot. It confirms that a Water breakaway raises the cap for the same shot's Fire match, and checks clipping and exact loss, unchanged score and Fire yield, the per-type budget, validation, reset, and the notice's text, color and placement. It renders `Logs/ContributionLimit-notice.png`. No current sphere uses a limit yet.
 
 ## Validation
 
@@ -80,6 +95,22 @@ Life uses the pink-white cellular surface and cell icon in Art/Spheres/Life, pal
 ## Mud sphere
 
 Mud (sphere ID 9, appended element ID 52) uses its wet-mud artwork, light brown #CA9C6B (distinct from pale-gray Stone #D0D3D8), and pelitosphere voice. Its four units are 1 Water / 1 Stone / 2 Mud, with no Null: a 12-point sphere yields 3 Water, 3 Stone and 6 Mud; a 50-point breakaway yields 12.5 Water, 12.5 Stone and 25 Mud. Stone + Water unlocks Mud; Water + Mud unlocks Life through the shared recipe/discovery rules. Both are available for DEV testing while remaining locked normally until earned. Mud's planet profile contributes Soil at weight 1, compared with Life 0.2 and Plant 0.25, strongly warming exposed land toward brown through the existing percentage/buildup and soil shader response. The Water and Stone units additionally use their existing independent planet profiles.
+
+## Civilization sphere
+
+Civilization (ID 12) represents population sprawl. It adds the appended `ElementId.Civilization`, whose planet profile drives the `Civilization` stat. That stat sets how far city lights spread; it does not brighten them. Brightness comes from `CityLightIntensity`: Technology, City and Energy. A pure Civilization world shows dim, sprawling lights, and Technology on the same sprawl roughly doubles their brightness (see Planet-stats.md, City lights). The art is `Art/Spheres/Civilization/civilization-{surface,icon}-v1.png` (256×128 surface, 256 sprite icon), and the voice is `Audio/Voice/politosphere.mp3`. The recipe is intentionally unset.
+
+`SphereIntroTools.Configure` imports the art for its listed spheres (Civilization, Magic, Technology) through the shared `SphereCatalogTools.ImportSphereArt` (Air's tool uses it too). It then seeds the spheres, adds their planet profiles through `CityLightTools.Configure`, and validates. `SphereIntroSmoke` (`-sphereIntroSmoke <sphere id>`, DEV mode) checks any sphere entirely from its definition: DEV and normal availability, setup selection, board shape, breakaway yield through `RemoveCells`, one bar per contributed element in the shared colors, streak color, voice and a preview render. Run it with `SphereIntroTools.Smoke` and `-sphereIntroSmoke <id>` (12 Civilization, 13 Magic, 14 Technology). New spheres can reuse it instead of adding a sphere-specific smoke.
+
+## Magic and Technology spheres
+
+**Magic** (ID 13) is turquoise and contributes 3 Magic and 1 Void. Human + Void unlocks it, and so does Plant + Spirit; the recipe book allows several recipes for one sphere. The second recipe stands in for Forest + Spirit: recipes combine elements, and the planned Forest sphere (Plant + Plant) contributes only Plant, so any strong Plant source qualifies. Revisit it once the Forest and Spirit spheres exist. On the planet, Magic tints vegetation and city lights violet through the shared color traits and leaves water and land alone. Its earlier stand-in purple visualizer color was removed: Configure drops any stand-in `elementColors` entry whose element has gained a sphere.
+
+**Technology** (ID 14) is electric blue and contributes 1 Civilization, 2 Technology and 1 Null. The Technology element brightens city lights (`CityLightIntensity` 1), adds some coverage (Civilization 0.7) and shifts the lights toward cool white. Its recipe is unset.
+
+## Spirit element
+
+`ElementId.Spirit` (appended) exists ahead of its sphere, which will come from Air + Life. Until then its visualizer color is a gray-blue stand-in (#7A8CAA) in `SphereCatalog.elementColors`; `SeedElementColor` adds a stand-in only for elements without a sphere, and Configure drops stand-ins once a namesake sphere exists. Its planet profile is empty (no globe effect yet). `PlanetStatCatalog.EnsureProfiles` gives every appended element an empty profile, so new elements never break the one-profile-per-element rule; `SphereIntroTools.Configure` calls it and runs `PlanetStatChecks`.
 
 ## Crystal sphere and shapes
 

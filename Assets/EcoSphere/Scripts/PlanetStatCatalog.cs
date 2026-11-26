@@ -8,10 +8,27 @@ namespace EcoSphere
         public PlanetStat stat;[Range(-1,1)] public float amount;
         public PlanetStatEffect(PlanetStat stat,float amount){this.stat=stat;this.amount=amount;}
     }
+    // An element's pull on one planet color. Strength weights both the color blend and how strongly the trait shows.
+    [Serializable] public struct PlanetColorEffect
+    {
+        public PlanetColorTrait trait;public Color color;[Range(0,1)] public float strength;
+        public PlanetColorEffect(PlanetColorTrait trait,Color color,float strength){this.trait=trait;this.color=color;this.strength=strength;}
+    }
+    [Serializable] public sealed class PlanetColorResponse
+    {
+        public PlanetColorTrait trait;
+        [Min(.001f),Tooltip("Combined weighted color strength that reaches Maximum Amount.")]
+        public float contributionForFullEffect=.3f;
+        [Range(0,1),Tooltip("Largest share of the base color the tint may replace.")]
+        public float maximumAmount=.85f;
+        public float Evaluate(float contribution)=>Mathf.Clamp01(contribution/Mathf.Max(.001f,contributionForFullEffect))*maximumAmount;
+    }
     [Serializable] public sealed class ElementPlanetProfile
     {
         public ElementId element;
         public List<PlanetStatEffect> effects=new List<PlanetStatEffect>();
+        [Tooltip("Planet colors this element tints (water, vegetation, land). Blended by weighted contribution like the atmosphere.")]
+        public List<PlanetColorEffect> colors=new List<PlanetColorEffect>();
         public Color atmosphereColor=Color.white;
         [Range(0,1)] public float atmosphereStrength;
     }
@@ -81,6 +98,91 @@ namespace EcoSphere
             if(responses!=null)foreach(var response in responses)if(response.stat==stat)return response.Evaluate(contribution);
             return Mathf.Clamp(contribution,-1,1);
         }
+        public List<PlanetColorResponse> colorResponses=DefaultColorResponses();
+        public static List<PlanetColorResponse> DefaultColorResponses()
+        {
+            var result=new List<PlanetColorResponse>();
+            foreach(PlanetColorTrait trait in Enum.GetValues(typeof(PlanetColorTrait)))result.Add(new PlanetColorResponse{trait=trait});
+            return result;
+        }
+        public float RespondColor(PlanetColorTrait trait,float contribution)
+        {
+            if(colorResponses!=null)foreach(var response in colorResponses)if(response.trait==trait)return response.Evaluate(contribution);
+            return Mathf.Clamp01(contribution);
+        }
+        public void Validate()
+        {
+            foreach(PlanetColorTrait trait in Enum.GetValues(typeof(PlanetColorTrait)))
+                if(colorResponses==null || colorResponses.FindAll(x=>x.trait==trait).Count!=1)throw new InvalidOperationException("Planet color trait "+trait+" needs exactly one response");
+            foreach(var profile in elements)
+            {
+                var seen=new HashSet<PlanetColorTrait>();
+                foreach(var tint in profile.colors)
+                    if(!Enum.IsDefined(typeof(PlanetColorTrait),tint.trait) || !seen.Add(tint.trait) || tint.strength<=0 || tint.strength>1)
+                        throw new InvalidOperationException(profile.element+": color traits must be distinct with strength in (0, 1]");
+            }
+        }
+        // Default element tints. The one authored list: PopulateDefaults and PlanetColorTools.Configure both apply it.
+        public void SeedColorTraits()
+        {
+            foreach(var profile in elements)profile.colors.Clear();
+            Tint(ElementId.Plant,PlanetColorTrait.Water,new Color(.04f,.23f,.25f).gamma,.026f);     // same hue as the former WaterGreenness, kept equally faint
+            Tint(ElementId.Algae,PlanetColorTrait.Water,new Color(.05f,.3f,.2f),.8f);
+            Tint(ElementId.Algae,PlanetColorTrait.Vegetation,new Color(.1f,.45f,.4f),.6f);
+            Tint(ElementId.Mud,PlanetColorTrait.Water,new Color(.2f,.14f,.07f),.45f);
+            Tint(ElementId.Swamp,PlanetColorTrait.Water,new Color(.12f,.15f,.06f),.6f);
+            Tint(ElementId.Poison,PlanetColorTrait.Water,new Color(.25f,.32f,.05f),.7f);
+            Tint(ElementId.Poison,PlanetColorTrait.Vegetation,new Color(.55f,.55f,.12f),.6f);
+            Tint(ElementId.Oil,PlanetColorTrait.Water,new Color(.06f,.05f,.04f),.7f);
+            Tint(ElementId.Smoke,PlanetColorTrait.Water,new Color(.18f,.17f,.14f),.35f);
+            Tint(ElementId.Magic,PlanetColorTrait.Vegetation,new Color(.5f,.2f,.75f),.8f);
+            Tint(ElementId.Crystal,PlanetColorTrait.Land,new Color(.89f,.42f,.95f),.7f);
+            Tint(ElementId.Crystal,PlanetColorTrait.Vegetation,new Color(.75f,.45f,.85f),.25f);
+            Tint(ElementId.Fungus,PlanetColorTrait.Vegetation,new Color(.55f,.42f,.5f),.6f);
+            Tint(ElementId.Flower,PlanetColorTrait.Vegetation,new Color(.75f,.45f,.3f),.3f);
+            Tint(ElementId.Salt,PlanetColorTrait.Land,new Color(.92f,.9f,.86f),.6f);
+            Tint(ElementId.Clay,PlanetColorTrait.Land,new Color(.8f,.38f,.2f),.6f);
+            Tint(ElementId.Coal,PlanetColorTrait.Land,new Color(.12f,.11f,.11f),.6f);
+            Tint(ElementId.Ash,PlanetColorTrait.Land,new Color(.3f,.29f,.28f),.4f);
+            Tint(ElementId.Metal,PlanetColorTrait.Land,new Color(.55f,.6f,.66f),.4f);
+            Tint(ElementId.Glass,PlanetColorTrait.Land,new Color(.6f,.78f,.8f),.35f);
+            // City lights default to the warm color on the planet material; these shift it.
+            Tint(ElementId.Technology,PlanetColorTrait.CityLights,new Color(.8f,.9f,1f),.5f);
+            Tint(ElementId.Magic,PlanetColorTrait.CityLights,new Color(.85f,.6f,1f),.8f);
+            NotifyChanged();
+        }
+        // City lights: Civilization (population sprawl) spreads them; Technology, City and Energy brighten them.
+        // Without brightness they stay dim (the material's base brightness). The one authored list:
+        // PopulateDefaults and CityLightTools.Configure both apply it without touching other effects.
+        // Every element except Core and Laser needs a profile, even one with no planet effect (it still counts in the totals).
+        // New elements appended to ElementId get an empty profile here until their effects are authored.
+        public void EnsureProfiles()
+        {
+            foreach(ElementId element in Enum.GetValues(typeof(ElementId)))
+                if(element!=ElementId.Core && element!=ElementId.Laser && !elements.Exists(x=>x.element==element))elements.Add(new ElementPlanetProfile{element=element});
+            NotifyChanged();
+        }
+        public void SeedCityLights()
+        {
+            SetEffect(ElementId.Civilization,PlanetStat.Civilization,1);
+            SetEffect(ElementId.Human,PlanetStat.CityLightIntensity,0);
+            SetEffect(ElementId.City,PlanetStat.CityLightIntensity,.6f);
+            SetEffect(ElementId.Technology,PlanetStat.CityLightIntensity,1);
+            SetEffect(ElementId.Energy,PlanetStat.CityLightIntensity,.4f);
+            NotifyChanged();
+        }
+        void SetEffect(ElementId element,PlanetStat stat,float amount)
+        {
+            var profile=elements.Find(x=>x.element==element);
+            // Amount 0 removes the effect. A new element (appended to ElementId) gets its profile here.
+            if(profile==null){profile=new ElementPlanetProfile{element=element};elements.Add(profile);}
+            profile.effects.RemoveAll(effect=>effect.stat==stat);if(amount!=0)profile.effects.Add(new PlanetStatEffect(stat,amount));
+        }
+        void Tint(ElementId element,PlanetColorTrait trait,Color color,float strength)
+        {
+            var profile=elements.Find(x=>x.element==element) ?? throw new InvalidOperationException("No planet profile for "+element);
+            profile.colors.Add(new PlanetColorEffect(trait,color,strength));
+        }
         public void PopulateDefaults()
         {
             elements.Clear();
@@ -112,7 +214,7 @@ namespace EcoSphere
             Add(ElementId.Glass,(PlanetStat.Mineralization,.6f));
             Add(ElementId.Coal,(PlanetStat.Mineralization,.4f));Add(ElementId.Oil,(PlanetStat.Pollution,.3f));
             Add(ElementId.Wood,(PlanetStat.BiologicalCoverage,.4f));Add(ElementId.Gravity);
-            Add(ElementId.Plant,(PlanetStat.BiologicalCoverage,.8f),(PlanetStat.Soil,.25f),(PlanetStat.WaterGreenness,.04f),(PlanetStat.AtmosphereExpansion,.12f));
+            Add(ElementId.Plant,(PlanetStat.BiologicalCoverage,.8f),(PlanetStat.Soil,.25f),(PlanetStat.AtmosphereExpansion,.12f));
             Add(ElementId.Algae,(PlanetStat.BiologicalCoverage,.6f),(PlanetStat.Moisture,.4f));
             Add(ElementId.Moss,(PlanetStat.BiologicalCoverage,.5f),(PlanetStat.Moisture,.35f));
             Add(ElementId.Fungus,(PlanetStat.BiologicalCoverage,.5f),(PlanetStat.Moisture,.3f));
@@ -138,6 +240,9 @@ namespace EcoSphere
             Atmosphere(ElementId.Smoke,new Color(.38f,.34f,.3f,1),.35f);
             Atmosphere(ElementId.Dust,new Color(.78f,.64f,.45f,1),.2f);
             Atmosphere(ElementId.Poison,new Color(.65f,.8f,.4f,1),.25f);
+            SeedColorTraits();
+            SeedCityLights();
+            EnsureProfiles();
             NotifyChanged();
         }
         void Add(ElementId element,params (PlanetStat stat,float amount)[] effects)

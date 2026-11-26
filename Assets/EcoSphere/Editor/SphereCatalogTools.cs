@@ -35,6 +35,9 @@ namespace EcoSphere.Editor
             Add(catalog, SphereIds.Mud, "Mud", ElementId.Mud, new Color32(202,156,107,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Air, "Air", ElementId.Air, new Color32(232,245,250,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Crystal, "Crystal", ElementId.Crystal, new Color32(227,108,242,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Civilization, "Civilization", ElementId.Civilization, new Color32(232,183,114,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Magic, "Magic", ElementId.Magic, new Color32(53,203,182,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Technology, "Technology", ElementId.Technology, new Color32(13,152,237,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Core, "Core", ElementId.Core, new Color32(163, 64, 255, 255), SphereRole.Core, false);
             if (!catalog.recipeBook)
             {
@@ -52,13 +55,40 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Stone,ElementId.Water,SphereIds.Mud);
             SeedRecipe(catalog,ElementId.Water,ElementId.Mud,SphereIds.Life);
             SeedRecipe(catalog,ElementId.Stone,ElementId.Magic,SphereIds.Crystal);
-            // Magic has no sphere yet; its visualizer color lives in the catalog until one exists.
-            if(!catalog.elementColors.Exists(entry=>entry.element==ElementId.Magic))
-                catalog.elementColors.Add(new ElementColorEntry{element=ElementId.Magic,color=new Color32(122,60,224,255)});
+            SeedRecipe(catalog,ElementId.Human,ElementId.Void,SphereIds.Magic);
+            SeedRecipe(catalog,ElementId.Plant,ElementId.Spirit,SphereIds.Magic);   // Forest (double Plant) + Spirit; revisit once those spheres exist
+            // Spirit has no sphere yet; its visualizer color lives here until one exists (then Configure drops it below).
+            SeedElementColor(catalog,ElementId.Spirit,new Color32(122,140,170,255));
+            // Stand-in visualizer colors are only for elements without a sphere; drop any whose element has gained one.
+            catalog.InvalidateIndexes();catalog.elementColors.RemoveAll(entry=>catalog.ElementAppearance(entry.element));
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             catalog.Validate();
             Debug.Log($"ECOSPHERE_SPHERE_CATALOG_CONFIGURED: {catalog.spheres.Count} definitions, shared artwork, contributions and colors");
+        }
+
+        // Shared import settings for a sphere's art folder: the icon is a transparent sprite, the surface a repeating texture.
+        public static void ImportSphereArt(string label,string version="v1")
+        {
+            AssetDatabase.Refresh();
+            string stem="Assets/EcoSphere/Art/Spheres/"+label+"/"+label.ToLowerInvariant()+"-";
+            foreach(string kind in new[]{"surface","icon"})
+            {
+                var importer=(TextureImporter)AssetImporter.GetAtPath(stem+kind+"-"+version+".png") ?? throw new Exception("Missing "+label+" "+kind+" art");
+                importer.textureType=kind=="icon" ? TextureImporterType.Sprite : TextureImporterType.Default;
+                importer.spriteImportMode=SpriteImportMode.Single;importer.maxTextureSize=256;
+                importer.alphaIsTransparency=kind=="icon";importer.mipmapEnabled=kind=="surface";
+                importer.wrapMode=kind=="surface" ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
+                importer.textureCompression=TextureImporterCompression.Uncompressed;importer.SaveAndReimport();
+            }
+        }
+
+        // A stand-in visualizer color for an element without a sphere. Skipped once the element has a namesake sphere.
+        static void SeedElementColor(SphereCatalog catalog,ElementId element,Color color)
+        {
+            catalog.InvalidateIndexes();
+            if(catalog.ElementAppearance(element) || catalog.elementColors.Exists(entry=>entry.element==element))return;
+            catalog.elementColors.Add(new ElementColorEntry{element=element,color=color});
         }
 
         static void SeedRecipe(SphereCatalog catalog,ElementId first,ElementId second,int output)
@@ -78,7 +108,8 @@ namespace EcoSphere.Editor
                 definition.id = id; definition.namesakeElement=element; definition.displayName = label; definition.color = color;
                 definition.category=id==SphereIds.Plant || id==SphereIds.Life ? SphereCategory.Life :
                     id==SphereIds.Void || role==SphereRole.Core ? SphereCategory.Forces :
-                    role==SphereRole.Laser ? SphereCategory.Technology : SphereCategory.Basic;
+                    role==SphereRole.Laser || id==SphereIds.Civilization || id==SphereIds.Technology ? SphereCategory.Technology :
+                    id==SphereIds.Magic ? SphereCategory.Beyond : SphereCategory.Basic;
                 if(id==SphereIds.Plant)definition.displayName="Plant Life";
                 definition.role = role; definition.selectable = role == SphereRole.Element;
                 definition.availableAtStart = starter;
@@ -87,6 +118,9 @@ namespace EcoSphere.Editor
                 if(id==SphereIds.Crystal) { definition.shape=SphereShape.Crystal; definition.deflectedHits=2;
                     definition.deflectSound=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/crystal-hit.mp3"); definition.breakSound=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/crystal-breaking.mp3");
                     definition.description="Adds a bit of magic to the world, while reflecting other elements."; }
+                if(id==SphereIds.Civilization)definition.description="Spreads settlements across the land. Their lights glow brighter as technology advances.";
+                if(id==SphereIds.Magic)definition.description="Fills the world with wonder, tinting its plant life and city lights in strange colors.";
+                if(id==SphereIds.Technology)definition.description="Powers civilization, making its city lights shine brighter.";
                 SeedContributions(definition,element);
                 string art = "Assets/EcoSphere/Art/";
                 string stem = "Spheres/" + label + "/" + label.ToLowerInvariant();
@@ -100,7 +134,7 @@ namespace EcoSphere.Editor
             if (!definition.resourceVoice)
             {
                 string voice = id == SphereIds.Ice ? "cryosphere" : id == SphereIds.Sunlight ? "heliosphere" :
-                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : null;
+                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : id == SphereIds.Civilization ? "politosphere" : id == SphereIds.Magic ? "arcanosphere" : id == SphereIds.Technology ? "technosphere" : null;
                 if (voice != null)
                 {
                     definition.resourceVoice = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/Voice/" + voice + ".mp3");
@@ -131,6 +165,12 @@ namespace EcoSphere.Editor
                     sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.contributions.Add(new ElementContribution(ElementId.Stone,1));sphere.contributions.Add(new ElementContribution(ElementId.Mud,2));break;
                 case SphereIds.Crystal:
                     sphere.contributions.Add(new ElementContribution(ElementId.Stone,1));sphere.contributions.Add(new ElementContribution(ElementId.Magic,1));sphere.contributions.Add(new ElementContribution(ElementId.Crystal,2));break;
+                case SphereIds.Civilization:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Human,1));sphere.contributions.Add(new ElementContribution(ElementId.Civilization,2));sphere.unallocatedWeight=1;break;
+                case SphereIds.Magic:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Magic,3));sphere.contributions.Add(new ElementContribution(ElementId.Void,1));break;
+                case SphereIds.Technology:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Civilization,1));sphere.contributions.Add(new ElementContribution(ElementId.Technology,2));sphere.unallocatedWeight=1;break;
                 default:sphere.contributions.Add(new ElementContribution(fallback,1));break;
             }
         }
@@ -184,8 +224,25 @@ namespace EcoSphere.Editor
             Expect(ShotDeflection.Resolve(crystal,SphereIds.Fire,0)==ShotImpact.Deflect && ShotDeflection.Resolve(crystal,SphereIds.Fire,1)==ShotImpact.Deflect && ShotDeflection.Resolve(crystal,SphereIds.Fire,2)==ShotImpact.Break &&
                 ShotDeflection.Resolve(crystal,SphereIds.Crystal,0)==ShotImpact.Attach && ShotDeflection.Resolve(catalog.Get(SphereIds.Stone),SphereIds.Fire,5)==ShotImpact.Attach,"deflection rule: two deflections, third hit breaks, same type and ordinary spheres attach");
             Expect(catalog.recipeBook.TryCombine(ElementId.Magic,ElementId.Stone,out var crystalRecipe) && crystalRecipe==crystal,"Stone + Magic must unlock Crystal");
-            Expect(catalog.ElementAppearance(ElementId.Magic)==null && catalog.ElementColor(ElementId.Magic)==catalog.elementColors.Find(entry=>entry.element==ElementId.Magic).color &&
-                catalog.ElementColor(ElementId.Crystal)==crystal.color,"element colors: authored Magic fallback, namesake Crystal");
+            var magic=catalog.Get(SphereIds.Magic);
+            Expect(catalog.ElementAppearance(ElementId.Magic)==magic && catalog.ElementColor(ElementId.Magic)==magic.color && !catalog.elementColors.Exists(entry=>entry.element==ElementId.Magic) &&
+                catalog.ElementColor(ElementId.Crystal)==crystal.color,"element colors: namesake Magic and Crystal, no stale stand-in color");
+            var civilization=catalog.Get(SphereIds.Civilization);
+            Expect(civilization.namesakeElement==ElementId.Civilization && civilization.color==(Color)new Color32(232,183,114,255) && civilization.category==SphereCategory.Technology &&
+                civilization.AmmoEligible && !civilization.availableAtStart && civilization.surface && civilization.icon &&
+                civilization.ContributionSummary()=="Civilization 50% · Human 25%" && civilization.unallocatedWeight==1 && civilization.TotalContributionUnits==4,
+                "Civilization identity: sandstone, Technology category, 1 Human / 2 Civilization / 1 Null, art");
+            Expect(civilization.resourceVoice && civilization.resourceVoice.name=="politosphere" && LevelAudio.MatchVoice(SphereIds.Civilization,voiceMinimum)==civilization.resourceVoice,"Civilization must use politosphere");
+            foreach(var recipe in catalog.recipeBook.recipes)Expect(recipe.output!=civilization,"Civilization recipe should remain unset for now");
+            Expect(magic.namesakeElement==ElementId.Magic && magic.color==(Color)new Color32(53,203,182,255) && magic.category==SphereCategory.Beyond && magic.AmmoEligible && !magic.availableAtStart &&
+                magic.ContributionSummary()=="Magic 75% · Void 25%" && magic.unallocatedWeight==0 && magic.resourceVoice && magic.resourceVoice.name=="arcanosphere","Magic identity: turquoise, Beyond, 3 Magic / 1 Void, arcanosphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Void,ElementId.Human,out var magicRecipe) && magicRecipe==magic &&
+                catalog.recipeBook.TryCombine(ElementId.Spirit,ElementId.Plant,out var spiritRecipe) && spiritRecipe==magic,"Human + Void and Plant + Spirit must both unlock Magic");
+            Expect(catalog.ElementAppearance(ElementId.Spirit)==null && catalog.ElementColor(ElementId.Spirit)==(Color)new Color32(122,140,170,255),"Spirit must use its gray-blue stand-in color until it has a sphere");
+            var technology=catalog.Get(SphereIds.Technology);
+            Expect(technology.namesakeElement==ElementId.Technology && technology.color==(Color)new Color32(13,152,237,255) && technology.category==SphereCategory.Technology && technology.AmmoEligible && !technology.availableAtStart &&
+                technology.ContributionSummary()=="Technology 50% · Civilization 25%" && technology.unallocatedWeight==1 && technology.resourceVoice && technology.resourceVoice.name=="technosphere","Technology identity: electric blue, Technology, 1 Civilization / 2 Technology / 1 Null, technosphere");
+            foreach(var recipe in catalog.recipeBook.recipes)Expect(recipe.output!=technology,"Technology recipe should remain unset for now");
             // Generated body: every corner stays inside the round footprint, faces point outward, front table stays behind the icon.
             var gem=SphereShapes.Mesh(SphereShape.Crystal);var gemVertices=gem.vertices;var gemNormals=gem.normals;var gemTriangles=gem.triangles;
             foreach(var vertex in gemVertices)Expect(new Vector2(vertex.x,vertex.y).magnitude<=.5001f && vertex.z>-.47f && vertex.z<.5f,"crystal vertex outside the sphere footprint");

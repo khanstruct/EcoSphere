@@ -46,6 +46,9 @@ namespace EcoSphere
         readonly BoardCollisionSnapshot collisionSnapshot = new BoardCollisionSnapshot();
         readonly List<Vector2> aimPoints = new List<Vector2>(13);
         readonly double[] totals = new double[Enum.GetValues(typeof(ElementId)).Length];
+        ElementLedger elementLedger;
+        // Every gameplay element gain goes through this ledger so contribution limits apply uniformly.
+        internal ElementLedger Elements { get { if (elementLedger == null) { elementLedger = new ElementLedger(totals); elementLedger.ShortageOccurred += ShowShortage; } return elementLedger; } }
         readonly float[] shown = new float[Enum.GetValues(typeof(ElementId)).Length];
         readonly List<Material> materials = new List<Material>();
         readonly List<Sprite> generatedSprites = new List<Sprite>();
@@ -451,11 +454,16 @@ namespace EcoSphere
             resolutionSpherePoints.Clear();
             var matches = board.MatchFrom(chosen,cleansedInfestation);
             lastMatch = matches.Count; matchedCount += matches.Count;
-            RemoveCells(matches, ElementScoring.MatchRate(matches.Count),matchOrigin:chosen,voicePoints:resolutionSpherePoints);
-            var released = board.Disconnected(); lastRelease = released.Count;
-            RecordResolution(lastMatch, lastRelease, shotRicochets);
-            AdvanceTutorial(released);
-            RemoveCells(released, ElementScoring.Breakaway, true,voicePoints:resolutionSpherePoints);
+            HashSet<Vector2Int> released;
+            // One shot is one resolution: everything it gains raises contribution caps before they are checked.
+            using (Elements.Batch())
+            {
+                RemoveCells(matches, ElementScoring.MatchRate(matches.Count),matchOrigin:chosen,voicePoints:resolutionSpherePoints);
+                released = board.Disconnected(); lastRelease = released.Count;
+                RecordResolution(lastMatch, lastRelease, shotRicochets);
+                AdvanceTutorial(released);
+                RemoveCells(released, ElementScoring.Breakaway, true,voicePoints:resolutionSpherePoints);
+            }
             if (levelAudio) levelAudio.Resolve(lastMatch, lastRelease);
             if (levelAudio)shotHasElementCallout=levelAudio.AnnounceResolution(resolutionSpherePoints);
             complete = board.Cells.Count == 0;
@@ -482,10 +490,10 @@ namespace EcoSphere
                 {
                     voicePoints.TryGetValue(type,out int previousPoints);voicePoints[type]=previousPoints+pointsPerSphere;
                 }
-                bool contributes = definition.role != SphereRole.Core;
+                bool contributes = definition.Contributes;
                 if (contributes)
                 {
-                    definition.AddContributions(totals, pointsPerSphere);
+                    Elements.Add(definition, pointsPerSphere);
                 }
                 if (type != LaserType) score += pointsPerSphere;
                 var visual = visuals[cell]; visuals.Remove(cell); board.Cells.Remove(cell);
@@ -621,7 +629,7 @@ namespace EcoSphere
                 failed = true; ready = false; complete = false;
                 GameServices.Session.Phase=GamePhase.Failed;
                 ReportComposition("failed",false);
-                Array.Clear(totals, 0, totals.Length); Array.Clear(shown, 0, shown.Length);
+                Elements.Clear(); Array.Clear(shown, 0, shown.Length);
                 score = matchedCount = lastMatch = lastRelease = 0;
                 ResetScoreTracking();
                 if (levelAudio) levelAudio.CancelResolution();

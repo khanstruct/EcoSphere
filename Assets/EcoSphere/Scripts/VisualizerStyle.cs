@@ -29,5 +29,16 @@ namespace EcoSphere
         [Range(1,2)] public float scoreRangePastThreeStars=1.15f;
         public Color scoreTrackColor=new Color(1,1,1,.08f);
         public Color scoreFillColor=new Color(1,.78f,.3f,.85f);
+
+        [Header("Contribution shortage notice (rises above the capped element's bar)")]
+        [Tooltip("{0} is the limiting element's name. The text uses that element's visualizer color.")]
+        public string shortageFormat="Not enough {0}";
+        [Min(6)] public float shortageFontSize=18;
+        [Min(.1f)] public float shortageDuration=1.6f;
+        [Min(0)] public float shortageRise=24;
+        [Tooltip("Start height above the capped bar's top, clearing its value label.")]
+        [Min(0)] public float shortageOffset=42;
+        [Range(0,.5f)] public float shortageOutline=.25f;
+        public Color shortageOutlineColor=new Color(0,0,0,.9f);
     }
 }

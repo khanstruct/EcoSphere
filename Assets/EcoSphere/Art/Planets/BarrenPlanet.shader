@@ -17,7 +17,20 @@ Shader "EcoSphere/Barren Planet"
         _Soil ("Soil",Range(0,1))=0
         _Moisture ("Moisture",Range(0,1))=0
         _Vegetation ("Vegetation growth",Range(0,1))=0
-        _WaterGreenness ("Water biological tint",Range(0,1))=0
+        _WaterTint ("Water color trait (rgb color, a amount)",Color)=(0,0,0,0)
+        _VegetationTint ("Vegetation color trait (rgb color, a amount)",Color)=(0,0,0,0)
+        _LandTint ("Land color trait (rgb color, a amount)",Color)=(0,0,0,0)
+        _CityLightsTint ("City lights color trait (rgb color, a amount)",Color)=(0,0,0,0)
+        _CityLightsMask ("City lights, scattered settlements (linear)",2D)="black" {}
+        _CityLightsDenseMask ("City lights, dense urban networks (linear)",2D)="black" {}
+        _CityLightsColor ("Default city light color",Color)=(1,0.72,0.38,1)
+        _CityLightsBrightness ("City light brightness (without technology, at full intensity)",Vector)=(0.6,3,0,0)
+        _CityLightsDayVisibility ("City light visibility on the lit side",Range(0,1))=0.75
+        _CityLightsUrbanShade ("Darkening of built-up land under the lights (daylight contrast)",Range(0,1))=0.35
+        _CityLightsTiling ("City light mask repeats around the globe (x, y)",Vector)=(3,3,0,0)
+        _CityLightsSharpness ("City light points (mask floor, gain, scattered settlement boost)",Vector)=(0.04,1.6,2.5,0)
+        _Civilization ("Civilization (settlement coverage)",Range(0,1))=0
+        _CityLightIntensity ("City light intensity",Range(0,1))=0
         _TerrainBounds ("Terrain elevation bounds",Vector)=(0,1,0,0)
     }
     SubShader
@@ -33,6 +46,8 @@ Shader "EcoSphere/Barren Planet"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             TEXTURE2D(_HeightMap); SAMPLER(sampler_HeightMap);
+            TEXTURE2D(_CityLightsMask); SAMPLER(sampler_CityLightsMask);
+            TEXTURE2D(_CityLightsDenseMask);
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 half4 _WaterColor;
@@ -43,7 +58,12 @@ Shader "EcoSphere/Barren Planet"
                 float _Temperature, _GeologicalActivity;
                 float _FreezeStart, _FullyFrozen;
                 float _Sediment, _Soil, _Moisture;
-                float _Vegetation, _WaterGreenness;
+                float _Vegetation;
+                half4 _WaterTint, _VegetationTint, _LandTint, _CityLightsTint, _CityLightsColor;
+                float4 _CityLightsBrightness;
+                float _CityLightsDayVisibility, _CityLightsUrbanShade;
+                float4 _CityLightsTiling, _CityLightsSharpness;
+                float _Civilization, _CityLightIntensity;
                 float4 _TerrainBounds;
             CBUFFER_END
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float4 tangentOS : TANGENT; float2 uv : TEXCOORD0; };
@@ -95,6 +115,10 @@ Shader "EcoSphere/Barren Planet"
                 rock=lerp(rock,soilColor,soilTint);
                 half drySand=_Sediment*(1-_Moisture)*(.7+.3*(1-exposed));
                 rock=lerp(rock,half3(.7,.5,.28)*(.65+rock.r),drySand);
+                // Land color trait: recolor luminance toward the blended element hue. An sRGB mid-gray hue (linear .214) keeps brightness;
+                // dark hues (coal) darken and pale ones (salt) brighten, while the rock detail survives.
+                half landLuminance=dot(rock,half3(.2126,.7152,.0722));
+                rock=lerp(rock,landLuminance*_LandTint.rgb*4.67,saturate(_LandTint.a));
                 half heat=saturate(_Temperature);
                 half scorch=heat*.15 + smoothstep(.25,.95,heat)*.85;
                 rock=lerp(rock,rock*half3(1.16,.77,.56),heat*.65);
@@ -102,7 +126,8 @@ Shader "EcoSphere/Barren Planet"
                 half water = 1 - smoothstep(_SeaLevel - .008, _SeaLevel + .008, elevation);
                 half depth = saturate((_SeaLevel - elevation) * 9);
                 half3 ocean = lerp(_WaterColor.rgb * half3(1.6, 1.8, 1.65), _WaterColor.rgb, depth);
-                ocean=lerp(ocean,half3(.04,.23,.25),saturate(_WaterGreenness));
+                // Water color trait keeps the shallow-to-deep variation of the base water.
+                ocean=lerp(ocean,_WaterTint.rgb*lerp(1.5,1,depth),saturate(_WaterTint.a));
                 float3 planetDirection = normalize(input.planetDirection);
                 float lowland=max(_SeaLevel,_TerrainBounds.x);
                 half altitude=saturate((elevation-lowland)/max(.05,_TerrainBounds.y-lowland));
@@ -114,6 +139,8 @@ Shader "EcoSphere/Barren Planet"
                 half foliage=smoothstep(patchThreshold-.035,patchThreshold+.035,patch)*smoothstep(0,.035,_Vegetation);
                 half canopy=IceNoise(planetDirection*55+8.1);
                 half3 foliageColor=lerp(half3(.035,.17,.055),half3(.16,.36,.08),canopy);
+                // Vegetation color trait keeps the canopy light/dark variation.
+                foliageColor=lerp(foliageColor,_VegetationTint.rgb*lerp(.45,1,canopy),saturate(_VegetationTint.a));
                 rock=lerp(rock,foliageColor,foliage*.94);
                 half3 albedo = lerp(rock, ocean, water);
                 // Seam-free, planet-fixed variation breaks up the cap into terrain-following fingers.
@@ -162,7 +189,35 @@ Shader "EcoSphere/Barren Planet"
                 half3 illumination = max(SampleSH(normal), half3(.18, .18, .18)) + light.color * diffuse * .65;
                 half3 halfDirection = normalize(light.direction + GetWorldSpaceNormalizeViewDir(input.positionWS));
                 half glint = pow(saturate(dot(normal, halfDirection)), 64) * water * diffuse * (1-ice*.8);
-                return half4(albedo * illumination + light.color * glint * .45 + lavaColor*lava*1.6, 1);
+                // City lights. Civilization sets coverage: regions light up in a stable order with scattered settlements;
+                // technology (intensity) brightens them and blends in dense urban networks. The CityLights color trait shifts the hue.
+                // Lights sit on exposed land only, show on the night side, and twinkle per small cell rather than in unison.
+                half civilization=saturate(_Civilization);
+                half3 cityLight=0;
+                if(civilization>0)
+                {
+                    // Tiled so each mask texel is about a screen pixel; the floor and gain turn soft blobs into points.
+                    float2 lightsUV=input.uv*_CityLightsTiling.xy;
+                    half scattered=saturate((SAMPLE_TEXTURE2D(_CityLightsMask,sampler_CityLightsMask,lightsUV).r-_CityLightsSharpness.x)*_CityLightsSharpness.y*max(1,_CityLightsSharpness.z));
+                    half dense=saturate((SAMPLE_TEXTURE2D(_CityLightsDenseMask,sampler_CityLightsMask,lightsUV).r-_CityLightsSharpness.x)*_CityLightsSharpness.y);
+                    half settledRegion=IceNoise(planetDirection*4+21.7)*.7+IceNoise(planetDirection*9+3.3)*.3;
+                    half revealAt=.72-civilization*.9;
+                    half reveal=smoothstep(revealAt-.08,revealAt+.08,settledRegion)*smoothstep(0,.03,civilization);
+                    // Civilization only spreads scattered settlements; the dense urban network needs abundant technology (light intensity).
+                    half urban=lerp(scattered,max(scattered,dense),smoothstep(.45,1,saturate(_CityLightIntensity)));
+                    half onLand=(1-water)*(1-ice)*(1-crust);
+                    // Full strength past the terminator; a dimmer floor keeps lights readable on the lit face the game cameras show.
+                    half night=lerp(_CityLightsDayVisibility,1,smoothstep(.1,-.3,dot(normalize(input.normalWS),light.direction)));
+                    float3 cell=floor(planetDirection*60);
+                    half twinkle=.85+.15*sin(_Time.y*(1.5+IceHash(cell)*2)+IceHash(cell+7.1)*6.283);
+                    half brightness=lerp(_CityLightsBrightness.x,_CityLightsBrightness.y,saturate(_CityLightIntensity));
+                    half3 hue=lerp(_CityLightsColor.rgb,_CityLightsTint.rgb,saturate(_CityLightsTint.a));
+                    half footprint=urban*reveal*onLand;
+                    cityLight=hue*footprint*night*twinkle*brightness;
+                    // Built-up land reads slightly darker, so the lights keep their contrast on the daylit face.
+                    albedo*=1-_CityLightsUrbanShade*footprint;
+                }
+                return half4(albedo * illumination + light.color * glint * .45 + lavaColor*lava*1.6 + cityLight, 1);
             }
             ENDHLSL
         }

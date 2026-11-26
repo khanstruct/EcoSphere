@@ -11,14 +11,34 @@ namespace EcoSphere
     public enum PlanetStat { Temperature, TerrainRuggedness, SurfaceWater, Sediment, Soil,
         Moisture, BiologicalCoverage, GeologicalActivity, AtmosphereDensity, CloudCover,
         CloudThickness, WeatherActivity, ElectricalActivity, Civilization, Pollution,
-        Mineralization, ExoticActivity, AtmosphereExpansion, WaterGreenness, CloudDarkness }
+        Mineralization, ExoticActivity, AtmosphereExpansion,
+        [Obsolete("Superseded by the Water color trait; kept so old snapshots keep their index and tint.")] WaterGreenness,
+        CloudDarkness,
+        CityLightIntensity }
+
+    // Colors that elements tint, blended by weighted contribution. Append only: snapshots store this order.
+    // Each maps to the planet shader property "_<Trait>Tint" (rgb = blended color, a = amount).
+    public enum PlanetColorTrait { Water, Vegetation, Land, CityLights }
 
     [Serializable]
     public sealed class PlanetStats
     {
         static readonly int ChannelCount=Enum.GetValues(typeof(PlanetStat)).Length;
+        static readonly int ColorTraitCount=Enum.GetValues(typeof(PlanetColorTrait)).Length;
+        static readonly int[] ColorTraitProperties=ColorTraitPropertyIds();
+        static int[] ColorTraitPropertyIds()
+        {
+            var ids=new int[ColorTraitCount];
+            for(int i=0;i<ids.Length;i++)ids[i]=Shader.PropertyToID("_"+(PlanetColorTrait)i+"Tint");
+            return ids;
+        }
+        // Tint applied to snapshots saved before color traits, which only had a green-water amount.
+        // The old shader constant was linear; colors pass through SetColor as sRGB, so store its sRGB equivalent.
+        static readonly Color LegacyWaterGreen=new Color(.04f,.23f,.25f).gamma;
         public int version=1;
         public float[] values=new float[ChannelCount];
+        // rgb = blended trait color, a = tint amount (0 = untinted). Missing in old snapshots, which read as untinted.
+        public Color[] colorTraits=new Color[ColorTraitCount];
         public Color atmosphereColor;
         public float atmosphereWidth;
         // Saved with the stats so later tuning does not rewrite a completed world's climate.
@@ -31,8 +51,26 @@ namespace EcoSphere
             get => values!=null && (int)stat<values.Length ? values[(int)stat] : 0;
             set { EnsureSize();values[(int)stat]=value; }
         }
-        void EnsureSize() { if(values==null || values.Length!=ChannelCount)Array.Resize(ref values,ChannelCount); }
-        public void Clear() {EnsureSize();Array.Clear(values,0,values.Length);atmosphereColor=Color.clear;atmosphereWidth=0;}
+        public Color this[PlanetColorTrait trait] {
+            get => colorTraits!=null && (int)trait<colorTraits.Length ? colorTraits[(int)trait] : Color.clear;
+            set { EnsureSize();colorTraits[(int)trait]=value; }
+        }
+        // What the shader draws for a trait. Old snapshots without a Water trait keep their legacy green-water amount.
+        public Color AppliedTint(PlanetColorTrait trait)
+        {
+            var tint=this[trait];
+#pragma warning disable CS0618
+            float legacyGreen=this[PlanetStat.WaterGreenness];
+#pragma warning restore CS0618
+            if(trait==PlanetColorTrait.Water && tint.a<=0 && legacyGreen>0){tint=LegacyWaterGreen;tint.a=Mathf.Clamp01(legacyGreen);}
+            return tint;
+        }
+        void EnsureSize()
+        {
+            if(values==null || values.Length!=ChannelCount)Array.Resize(ref values,ChannelCount);
+            if(colorTraits==null || colorTraits.Length!=ColorTraitCount)Array.Resize(ref colorTraits,ColorTraitCount);
+        }
+        public void Clear() {EnsureSize();Array.Clear(values,0,values.Length);Array.Clear(colorTraits,0,colorTraits.Length);atmosphereColor=Color.clear;atmosphereWidth=0;}
         void CopyClimateFrom(PlanetStats other)
         {
             freezingStartsAt=other.freezingStartsAt;fullyFrozenAt=other.fullyFrozenAt;
@@ -45,6 +83,7 @@ namespace EcoSphere
             if(ReferenceEquals(this,other))return;
             Clear();
             if(other.values!=null)Array.Copy(other.values,values,Math.Min(values.Length,other.values.Length));
+            if(other.colorTraits!=null)Array.Copy(other.colorTraits,colorTraits,Math.Min(colorTraits.Length,other.colorTraits.Length));
             atmosphereColor=other.atmosphereColor;atmosphereWidth=other.atmosphereWidth;CopyClimateFrom(other);
         }
         public PlanetStats Copy() {var result=new PlanetStats();result.CopyFrom(this);return result;}
@@ -72,6 +111,13 @@ namespace EcoSphere
             CopyClimateFrom(target);
             for(int i=0;i<values.Length;i++)values[i]=Mathf.MoveTowards(values[i],target[(PlanetStat)i],dt*.6f);
             float blend=1-Mathf.Exp(-dt*4);
+            for(int i=0;i<colorTraits.Length;i++)
+            {
+                var goal=target[(PlanetColorTrait)i];var now=colorTraits[i];
+                // A trait fading in starts from its own hue rather than from black.
+                if(now.a<=.001f){now.r=goal.r;now.g=goal.g;now.b=goal.b;}
+                colorTraits[i]=Color.Lerp(now,goal,blend);
+            }
             atmosphereColor=Color.Lerp(atmosphereColor,target.atmosphereColor,blend);
             atmosphereWidth=Mathf.Lerp(atmosphereWidth,target.atmosphereWidth,blend);
         }
@@ -91,7 +137,8 @@ namespace EcoSphere
             properties.SetFloat("_Soil",this[PlanetStat.Soil]);
             properties.SetFloat("_Moisture",this[PlanetStat.Moisture]);
             properties.SetFloat("_Vegetation",VegetationPotential);
-            properties.SetFloat("_WaterGreenness",this[PlanetStat.WaterGreenness]);
+            properties.SetFloat("_Civilization",this[PlanetStat.Civilization]);properties.SetFloat("_CityLightIntensity",this[PlanetStat.CityLightIntensity]);
+            for(int i=0;i<ColorTraitProperties.Length;i++)properties.SetColor(ColorTraitProperties[i],AppliedTint((PlanetColorTrait)i));
             // Legacy names are also set for existing tooling; shader logic uses shared temperature.
             properties.SetFloat("_FireHeat",Heat);properties.SetFloat("_IceCoverage",IceCoverage);
         }
@@ -111,6 +158,7 @@ namespace EcoSphere
             var composition=new ElementComposition(elements);
             float temperatureBuildup=Mathf.Clamp01((float)(composition.Total/Math.Max(1,catalog.temperaturePointsForFullInfluence)));
             float atmosphereWeight=0;Color color=Color.clear;
+            var traitWeights=new float[Enum.GetValues(typeof(PlanetColorTrait)).Length];var traitColors=new Color[traitWeights.Length];
             foreach(var profile in catalog.elements)
             {
                 float influence=composition.Influence(profile.element,catalog.pointsForFullInfluence,catalog.dominanceBonus);
@@ -120,6 +168,18 @@ namespace EcoSphere
                     result[effect.stat]+=effect.amount*(effect.stat==PlanetStat.Temperature ? temperatureInfluence : influence);
                 float weight=profile.atmosphereStrength*influence;
                 atmosphereWeight+=weight;color+=profile.atmosphereColor*weight;
+                foreach(var tint in profile.colors)
+                {
+                    float tintWeight=tint.strength*influence;
+                    traitWeights[(int)tint.trait]+=tintWeight;traitColors[(int)tint.trait]+=tint.color*tintWeight;
+                }
+            }
+            // Color traits: weighted-average hue, with the amount set by total weighted strength through the trait's response.
+            for(int i=0;i<traitWeights.Length;i++)
+            {
+                if(traitWeights[i]<=0)continue;
+                var blended=traitColors[i]/traitWeights[i];blended.a=catalog.RespondColor((PlanetColorTrait)i,traitWeights[i]);
+                result[(PlanetColorTrait)i]=blended;
             }
             // Combine all element effects before applying the visual response: opposite effects still cancel.
             result[PlanetStat.AtmosphereDensity]+=atmosphereWeight;
