@@ -23,12 +23,15 @@ namespace EcoSphere
         int displayedSystem = -1;
         public Color orbitColor = new Color(1, .76f, .24f);
         public int SelectedPlanet { get; private set; } = -1;
+        public SystemCornerButtons CornerButtons { get; private set; }
 
         void Awake()
         {
             GameServices.Session.Phase=GamePhase.System;
             if (Camera.main) Camera.main.cullingMask &= ~(1 << 30);
             if (!GetComponent<SystemResponsiveLayout>()) gameObject.AddComponent<SystemResponsiveLayout>();
+            // Created before the responsive layout's Start, so it moves into the safe area with the rest of the screen.
+            CornerButtons = SystemCornerButtons.Create(transform);
             if (GameServices.Session.ReturningToSystem) { systemNumber = GameServices.Session.SystemNumber; GameServices.Session.ReturningToSystem = false; }
             else systemNumber = GameServices.Progress.CurrentSystem;
             RefreshSystemHeading();

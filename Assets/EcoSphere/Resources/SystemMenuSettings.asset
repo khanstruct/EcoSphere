@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21f3660972c637842ac0e983968b40b4, type: 3}
+  m_Name: SystemMenuSettings
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SystemMenuSettings
+  buttonSize: 110
+  margin: {x: 30, y: 30}
+  spacing: 20
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  highlightedColor: {r: 1, g: 0.9, b: 0.65, a: 1}
+  pressedColor: {r: 0.8, g: 0.7, b: 0.5, a: 1}
+  entries:
+  - id: settings
+    label: Settings
+    icon: {fileID: 21300000, guid: ed38a505a40d71a42bb29a9c9af47c86, type: 3}
+    corner: 0
+  - id: collection
+    label: Collection
+    icon: {fileID: 21300000, guid: dadfa9cb51e20a846b3f32a6b1ee36d9, type: 3}
+    corner: 1
