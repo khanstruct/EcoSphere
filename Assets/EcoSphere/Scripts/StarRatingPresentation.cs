@@ -16,6 +16,9 @@ namespace EcoSphere
         RectTransform root;
         bool continued;
         const float RevealInterval=.5f, PopDuration=.3f;
+        // Continue sits centered just beneath the star row, scaled up as a whole so label and frame stay in proportion.
+        const float StarRowAnchor=.58f, ButtonScale=1.4f, ButtonGapFraction=.03f;
+        RectTransform buttonRect;
 
         public IEnumerator Present(int count,Sprite sprite,GameObject buttonPrefab,TMP_FontAsset font)
         {
@@ -37,8 +40,8 @@ namespace EcoSphere
             var button=Instantiate(buttonPrefab,root);button.name="Rating Continue";
             ContinueButton=button.GetComponent<Button>();ContinueButton.interactable=false;
             button.GetComponent<CelestialButton>().label.text="Continue";
-            var buttonRect=button.GetComponent<RectTransform>();buttonRect.anchorMin=buttonRect.anchorMax=new Vector2(.5f,.09f);
-            buttonRect.anchoredPosition=Vector2.zero;buttonRect.sizeDelta=new Vector2(360,120);
+            buttonRect=button.GetComponent<RectTransform>();buttonRect.anchorMin=buttonRect.anchorMax=new Vector2(.5f,StarRowAnchor);
+            buttonRect.sizeDelta=new Vector2(360,120);buttonRect.localScale=Vector3.one*ButtonScale;
             ContinueButton.onClick.AddListener(()=>continued=true);
             button.SetActive(false);
             var audio=GameServices.Audio.CreateSource(gameObject,"Star score",AudioChannel.Effects,.85f);
@@ -72,9 +75,10 @@ namespace EcoSphere
             if(previousLayoutSize==sizeKey && previousStarCount==stars.Count && previousTargetCount==count)return;
             previousLayoutSize=sizeKey;previousStarCount=stars.Count;previousTargetCount=count;
             float size=Mathf.Min(width*.28f,height*.42f),step=size+width*.025f;
+            if(buttonRect)buttonRect.anchoredPosition=new Vector2(0,-size*.5f-height*ButtonGapFraction-buttonRect.sizeDelta.y*ButtonScale*.5f);
             for(int i=0;i<stars.Count;i++)
             {
-                stars[i].anchorMin=stars[i].anchorMax=new Vector2(.5f,.58f);
+                stars[i].anchorMin=stars[i].anchorMax=new Vector2(.5f,StarRowAnchor);
                 stars[i].sizeDelta=Vector2.one*size;stars[i].anchoredPosition=new Vector2((i-(count-1)*.5f)*step,0);
             }
         }

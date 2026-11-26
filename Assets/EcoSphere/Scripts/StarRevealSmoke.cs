@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
@@ -25,6 +26,21 @@ namespace EcoSphere
                 new GameObject("Star reveal checks").AddComponent<StarRevealSmoke>();
         }
         static void Expect(bool value,string message){if(!value)throw new Exception("Star reveal: "+message);}
+        // Overlay canvases cannot render offscreen, so the review image briefly routes the rating canvas through a camera, then restores it.
+        static IEnumerator CaptureRating(StarRatingPresentation rating)
+        {
+            var canvas=rating.GetComponent<Canvas>();
+            var camera=new GameObject("Rating capture camera").AddComponent<Camera>();camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=Color.black;
+            var target=new RenderTexture(900,1600,24);target.Create();camera.targetTexture=target;
+            canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=camera;canvas.planeDistance=1;camera.transform.position=new Vector3(0,-5000,0);camera.nearClipPlane=.1f;camera.farClipPlane=2;camera.cullingMask=~0;
+            yield return null;yield return null;Canvas.ForceUpdateCanvases();camera.Render();
+            var previous=RenderTexture.active;RenderTexture.active=target;
+            var pixels=new Texture2D(900,1600,TextureFormat.RGB24,false);pixels.ReadPixels(new Rect(0,0,900,1600),0,0);pixels.Apply();
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.dataPath,"../Logs/StarReveal-continue.png"),pixels.EncodeToPNG());
+            RenderTexture.active=previous;canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.worldCamera=null;camera.targetTexture=null;
+            target.Release();Destroy(target);Destroy(pixels);Destroy(camera.gameObject);
+            yield return null;yield return null;Canvas.ForceUpdateCanvases();
+        }
         IEnumerator Start()
         {
             DontDestroyOnLoad(gameObject);yield return null;yield return null;
@@ -50,6 +66,17 @@ namespace EcoSphere
             yield return new WaitForSecondsRealtime(.7f);
             Expect(SceneManager.GetActiveScene().name!="Results","rating advanced without input");
             Canvas.ForceUpdateCanvases();
+            // Continue is enlarged and centered just beneath the star row (screen-space corners, so scale counts).
+            var corners=new Vector3[4];((RectTransform)rating.ContinueButton.transform).GetWorldCorners(corners);
+            float buttonLeft=corners[0].x,buttonRight=corners[2].x,buttonBottom=corners[0].y,buttonTop=corners[1].y;
+            float starsLeft=float.MaxValue,starsRight=float.MinValue,starsBottom=float.MaxValue;
+            foreach(var star in rating.GetComponentsInChildren<Image>())
+                if(star.name.StartsWith("Earned star")){star.rectTransform.GetWorldCorners(corners);starsLeft=Mathf.Min(starsLeft,corners[0].x);starsRight=Mathf.Max(starsRight,corners[2].x);starsBottom=Mathf.Min(starsBottom,corners[0].y);}
+            float scale=((RectTransform)rating.transform).lossyScale.x,gap=(starsBottom-buttonTop)/scale;
+            Expect(Mathf.Abs((buttonLeft+buttonRight)*.5f-(starsLeft+starsRight)*.5f)<1,"Continue must be centered under the stars");
+            Expect(gap>0 && gap<80,"Continue must sit just beneath the stars (gap "+gap+")");
+            Expect((buttonRight-buttonLeft)/scale>=360*1.3f && buttonBottom>0,"Continue must be enlarged and on screen");
+            yield return CaptureRating(rating);
             var pointerPosition=RectTransformUtility.WorldToScreenPoint(null,rating.ContinueButton.transform.position);
             var pointer=new PointerEventData(EventSystem.current){position=pointerPosition};
             var hits=new System.Collections.Generic.List<RaycastResult>();EventSystem.current.RaycastAll(pointer,hits);
@@ -60,7 +87,9 @@ namespace EcoSphere
             InputSystem.QueueStateEvent(mouse,new MouseState{position=pointerPosition});yield return null;yield return null;
             InputSystem.QueueStateEvent(mouse,new MouseState{position=pointerPosition,buttons=1});yield return null;yield return null;
             InputSystem.QueueStateEvent(mouse,new MouseState{position=pointerPosition});yield return null;yield return null;yield return null;
-            Expect(SceneManager.GetActiveScene().name=="Results" && WorldLevels.Get(1,0).highestScore==2500,"Continue failed to open saved Results");
+            Expect(SceneManager.GetActiveScene().name=="Results","real pointer Continue did not open Results (scene "+SceneManager.GetActiveScene().name+")");
+            var played=WorldLevels.Get(GameServices.Session.SystemNumber,GameServices.Session.PlanetIndex);
+            Expect(played.highestScore==2500,"saved score "+played.highestScore+" is not 2500 on the played planet");
             Debug.Log("ECOSPHERE_STAR_REVEAL_PASSED: world-complete first, three staggered stars/sounds, real pointer Continue through UI input and saved score");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
