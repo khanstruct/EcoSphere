@@ -25,7 +25,7 @@ namespace EcoSphere
                 int bar=displayedElements.IndexOf(entry.element);
                 Expect(bar>=0 && energyBars[bar].color==Catalog.ElementColor(entry.element) && resourceLabels[bar].text==Catalog.ElementName(entry.element),"missing or miscolored "+entry.element+" bar");
             }
-            Expect(Catalog.ElementColor(sphere.namesakeElement)==sphere.color,"namesake element must use the sphere color");
+            Expect(!sphere.HasNamesake || Catalog.ElementColor(sphere.namesakeElement)==sphere.color,"namesake element must use the sphere color");
             Expect(visual.GetComponent<TrailRenderer>().startColor==sphere.color,"streak must use the sphere color");
             Expect(sphere.resourceVoice && LevelAudio.MatchVoice(sphere.id,GameAudioSettings.Current.minimumMatchedSpheresForVoice)==sphere.resourceVoice,"large matches must play the sphere voice");
         }

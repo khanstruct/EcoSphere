@@ -43,6 +43,7 @@ namespace EcoSphere
             foreach(var sphere in spheres)
             {
                 if(!sphere || !ids.TryAdd(sphere.id,sphere))throw new InvalidOperationException("Missing or duplicate sphere definition");
+                if(!sphere.HasNamesake)continue;   // e.g. Forest: adds Plant but does not represent an element
                 if(!Enum.IsDefined(typeof(ElementId),sphere.namesakeElement) || !namesakes.TryAdd(sphere.namesakeElement,sphere))
                     throw new InvalidOperationException(sphere.name+": missing or duplicate namesake element");
             }

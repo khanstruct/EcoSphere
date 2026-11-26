@@ -24,6 +24,8 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Civilization | 12 | Human: 1, Civilization: 2, Null: 1 | Element; sandstone #E8B772, Technology category, politosphere voice, DEV available, no recipe yet |
 | Magic | 13 | Magic: 3, Void: 1 | Element; turquoise #35CBB6, Beyond category, arcanosphere voice, DEV available, Human + Void or Plant + Spirit recipes |
 | Technology | 14 | Civilization: 1, Technology: 2, Null: 1 | Element; electric blue #0D98ED, Technology category, technosphere voice, DEV available, no recipe yet |
+| Spirit | 15 | Magic: 1, Spirit: 2, Void: 1 | Element; mint #A8E6C2, Beyond category, ectosphere voice, DEV available, Air + Life recipe |
+| Forest | 16 | Plant: 3, Null: 1 | No namesake element; forest green #1F6B2A, Life category, florasphere voice, DEV available, Plant + Plant recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -100,13 +102,19 @@ Mud (sphere ID 9, appended element ID 52) uses its wet-mud artwork, light brown 
 
 Civilization (ID 12) represents population sprawl. It adds the appended `ElementId.Civilization`, whose planet profile drives the `Civilization` stat. That stat sets how far city lights spread; it does not brighten them. Brightness comes from `CityLightIntensity`: Technology, City and Energy. A pure Civilization world shows dim, sprawling lights, and Technology on the same sprawl roughly doubles their brightness (see Planet-stats.md, City lights). The art is `Art/Spheres/Civilization/civilization-{surface,icon}-v1.png` (256×128 surface, 256 sprite icon), and the voice is `Audio/Voice/politosphere.mp3`. The recipe is intentionally unset.
 
-`SphereIntroTools.Configure` imports the art for its listed spheres (Civilization, Magic, Technology) through the shared `SphereCatalogTools.ImportSphereArt` (Air's tool uses it too). It then seeds the spheres, adds their planet profiles through `CityLightTools.Configure`, and validates. `SphereIntroSmoke` (`-sphereIntroSmoke <sphere id>`, DEV mode) checks any sphere entirely from its definition: DEV and normal availability, setup selection, board shape, breakaway yield through `RemoveCells`, one bar per contributed element in the shared colors, streak color, voice and a preview render. Run it with `SphereIntroTools.Smoke` and `-sphereIntroSmoke <id>` (12 Civilization, 13 Magic, 14 Technology). New spheres can reuse it instead of adding a sphere-specific smoke.
+`SphereIntroTools.Configure` imports the art for its listed spheres (Civilization, Magic, Technology, Spirit, Forest) through the shared `SphereCatalogTools.ImportSphereArt` (Air's tool uses it too). It then seeds the spheres, adds their planet profiles through `CityLightTools.Configure`, and validates. `SphereIntroSmoke` (`-sphereIntroSmoke <sphere id>`, DEV mode) checks any sphere entirely from its definition: DEV and normal availability, setup selection, board shape, breakaway yield through `RemoveCells`, one bar per contributed element in the shared colors, streak color, voice and a preview render. Run it with `SphereIntroTools.Smoke` and `-sphereIntroSmoke <id>` (12 Civilization, 13 Magic, 14 Technology, 15 Spirit, 16 Forest). New spheres can reuse it instead of adding a sphere-specific smoke.
 
 ## Magic and Technology spheres
 
 **Magic** (ID 13) is turquoise and contributes 3 Magic and 1 Void. Human + Void unlocks it, and so does Plant + Spirit; the recipe book allows several recipes for one sphere. The second recipe stands in for Forest + Spirit: recipes combine elements, and the planned Forest sphere (Plant + Plant) contributes only Plant, so any strong Plant source qualifies. Revisit it once the Forest and Spirit spheres exist. On the planet, Magic tints vegetation and city lights violet through the shared color traits and leaves water and land alone. Its earlier stand-in purple visualizer color was removed: Configure drops any stand-in `elementColors` entry whose element has gained a sphere.
 
 **Technology** (ID 14) is electric blue and contributes 1 Civilization, 2 Technology and 1 Null. The Technology element brightens city lights (`CityLightIntensity` 1), adds some coverage (Civilization 0.7) and shifts the lights toward cool white. Its recipe is unset.
+
+## Spirit and Forest spheres
+
+**Spirit** (ID 15) is mint and contributes 1 Magic, 2 Spirit and 1 Void. Air + Life unlocks it. It now supplies the Spirit element's color, so the old gray-blue stand-in was dropped automatically.
+
+**Forest** (ID 16) is forest green and contributes 3 Plant and 1 Null. Plant + Plant (a self-recipe) unlocks it. Forest is not an element: its `namesakeElement` is `SphereDefinition.NoNamesake`. Spheres without a namesake are skipped by the catalog's namesake index, so Plant Life keeps supplying Plant's color, art and voice, while Forest's own color is used for its streak and board. Validation rejects a namesake that is neither a real element nor none.
 
 ## Spirit element
 

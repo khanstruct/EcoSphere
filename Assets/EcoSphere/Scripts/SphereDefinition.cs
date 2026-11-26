@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
@@ -43,8 +43,11 @@ namespace EcoSphere
         void OnEnable()=>IdentityRevision++;
         void OnValidate()=>IdentityRevision++;
         public int id;
-        [Tooltip("The element this sphere represents. Independent of the elements it contributes.")]
-        public ElementId namesakeElement=(ElementId)(-1);
+        [Tooltip("The element this sphere represents, if any (None for spheres like Forest that only add other elements). Independent of the elements it contributes.")]
+        public const ElementId NoNamesake=(ElementId)(-1);
+        public ElementId namesakeElement=NoNamesake;
+        // A sphere without a namesake (e.g. Forest, which adds Plant) never supplies an element's color, art or voice.
+        public bool HasNamesake => namesakeElement!=NoNamesake;
         public string displayName;
         [TextArea(2,4), Tooltip("Short player-facing text explaining how this sphere behaves in play. Don't list element yields here: ContributionSummary builds them from Contributions.")]
         public string description;
@@ -81,6 +84,7 @@ namespace EcoSphere
         {
             if(!Enum.IsDefined(typeof(SphereCategory),category))throw new InvalidOperationException(name+": invalid sphere category");
             if(!Enum.IsDefined(typeof(SphereShape),shape))throw new InvalidOperationException(name+": invalid sphere shape");
+            if(HasNamesake && !Enum.IsDefined(typeof(ElementId),namesakeElement))throw new InvalidOperationException(name+": namesake must be a valid element or none");
             if (string.IsNullOrWhiteSpace(displayName) || !surface || !icon)
                 throw new InvalidOperationException(name + ": name, texture and icon are required");
             if (contributions == null || contributions.Count < 1 || contributions.Count > 4)

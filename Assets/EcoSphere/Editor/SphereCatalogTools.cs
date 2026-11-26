@@ -38,6 +38,8 @@ namespace EcoSphere.Editor
             Add(catalog, SphereIds.Civilization, "Civilization", ElementId.Civilization, new Color32(232,183,114,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Magic, "Magic", ElementId.Magic, new Color32(53,203,182,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Technology, "Technology", ElementId.Technology, new Color32(13,152,237,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Spirit, "Spirit", ElementId.Spirit, new Color32(168,230,194,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Forest, "Forest", SphereDefinition.NoNamesake, new Color32(31,107,42,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Core, "Core", ElementId.Core, new Color32(163, 64, 255, 255), SphereRole.Core, false);
             if (!catalog.recipeBook)
             {
@@ -56,9 +58,9 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Water,ElementId.Mud,SphereIds.Life);
             SeedRecipe(catalog,ElementId.Stone,ElementId.Magic,SphereIds.Crystal);
             SeedRecipe(catalog,ElementId.Human,ElementId.Void,SphereIds.Magic);
-            SeedRecipe(catalog,ElementId.Plant,ElementId.Spirit,SphereIds.Magic);   // Forest (double Plant) + Spirit; revisit once those spheres exist
-            // Spirit has no sphere yet; its visualizer color lives here until one exists (then Configure drops it below).
-            SeedElementColor(catalog,ElementId.Spirit,new Color32(122,140,170,255));
+            SeedRecipe(catalog,ElementId.Plant,ElementId.Spirit,SphereIds.Magic);   // stands in for Forest + Spirit: Forest adds only Plant
+            SeedRecipe(catalog,ElementId.Air,ElementId.Life,SphereIds.Spirit);
+            SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             // Stand-in visualizer colors are only for elements without a sphere; drop any whose element has gained one.
             catalog.InvalidateIndexes();catalog.elementColors.RemoveAll(entry=>catalog.ElementAppearance(entry.element));
             EditorUtility.SetDirty(catalog);
@@ -109,7 +111,7 @@ namespace EcoSphere.Editor
                 definition.category=id==SphereIds.Plant || id==SphereIds.Life ? SphereCategory.Life :
                     id==SphereIds.Void || role==SphereRole.Core ? SphereCategory.Forces :
                     role==SphereRole.Laser || id==SphereIds.Civilization || id==SphereIds.Technology ? SphereCategory.Technology :
-                    id==SphereIds.Magic ? SphereCategory.Beyond : SphereCategory.Basic;
+                    id==SphereIds.Magic || id==SphereIds.Spirit ? SphereCategory.Beyond : id==SphereIds.Forest ? SphereCategory.Life : SphereCategory.Basic;
                 if(id==SphereIds.Plant)definition.displayName="Plant Life";
                 definition.role = role; definition.selectable = role == SphereRole.Element;
                 definition.availableAtStart = starter;
@@ -121,6 +123,8 @@ namespace EcoSphere.Editor
                 if(id==SphereIds.Civilization)definition.description="Spreads settlements across the land. Their lights glow brighter as technology advances.";
                 if(id==SphereIds.Magic)definition.description="Fills the world with wonder, tinting its plant life and city lights in strange colors.";
                 if(id==SphereIds.Technology)definition.description="Powers civilization, making its city lights shine brighter.";
+                if(id==SphereIds.Spirit)definition.description="Fills the world with an unseen presence, a quiet bridge between life and magic.";
+                if(id==SphereIds.Forest)definition.description="Blankets the land in dense woodland, adding a wealth of plant life.";
                 SeedContributions(definition,element);
                 string art = "Assets/EcoSphere/Art/";
                 string stem = "Spheres/" + label + "/" + label.ToLowerInvariant();
@@ -134,7 +138,7 @@ namespace EcoSphere.Editor
             if (!definition.resourceVoice)
             {
                 string voice = id == SphereIds.Ice ? "cryosphere" : id == SphereIds.Sunlight ? "heliosphere" :
-                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : id == SphereIds.Civilization ? "politosphere" : id == SphereIds.Magic ? "arcanosphere" : id == SphereIds.Technology ? "technosphere" : null;
+                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : id == SphereIds.Civilization ? "politosphere" : id == SphereIds.Magic ? "arcanosphere" : id == SphereIds.Technology ? "technosphere" : id == SphereIds.Spirit ? "ectosphere" : id == SphereIds.Forest ? "florasphere" : null;
                 if (voice != null)
                 {
                     definition.resourceVoice = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/Voice/" + voice + ".mp3");
@@ -171,6 +175,10 @@ namespace EcoSphere.Editor
                     sphere.contributions.Add(new ElementContribution(ElementId.Magic,3));sphere.contributions.Add(new ElementContribution(ElementId.Void,1));break;
                 case SphereIds.Technology:
                     sphere.contributions.Add(new ElementContribution(ElementId.Civilization,1));sphere.contributions.Add(new ElementContribution(ElementId.Technology,2));sphere.unallocatedWeight=1;break;
+                case SphereIds.Spirit:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Magic,1));sphere.contributions.Add(new ElementContribution(ElementId.Spirit,2));sphere.contributions.Add(new ElementContribution(ElementId.Void,1));break;
+                case SphereIds.Forest:   // Forest is not an element: it adds Plant
+                    sphere.contributions.Add(new ElementContribution(ElementId.Plant,3));sphere.unallocatedWeight=1;break;
                 default:sphere.contributions.Add(new ElementContribution(fallback,1));break;
             }
         }
@@ -238,11 +246,19 @@ namespace EcoSphere.Editor
                 magic.ContributionSummary()=="Magic 75% · Void 25%" && magic.unallocatedWeight==0 && magic.resourceVoice && magic.resourceVoice.name=="arcanosphere","Magic identity: turquoise, Beyond, 3 Magic / 1 Void, arcanosphere");
             Expect(catalog.recipeBook.TryCombine(ElementId.Void,ElementId.Human,out var magicRecipe) && magicRecipe==magic &&
                 catalog.recipeBook.TryCombine(ElementId.Spirit,ElementId.Plant,out var spiritRecipe) && spiritRecipe==magic,"Human + Void and Plant + Spirit must both unlock Magic");
-            Expect(catalog.ElementAppearance(ElementId.Spirit)==null && catalog.ElementColor(ElementId.Spirit)==(Color)new Color32(122,140,170,255),"Spirit must use its gray-blue stand-in color until it has a sphere");
             var technology=catalog.Get(SphereIds.Technology);
             Expect(technology.namesakeElement==ElementId.Technology && technology.color==(Color)new Color32(13,152,237,255) && technology.category==SphereCategory.Technology && technology.AmmoEligible && !technology.availableAtStart &&
                 technology.ContributionSummary()=="Technology 50% · Civilization 25%" && technology.unallocatedWeight==1 && technology.resourceVoice && technology.resourceVoice.name=="technosphere","Technology identity: electric blue, Technology, 1 Civilization / 2 Technology / 1 Null, technosphere");
             foreach(var recipe in catalog.recipeBook.recipes)Expect(recipe.output!=technology,"Technology recipe should remain unset for now");
+            var spirit=catalog.Get(SphereIds.Spirit);
+            Expect(spirit.namesakeElement==ElementId.Spirit && spirit.color==(Color)new Color32(168,230,194,255) && spirit.category==SphereCategory.Beyond && spirit.AmmoEligible && !spirit.availableAtStart &&
+                spirit.ContributionSummary()=="Spirit 50% · Magic 25% · Void 25%" && spirit.unallocatedWeight==0 && spirit.resourceVoice && spirit.resourceVoice.name=="ectosphere","Spirit identity: mint, Beyond, 1 Magic / 2 Spirit / 1 Void, ectosphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Life,ElementId.Air,out var spiritFrom) && spiritFrom==spirit,"Air + Life must unlock Spirit");
+            var forest=catalog.Get(SphereIds.Forest);
+            Expect(!forest.HasNamesake && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
+                forest.ContributionSummary()=="Plant 75%" && forest.unallocatedWeight==1 && forest.resourceVoice && forest.resourceVoice.name=="florasphere","Forest identity: no namesake element, forest green, Life, 3 Plant / 1 Null, florasphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Plant,ElementId.Plant,out var forestFrom) && forestFrom==forest,"Plant + Plant must unlock Forest");
+            Expect(catalog.ElementAppearance(ElementId.Plant)==catalog.Get(SphereIds.Plant) && catalog.ElementColor(ElementId.Plant)==catalog.Get(SphereIds.Plant).color,"Forest must not take over Plant's color or art");
             // Generated body: every corner stays inside the round footprint, faces point outward, front table stays behind the icon.
             var gem=SphereShapes.Mesh(SphereShape.Crystal);var gemVertices=gem.vertices;var gemNormals=gem.normals;var gemTriangles=gem.triangles;
             foreach(var vertex in gemVertices)Expect(new Vector2(vertex.x,vertex.y).magnitude<=.5001f && vertex.z>-.47f && vertex.z<.5f,"crystal vertex outside the sphere footprint");

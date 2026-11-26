@@ -29,8 +29,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e6e1e9b36df07234abc09b72ee5ac9e4, type: 2}
   - {fileID: 11400000, guid: 3cfffb5e59c5255429ea873aa869cf45, type: 2}
   - {fileID: 11400000, guid: dc55ad58d045f9c4b9a12114d94f517e, type: 2}
+  - {fileID: 11400000, guid: e6082b80ba69dcf428e6b2ba86970af3, type: 2}
+  - {fileID: 11400000, guid: 930157878bf4c3c4fb9e7a5db6c81ef6, type: 2}
   recipeBook: {fileID: 11400000, guid: 0caf164c424b4d94b9bf93f2f6829a4e, type: 2}
   openingSpheres: 0400000005000000i
-  elementColors:
-  - element: 54
-    color: {r: 0.47843137, g: 0.54901963, b: 0.6666667, a: 1}
+  elementColors: []

@@ -18,7 +18,7 @@ namespace EcoSphere.Editor
             ProceduralLevelTools.Validate();
             var catalog=SphereCatalog.Current;
             foreach(var sphere in catalog.spheres)
-                Expect(catalog.ElementAppearance(sphere.namesakeElement)==sphere,"mixed sphere lost namesake art");
+                Expect(!sphere.HasNamesake || catalog.ElementAppearance(sphere.namesakeElement)==sphere,"mixed sphere lost namesake art");
             var recipes=ScriptableObject.CreateInstance<ElementRecipeBook>();
             var replacement=ScriptableObject.CreateInstance<SphereCatalog>();
             var edited=UnityEngine.Object.Instantiate(catalog.Get(SphereIds.Fire));
