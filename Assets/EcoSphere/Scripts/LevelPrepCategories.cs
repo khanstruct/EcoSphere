@@ -78,7 +78,10 @@ namespace EcoSphere
         public void SelectCategory(SphereCategory? category)
         {
             if(SetupInputBlocked || !categoryTabs.Exists(tab=>tab.category==category))return;
-            SelectedCategory=category;ApplyCategoryFilter();Reflow();
+            SelectedCategory=category;ApplyCategoryFilter();
+            // A new category shows a different list, so it starts at the top.
+            var list=(RectTransform)root.Find("Discovered Spheres/Collection viewport/Sphere list");if(list)list.anchoredPosition=Vector2.zero;
+            Reflow();
         }
         void ApplyCategoryFilter()
         {

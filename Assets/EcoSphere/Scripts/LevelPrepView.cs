@@ -24,6 +24,8 @@ namespace EcoSphere
         }
         public TMP_FontAsset font;
         public Sprite frame, line, arch, starfield;
+        [Tooltip("Badge in the upper-right corner of a chosen sphere's tile.")]
+        public Sprite selectedCheck;
 
         readonly List<int> collectionTypes = new List<int>();
         readonly List<WorldModifierDefinition> activeModifiers = new List<WorldModifierDefinition>();
@@ -188,7 +190,9 @@ namespace EcoSphere
             var content=(RectTransform)collection.Find("Collection viewport/Sphere list");
             int columns=Mathf.Max(2,Mathf.FloorToInt((leftWidth-65)/245));
             float tileWidth=Mathf.Min(245,(leftWidth-65)/columns-10);
-            content.sizeDelta=new Vector2(leftWidth-65,Mathf.Max(viewportHeight, Mathf.CeilToInt(visibleTileIndices.Count / (float)columns) * 275 + 160)); content.anchoredPosition=Vector2.zero;
+            // Keep the player's scroll position across relayouts (selecting a sphere relays out); only clamp it to the new bounds.
+            content.sizeDelta=new Vector2(leftWidth-65,Mathf.Max(viewportHeight, Mathf.CeilToInt(visibleTileIndices.Count / (float)columns) * 275 + 160));
+            content.anchoredPosition=new Vector2(0,Mathf.Clamp(content.anchoredPosition.y,0,Mathf.Max(0,content.sizeDelta.y-viewportHeight)));
             for(int i=0;i<visibleTileIndices.Count;i++)
             {
                 var rect=tiles[visibleTileIndices[i]].rectTransform; rect.anchorMin=rect.anchorMax=new Vector2(.5f,1);
@@ -196,6 +200,7 @@ namespace EcoSphere
                 rect.anchoredPosition=new Vector2(-(columns-1)*(tileWidth+10)*.5f+(i%columns)*(tileWidth+10),-145-(i/columns)*275);
                 In(rect,"Midnight backing",rect.sizeDelta-new Vector2(42,42),Vector2.zero);
                 In(rect,"Rotating sphere",new Vector2(Mathf.Min(185,tileWidth-35),Mathf.Min(185,tileWidth-35)),new Vector2(0,20));
+                In(rect,"Selected check",new Vector2(56,56),new Vector2(tileWidth*.5f-42,rect.sizeDelta.y*.5f-42));
             }
             In(content,"Collection note",new Vector2(leftWidth-90,80),new Vector2(0,-Mathf.CeilToInt(visibleTileIndices.Count/(float)columns)*275-90));
             In(loadout,"Midnight backing",new Vector2(rightWidth-42,loadoutHeight-42),Vector2.zero);
@@ -263,7 +268,9 @@ namespace EcoSphere
                 tile.raycastTarget=true; var button=tile.gameObject.AddComponent<Button>(); button.targetGraphic=tile;
                 ButtonClickSound.Attach(button);
                 button.transition=Selectable.Transition.None;
-                button.onClick.AddListener(()=>AddSphere(type));
+                button.onClick.AddListener(()=>ToggleSphere(type));
+                var check=Image("Selected check",tile.transform,selectedCheck,new Vector2(56,56),Vector2.zero);
+                check.gameObject.SetActive(false);   // placed in Reflow: just inside the upper-right corner
             }
             var note=Text("Collection note",content,"More spheres await discovery",22,new Vector2(480,80),new Vector2(0, -Mathf.CeilToInt(collectionTypes.Count / 2f) * 275 - 90));
             note.rectTransform.anchorMin=note.rectTransform.anchorMax=new Vector2(.5f,1);
@@ -289,6 +296,13 @@ namespace EcoSphere
             var go=Instantiate(buttonPrefab,root); go.name=title;
             var rect=go.GetComponent<RectTransform>(); rect.anchorMin=rect.anchorMax=new Vector2(.5f,.5f); rect.anchoredPosition=position;
             go.GetComponent<CelestialButton>().label.text=title; return go.GetComponent<Button>();
+        }
+        // Clicking a tile chooses the sphere, or removes it if it is already chosen.
+        public void ToggleSphere(int type)
+        {
+            if(SetupInputBlocked)return;
+            int index=Selected.IndexOf(type);
+            if(index>=0)Remove(index);else AddSphere(type);
         }
         public void AddSphere(int type)
         {
@@ -322,7 +336,12 @@ namespace EcoSphere
                 if(old){old.gameObject.SetActive(false);old.SetParent(null,false);Destroy(old.gameObject);}
                 if(i<Selected.Count) Preview(Rect("Selected sphere",slots[i],slots[i].sizeDelta-Vector2.one*10,Vector2.zero),Selected[i]);
             }
-            for(int i=0;i<tiles.Count;i++) tiles[i].color=new Color(1,1,1,Selected.Contains(collectionTypes[i])?1:.35f);
+            for(int i=0;i<tiles.Count;i++)
+            {
+                bool chosen=Selected.Contains(collectionTypes[i]);
+                tiles[i].color=new Color(1,1,1,chosen?1:.35f);
+                tiles[i].transform.Find("Selected check").gameObject.SetActive(chosen);
+            }
             count.text=Selected.Count+" / "+RequiredSpheres+" selected";
             Begin.interactable=Selected.Count==RequiredSpheres&&!string.IsNullOrWhiteSpace(world.GameplayScene);
             if(layoutCanvas)Reflow();

@@ -17,3 +17,11 @@ SpherePreview renders the existing lit 3D surface textures and stationary icons 
 Both world modifiers are displayed unconditionally as visual placeholders. They do not change gameplay. Outfit TMP fonts, heading decorations and the reusable animated button prefab are reused. A single panel-frame sprite is nine-sliced for panels and collection tiles.
 
 LevelPrepTools.Build creates the scene and registers it in build settings. The runtime controller constructs its interface from the serialized art/font/prefab references. Unity compilation and play-mode checks passed for rotating surfaces, selection, duplicate prevention, removal/compaction, Begin gating, System-to-Prep navigation, system/planet context, Back navigation and Tutorial 1 launch behavior. A 900x1600 preview was visually inspected and saved to Logs/LevelPrep-preview.png. Validation ran in work/UnityValidation; the editor's pre-existing SearchDatabase indexing exception did not affect these checks.
+
+## Choosing spheres
+
+Clicking a sphere tile chooses it, and clicking a chosen tile removes it (`LevelPrepView.ToggleSphere`; the loadout slots still remove on click too). A chosen tile is fully opaque and shows the gold checkbox (`Art/UI/gold-checkbox-v1.png`, the `selectedCheck` sprite) just inside its upper-right corner.
+
+Choosing or removing a sphere relays out the screen. The sphere list keeps its scroll position through that relayout (clamped to the new bounds), so it no longer jumps to the top. Only switching category tabs returns the list to the top. `LevelPrepTools.ConfigureSelectionCheck` imports the checkbox and assigns it in the existing setup scene; `LevelPrepTools.Build` assigns it when rebuilding the scene.
+
+`LevelPrepTools.Smoke` with `-prepSelectionSmoke` (DEV mode, so the list is long enough to scroll) uses real pointer clicks. It scrolls halfway, clicks a visible tile and checks that the list did not move, the checkbox shows in the upper-right corner and the sphere is chosen. A second click must remove the sphere, its checkbox and its slot without scrolling, and switching category must return the list to the top. Render: `Logs/LevelPrep-selected.png`.

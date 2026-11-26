@@ -199,12 +199,7 @@ MonoBehaviour:
   line: {fileID: 21300000, guid: b5d937d92f865394cbd5c34d9f56f363, type: 3}
   arch: {fileID: 21300000, guid: 707cb239f18ff6a42a12c449bc085e42, type: 3}
   starfield: {fileID: 21300000, guid: 47efd25fd762cf342bd410f8ffe7e60f, type: 3}
-  sunModifier: {fileID: 21300000, guid: 063777876a4ac764fa811cb2e3bf94b8, type: 3}
-  rotationModifier: {fileID: 21300000, guid: 2ed883752f01ab940aa9c95219255879, type: 3}
-  iceSurface: {fileID: 2800000, guid: 9d03bb50662350441bfb2078fe3f1a33, type: 3}
-  sunlightSurface: {fileID: 2800000, guid: 3dd870bdce12bf14a8f2e5922547f857, type: 3}
-  iceIcon: {fileID: 21300000, guid: 8fc1162f8431282469482c39ac1f2e67, type: 3}
-  sunlightIcon: {fileID: 21300000, guid: f2902546fd49dea40992a3187a2a504a, type: 3}
+  selectedCheck: {fileID: 21300000, guid: eea692cce55879e499a919094bb88caf, type: 3}
   buttonPrefab: {fileID: 222641970439823138, guid: 543a0177d55e1994da1a9fa38be28b55, type: 3}
 --- !u!4 &1871898893
 Transform:
