@@ -109,7 +109,7 @@ namespace EcoSphere
                 var bar=new GameObject("Element bar",typeof(RectTransform),typeof(CanvasRenderer),typeof(EnergyBarGraphic)).GetComponent<EnergyBarGraphic>();
                 bar.transform.SetParent(strip,false); bar.rectTransform.anchorMin=bar.rectTransform.anchorMax=new Vector2(.5f,0);
                 bar.rectTransform.pivot=new Vector2(.5f,0); bar.material=visualizerStyle.energyMaterial;
-                bar.Phase=i*.13f; bar.color=Catalog.ElementAppearance(displayedElements[i])?.color ?? Color.white; energyBars.Add(bar);
+                bar.Phase=i*.13f; bar.color=Catalog.ElementColor(displayedElements[i]); energyBars.Add(bar);
                 var label=Label("Element name",strip,new Vector2(.5f,0),Vector2.zero,new Vector2(90,24),"",16);
                 label.enableAutoSizing=true; label.fontSizeMin=6; label.fontSizeMax=16; resourceLabels.Add(label);
                 var total=Label("Element points",strip,new Vector2(.5f,0),Vector2.zero,new Vector2(90,24),"0",20);

@@ -161,7 +161,11 @@ namespace EcoSphere
             RenderSettings.ambientLight = new Color(.48f, .5f, .6f);
             lineMaterial = new Material(Shader.Find("Sprites/Default")); materials.Add(lineMaterial);
             foreach (var definition in Catalog.spheres)
-                sphereMaterials.Add(definition.id, Surface(definition.surface, definition.unlit));
+            {
+                var material = Surface(definition.surface, definition.unlit);
+                SphereShapes.ApplyFinish(material, definition.shape);
+                sphereMaterials.Add(definition.id, material);
+            }
             cluster = new GameObject("Rotating hex cluster").transform; cluster.position = center;
             MakeSphere("Black hole core", -1, cluster, Vector3.zero);
             halo = SpritePart("Pulsing core halo", coreHalo, cluster, new Vector3(0, 0, .6f), 1.8f * VisualScale, -1).transform;
@@ -236,12 +240,11 @@ namespace EcoSphere
         GameObject MakeSphere(string name, int type, Transform parent, Vector3 local)
         {
             var root = new GameObject(name); root.transform.SetParent(parent, false); root.transform.localPosition = local;
-            var mesh = GameObject.CreatePrimitive(PrimitiveType.Sphere); mesh.name = "Rotating surface";
-            mesh.transform.SetParent(root.transform, false); mesh.transform.localScale = Vector3.one * Radius * 2;
-            Destroy(mesh.GetComponent<Collider>());
             var definition = Definition(type);
+            var mesh = SphereShapes.CreateBody(definition.shape, "Rotating surface");
+            mesh.transform.SetParent(root.transform, false); mesh.transform.localScale = Vector3.one * Radius * 2;
             ApplySurface(mesh.GetComponent<Renderer>(), sphereMaterials[type], definition.surface, Color.white);
-            var appearance = root.AddComponent<SphereAppearance>(); appearance.surface = mesh.transform;
+            var appearance = root.AddComponent<SphereAppearance>(); appearance.surface = mesh.transform; appearance.shape = definition.shape;
             appearance.glow=SphereGlow.Create(root.transform,definition,Radius*2,root.layer);
             appearance.spin = type < 0 ? 8 : 12;
             if (type == LaserType) MakeLaserDisplay(root);
@@ -357,7 +360,18 @@ namespace EcoSphere
                 projectile.transform.position += (Vector3)(projectileDirection * nearest);
                 remaining -= nearest;
                 if (!hit) break;
-                if (sphereHit) { Attach(hitCell, projectileDirection); return; }
+                AudioClip bounceSound=null;
+                if (sphereHit)
+                {
+                    var target=hitCell==Vector2Int.zero ? null : Definition(board.Cells[hitCell]);
+                    var impact=ShotDeflection.Resolve(target,loadedType,SphereDamage.HitsOn(visuals.TryGetValue(hitCell,out var struck) ? struck : null));
+                    if (impact==ShotImpact.Attach) { Attach(hitCell, projectileDirection); return; }
+                    if (impact==ShotImpact.Break) { BreakDeflector(hitCell); Place(hitCell); return; }
+                    // A deflecting sphere bounces the shot like a boundary, and it counts as a ricochet.
+                    SphereDamage.Strike(struck);
+                    normal=(origin+projectileDirection*nearest-collisionSnapshot.Centers[contact.SphereIndex]).normalized;
+                    bounceSound=target.deflectSound;
+                }
                 if (bottomHit)
                 {
                     if (levelAudio) levelAudio.Miss();
@@ -367,7 +381,7 @@ namespace EcoSphere
                 projectileDirection = BoardRules.Reflect(projectileDirection, normal).normalized;
                 ricochets++;
                 shotRicochets++;
-                if (levelAudio) levelAudio.Ricochet();
+                if (levelAudio) { if (bounceSound) levelAudio.PlayEffect(bounceSound); else levelAudio.Ricochet(); }
                 projectile.transform.position += (Vector3)(projectileDirection * .0001f);
                 remaining = Mathf.Max(0, remaining - .0001f);
             }
@@ -406,6 +420,22 @@ namespace EcoSphere
                 projectile.transform.position += (Vector3)(n * .003f);
                 return;
             }
+            Place(chosen);
+        }
+
+        // A broken deflector is simply lost: no score, no element contributions, no streak.
+        void BreakDeflector(Vector2Int cell)
+        {
+            var definition=Definition(board.Cells[cell]);
+            if(board.Infested.Contains(cell))KnockOffAlien(cell,false);
+            var visual=visuals[cell];visuals.Remove(cell);board.Cells.Remove(cell);
+            StartCoroutine(DissolveMatch(visual));
+            if(levelAudio)levelAudio.PlayEffect(definition.breakSound);
+        }
+
+        // Seats the projectile in a board cell and resolves matches, breakaways and audio for the shot.
+        void Place(Vector2Int chosen)
+        {
             projectile.transform.SetParent(cluster, false);
             projectile.transform.localPosition = BoardRules.Position(chosen);
             board.Cells.Add(chosen, loadedType); visuals.Add(chosen, projectile); projectile = null;

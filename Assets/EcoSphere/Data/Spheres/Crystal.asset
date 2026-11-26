@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6221ada88df1f8f4b92be8060335312f, type: 3}
+  m_Name: Crystal
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereDefinition
+  id: 11
+  namesakeElement: 26
+  displayName: Crystal
+  description: Adds a bit of magic to the world, while reflecting other elements.
+  category: 0
+  surface: {fileID: 2800000, guid: a98156c99a8c861468598b9467c7b403, type: 3}
+  icon: {fileID: 21300000, guid: 3994620b0cbd4ef4aa0169b45044cd8e, type: 3}
+  color: {r: 0.8901961, g: 0.42352942, b: 0.9490196, a: 1}
+  shape: 1
+  glowColor: {r: 1, g: 1, b: 1, a: 1}
+  glowStrength: 0
+  resourceVoice: {fileID: 8300000, guid: abb206755f0af9344bc39ab00ab3153c, type: 3}
+  role: 0
+  availableAtStart: 0
+  selectable: 1
+  unlit: 0
+  contributions:
+  - element: 2
+    amount: 1
+  - element: 48
+    amount: 1
+  - element: 26
+    amount: 2
+  unallocatedWeight: 0
+  deflectedHits: 2
+  deflectSound: {fileID: 8300000, guid: 916d3d28e3033ad4c9dacfe0bbb3a4ac, type: 3}
+  breakSound: {fileID: 8300000, guid: ea54bcf196d87d34686679a41480ef4d, type: 3}

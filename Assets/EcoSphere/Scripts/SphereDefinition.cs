@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
@@ -45,6 +45,8 @@ namespace EcoSphere
         public Texture2D surface;
         public Sprite icon;
         public Color color = Color.white;
+        [Tooltip("Visual body only. Collision, matching and scoring always use the round sphere footprint.")]
+        public SphereShape shape;
         [Header("Optional sphere halo")]
         public Color glowColor=Color.white;
         [Range(0,1)] public float glowStrength;
@@ -57,6 +59,12 @@ namespace EcoSphere
         [InspectorName("Unallocated Units"), Range(0,3), Tooltip("Unused units consume part of the four-unit budget, reducing elemental yield without reducing earned score.")]
         public int unallocatedWeight;
         public int ContributionUnits { get { int sum=0; foreach(var entry in contributions) sum+=entry.amount; return sum; } }
+        [Header("Shot deflection")]
+        [Range(0,10), Tooltip("Hits from other sphere types this sphere bounces off like a wall (counting as ricochets). 0 = shots attach normally. " +
+            "The hit after these breaks it: it is lost without points or elements and the shot takes its cell. Same-type shots always attach.")]
+        public int deflectedHits;
+        [Tooltip("Played when this sphere deflects a shot.")] public AudioClip deflectSound;
+        [Tooltip("Played when a shot breaks this sphere.")] public AudioClip breakSound;
         public int TotalContributionUnits => ContributionUnits+unallocatedWeight;
         public bool Matchable => role == SphereRole.Element;
         public bool AmmoEligible => selectable && Matchable;
@@ -64,6 +72,7 @@ namespace EcoSphere
         public void Validate()
         {
             if(!Enum.IsDefined(typeof(SphereCategory),category))throw new InvalidOperationException(name+": invalid sphere category");
+            if(!Enum.IsDefined(typeof(SphereShape),shape))throw new InvalidOperationException(name+": invalid sphere shape");
             if (string.IsNullOrWhiteSpace(displayName) || !surface || !icon)
                 throw new InvalidOperationException(name + ": name, texture and icon are required");
             if (contributions == null || contributions.Count < 1 || contributions.Count > 4)
@@ -74,6 +83,8 @@ namespace EcoSphere
                 if (!Enum.IsDefined(typeof(ElementId), entry.element) || entry.amount < 1 || entry.amount > 4 || !seen.Add(entry.element))
                     throw new InvalidOperationException(name + ": contributions must be positive and use distinct elements");
             if (ContributionUnits + unallocatedWeight > 4) throw new InvalidOperationException(name + ": at most four contribution units including unallocated units");
+            if (deflectedHits < 0 || deflectedHits > 10 || (deflectedHits > 0 && (!Matchable || !deflectSound || !breakSound)))
+                throw new InvalidOperationException(name + ": deflecting spheres must be elements with deflect and break sounds (0 to 10 hits)");
             if (color.a <= 0) throw new InvalidOperationException(name + ": the streak/visualizer color must be visible");
             if (string.IsNullOrWhiteSpace(description) || description.Length > MaximumDescriptionLength)
                 throw new InvalidOperationException(name + ": a description of 1 to " + MaximumDescriptionLength + " characters is required");

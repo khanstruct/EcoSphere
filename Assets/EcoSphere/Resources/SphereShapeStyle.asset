@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67155a5c711a78241afa09fa1a66222c, type: 3}
+  m_Name: SphereShapeStyle
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereShapeStyle
+  crystalTableRadius: 0.3
+  crystalCrownDepth: 0.26
+  crystalGirdle: 0.04
+  crystalPavilionDepth: 0.3
+  crystalFacetTextureJitter: 0.11
+  crystalSmoothness: 0.75
+  crystalMetallic: 0.15
+  crystalWobbleDegrees: 13
+  crystalWobbleSpeed: 0.7

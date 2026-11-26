@@ -69,7 +69,7 @@ namespace EcoSphere
             var ui=new GameObject("Saved foliage preview",typeof(RectTransform),typeof(RawImage));var preview=ui.AddComponent<SpherePreview>();
             preview.surfaceMaterial=receivingPlanetMaterial;preview.planetStats=copy.planetStats;preview.seaLevel=copy.seaLevel;preview.initialRotation=copy.rotation;preview.rotationSpeed=0;
             yield return null;preview.PreviewCamera.Render();
-            var previewBlock=new MaterialPropertyBlock();preview.PreviewCamera.transform.parent.Find("Sphere").GetComponent<Renderer>().GetPropertyBlock(previewBlock);
+            var previewBlock=new MaterialPropertyBlock();preview.BodyRenderer.GetPropertyBlock(previewBlock);
             if(previewBlock.GetFloat("_Vegetation")!=copy.planetStats.VegetationPotential || previewBlock.GetFloat("_WaterGreenness")!=tint || previewBlock.GetVector("_TerrainBounds")!=PlanetSurface.TerrainBounds(receivingPlanetMaterial))throw new Exception("Saved preview lost foliage/tint/terrain parameters");
             Destroy(ui);view.targetTexture=null;target.Release();Destroy(target);
             Debug.Log($"ECOSPHERE_FOLIAGE_SMOKE_PASSED clustered growth, mid-height preference, hot/cold reduction, ocean mask, subtle water tint delta={delta/count}, saved preview stats");

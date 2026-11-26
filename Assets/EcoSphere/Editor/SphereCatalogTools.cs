@@ -34,6 +34,7 @@ namespace EcoSphere.Editor
             Add(catalog, SphereIds.Life, "Life", ElementId.Life, new Color32(246,183,205,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Mud, "Mud", ElementId.Mud, new Color32(202,156,107,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Air, "Air", ElementId.Air, new Color32(232,245,250,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Crystal, "Crystal", ElementId.Crystal, new Color32(227,108,242,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Core, "Core", ElementId.Core, new Color32(163, 64, 255, 255), SphereRole.Core, false);
             if (!catalog.recipeBook)
             {
@@ -50,6 +51,10 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Ice,ElementId.Fire,SphereIds.Water);
             SeedRecipe(catalog,ElementId.Stone,ElementId.Water,SphereIds.Mud);
             SeedRecipe(catalog,ElementId.Water,ElementId.Mud,SphereIds.Life);
+            SeedRecipe(catalog,ElementId.Stone,ElementId.Magic,SphereIds.Crystal);
+            // Magic has no sphere yet; its visualizer color lives in the catalog until one exists.
+            if(!catalog.elementColors.Exists(entry=>entry.element==ElementId.Magic))
+                catalog.elementColors.Add(new ElementColorEntry{element=ElementId.Magic,color=new Color32(122,60,224,255)});
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             catalog.Validate();
@@ -79,6 +84,9 @@ namespace EcoSphere.Editor
                 definition.availableAtStart = starter;
                 definition.unlit = role == SphereRole.Core || id == SphereIds.Void;
                 if(id==SphereIds.Void) { definition.glowColor=Color.white; definition.glowStrength=.42f; }
+                if(id==SphereIds.Crystal) { definition.shape=SphereShape.Crystal; definition.deflectedHits=2;
+                    definition.deflectSound=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/crystal-hit.mp3"); definition.breakSound=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/crystal-breaking.mp3");
+                    definition.description="Adds a bit of magic to the world, while reflecting other elements."; }
                 SeedContributions(definition,element);
                 string art = "Assets/EcoSphere/Art/";
                 string stem = "Spheres/" + label + "/" + label.ToLowerInvariant();
@@ -92,7 +100,7 @@ namespace EcoSphere.Editor
             if (!definition.resourceVoice)
             {
                 string voice = id == SphereIds.Ice ? "cryosphere" : id == SphereIds.Sunlight ? "heliosphere" :
-                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : null;
+                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : null;
                 if (voice != null)
                 {
                     definition.resourceVoice = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/Voice/" + voice + ".mp3");
@@ -121,6 +129,8 @@ namespace EcoSphere.Editor
                     sphere.contributions.Add(new ElementContribution(ElementId.Life,1));sphere.contributions.Add(new ElementContribution(ElementId.Plant,2));sphere.unallocatedWeight=1;break;
                 case SphereIds.Mud:
                     sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.contributions.Add(new ElementContribution(ElementId.Stone,1));sphere.contributions.Add(new ElementContribution(ElementId.Mud,2));break;
+                case SphereIds.Crystal:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Stone,1));sphere.contributions.Add(new ElementContribution(ElementId.Magic,1));sphere.contributions.Add(new ElementContribution(ElementId.Crystal,2));break;
                 default:sphere.contributions.Add(new ElementContribution(fallback,1));break;
             }
         }
@@ -166,6 +176,24 @@ namespace EcoSphere.Editor
             Expect(catalog.Get(SphereIds.Ice).ContributionSummary()=="Ice 50% · Water 25%","Ice contribution summary");
             Expect(catalog.Get(SphereIds.Mud).ContributionSummary()=="Mud 50% · Water 25% · Stone 25%","Mud contribution summary");
             Expect(catalog.Get(SphereIds.Core).ContributionSummary()=="","Core must not list contributions");
+            var crystal=catalog.Get(SphereIds.Crystal);
+            Expect(crystal.shape==SphereShape.Crystal && crystal.AmmoEligible && !crystal.availableAtStart && crystal.TotalContributionUnits==4 &&
+                crystal.ContributionSummary()=="Crystal 50% · Stone 25% · Magic 25%","Crystal identity, shape and 1 Stone / 1 Magic / 2 Crystal");
+            Expect(crystal.resourceVoice && crystal.resourceVoice.name=="latisphere" && LevelAudio.MatchVoice(SphereIds.Crystal,voiceMinimum)==crystal.resourceVoice && !LevelAudio.MatchVoice(SphereIds.Crystal,voiceMinimum-1),"Crystal must use latisphere at the shared large-match threshold");
+            Expect(crystal.deflectedHits==2 && crystal.deflectSound && crystal.deflectSound.name=="crystal-hit" && crystal.breakSound && crystal.breakSound.name=="crystal-breaking","Crystal deflects two hits with crystal-hit, breaks with crystal-breaking");
+            Expect(ShotDeflection.Resolve(crystal,SphereIds.Fire,0)==ShotImpact.Deflect && ShotDeflection.Resolve(crystal,SphereIds.Fire,1)==ShotImpact.Deflect && ShotDeflection.Resolve(crystal,SphereIds.Fire,2)==ShotImpact.Break &&
+                ShotDeflection.Resolve(crystal,SphereIds.Crystal,0)==ShotImpact.Attach && ShotDeflection.Resolve(catalog.Get(SphereIds.Stone),SphereIds.Fire,5)==ShotImpact.Attach,"deflection rule: two deflections, third hit breaks, same type and ordinary spheres attach");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Magic,ElementId.Stone,out var crystalRecipe) && crystalRecipe==crystal,"Stone + Magic must unlock Crystal");
+            Expect(catalog.ElementAppearance(ElementId.Magic)==null && catalog.ElementColor(ElementId.Magic)==catalog.elementColors.Find(entry=>entry.element==ElementId.Magic).color &&
+                catalog.ElementColor(ElementId.Crystal)==crystal.color,"element colors: authored Magic fallback, namesake Crystal");
+            // Generated body: every corner stays inside the round footprint, faces point outward, front table stays behind the icon.
+            var gem=SphereShapes.Mesh(SphereShape.Crystal);var gemVertices=gem.vertices;var gemNormals=gem.normals;var gemTriangles=gem.triangles;
+            foreach(var vertex in gemVertices)Expect(new Vector2(vertex.x,vertex.y).magnitude<=.5001f && vertex.z>-.47f && vertex.z<.5f,"crystal vertex outside the sphere footprint");
+            for(int i=0;i<gemTriangles.Length;i+=3)
+            {
+                Vector3 a=gemVertices[gemTriangles[i]],b=gemVertices[gemTriangles[i+1]],c=gemVertices[gemTriangles[i+2]];
+                Expect(Vector3.Dot(Vector3.Cross(b-a,c-a),(a+b+c)/3)>0 && Vector3.Dot(gemNormals[gemTriangles[i]],(a+b+c)/3)>0,"crystal facet faces inward");
+            }
             var constrained=UnityEngine.Object.Instantiate(catalog.Get(SphereIds.Fire));
             try
             {

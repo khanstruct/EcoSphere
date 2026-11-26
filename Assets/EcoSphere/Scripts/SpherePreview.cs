@@ -17,9 +17,12 @@ namespace EcoSphere
         static int serial;
         GameObject stage;
         Transform globe;
+        SphereShape shape;
+        float elapsed;
         RenderTexture target;
         Material material;
         public Camera PreviewCamera { get; private set; }
+        public Renderer BodyRenderer { get; private set; }
         public Quaternion SurfaceRotation => globe ? globe.localRotation : Quaternion.identity;
         public void ConfigurePlanet(CompletedWorld world,Material planetMaterial,float spin=2)
         {
@@ -35,17 +38,19 @@ namespace EcoSphere
             int layer = 30;
             stage = new GameObject("Sphere preview stage");
             stage.transform.position = new Vector3((serial++ % 100) * 10, -1000, 0);
-            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            Destroy(sphere.GetComponent<Collider>());
+            shape = definition ? definition.shape : SphereShape.Sphere;
+            var sphere = SphereShapes.CreateBody(shape, "Preview body");
+            BodyRenderer = sphere.GetComponent<Renderer>();
             sphere.transform.SetParent(stage.transform, false); sphere.layer = layer;
             globe = sphere.transform; globe.localScale = Vector3.one * 1.65f;
-            globe.localRotation = Quaternion.Euler(0, initialRotation, 0);
+            globe.localRotation = SphereShapes.Orientation(shape, 0, rotationSpeed, initialRotation);
             material = surfaceMaterial ? new Material(surfaceMaterial) : new Material(Shader.Find(definition && definition.unlit ? "Universal Render Pipeline/Unlit" : "Universal Render Pipeline/Lit"));
             if (surfaceMaterial) { material.SetFloat("_SeaLevel", seaLevel); material.SetFloat("_StoneRuggedness",stoneRuggedness); material.SetFloat("_IceCoverage",iceCoverage); }
             else
             {
                 material.SetTexture("_BaseMap", surface); material.SetColor("_BaseColor", Color.white);
                 material.SetFloat("_Smoothness", .35f);
+                SphereShapes.ApplyFinish(material, shape);
             }
             sphere.GetComponent<Renderer>().sharedMaterial = material;
             if(surfaceMaterial)
@@ -78,7 +83,12 @@ namespace EcoSphere
                 if(style && style.previewMaterial)image.material=style.previewMaterial;
             }
         }
-        void Update() { if (globe) globe.Rotate(0, rotationSpeed * Time.deltaTime, 0, Space.Self); }
+        void Update()
+        {
+            if (!globe) return;
+            elapsed += Time.deltaTime;
+            globe.localRotation = SphereShapes.Orientation(shape, elapsed, rotationSpeed, initialRotation);
+        }
         void OnEnable(){if(stage)stage.SetActive(true);}
         void OnDisable(){if(stage)stage.SetActive(false);}
         void OnDestroy()

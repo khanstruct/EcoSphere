@@ -52,7 +52,11 @@ namespace EcoSphere
             if (worldComplete) worldComplete.LoadAudioData();
             if (creationFailed) creationFailed.LoadAudioData();
             foreach (var definition in SphereCatalog.Current.spheres)
+            {
                 if (definition.resourceVoice) definition.resourceVoice.LoadAudioData();
+                if (definition.deflectSound) definition.deflectSound.LoadAudioData();
+                if (definition.breakSound) definition.breakSound.LoadAudioData();
+            }
             if (impressive) impressive.LoadAudioData();
             if (ecosphere) ecosphere.LoadAudioData();
             shootSource.priority = 32;
@@ -81,10 +85,13 @@ namespace EcoSphere
             ApplyVolumes();
             shootSource.PlayOneShot(shoot);
         }
-        public void Ricochet() { if (ricochet) effectsSource.PlayOneShot(ricochet); }
+        public void Ricochet() => PlayEffect(ricochet);
         public void AmmoSwap() { if (Settings.ammoSwap && effectsSource) effectsSource.PlayOneShot(Settings.ammoSwap, Settings.ammoSwapVolume); }
-        public void Miss() { if (miss && effectsSource) effectsSource.PlayOneShot(miss); }
-        public void AlienHit(AudioClip clip){if(clip && effectsSource)effectsSource.PlayOneShot(clip);}
+        public void Miss() => PlayEffect(miss);
+        public void AlienHit(AudioClip clip)=>PlayEffect(clip);
+        // Every one-shot gameplay effect goes through here; EffectPlayed reports what was actually played.
+        public event System.Action<AudioClip> EffectPlayed;
+        public void PlayEffect(AudioClip clip){if(!clip || !effectsSource)return;effectsSource.PlayOneShot(clip);EffectPlayed?.Invoke(clip);}
 
         public void FireLaser()
         {

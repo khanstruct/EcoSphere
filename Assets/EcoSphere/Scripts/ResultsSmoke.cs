@@ -160,7 +160,7 @@ namespace EcoSphere
                 throw new Exception("Results globe must show saved appearance without an image frame");
             if(stored.planetStats!=null)
             {
-                var renderer=preview.PreviewCamera.transform.parent.Find("Sphere").GetComponent<Renderer>();
+                var renderer=preview.BodyRenderer;
                 var block=new MaterialPropertyBlock();renderer.GetPropertyBlock(block);
                 if(block.GetFloat("_Temperature")!=stored.planetStats.Temperature || block.GetFloat("_GeologicalActivity")!=stored.planetStats.Geology)
                     throw new Exception("Results globe changed temperature/geology");

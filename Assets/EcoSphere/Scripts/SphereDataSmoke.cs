@@ -59,7 +59,7 @@ namespace EcoSphere
                 for (int i = 0; i < displayedElements.Count; i++)
                 {
                     Expect(barTotals[i].text == Math.Truncate(totals[(int)displayedElements[i]]).ToString("0"), "channel did not show its element's truncated total");
-                    Expect(energyBars[i].color == (Catalog.ElementAppearance(displayedElements[i])?.color ?? Color.white), "element bar must use its namesake sphere color");
+                    Expect(energyBars[i].color == Catalog.ElementColor(displayedElements[i]), "element bar must use its namesake sphere color");
                 }
                 Expect(barTotals[displayedElements.IndexOf(ElementId.Void)].text == Math.Truncate(voidFromMatch + quarter).ToString("0"), "Void contributions from both spheres must share one channel");
                 yield return null;

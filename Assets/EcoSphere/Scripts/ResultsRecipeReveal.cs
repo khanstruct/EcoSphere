@@ -92,8 +92,7 @@ namespace EcoSphere
             {
                 // Elements without a registered namesake sphere use a labeled procedural orb.
                 material.SetFloat("_OrbFallback",1);
-                foreach(var source in SphereCatalog.Current.spheres)
-                    if(source.contributions.Exists(entry=>entry.element==element)) { graphic.color=source.color; break; }
+                graphic.color=SphereCatalog.Current.ElementColor(element);
             }
             ingredients.Add(sphere); ingredientMaterials.Add(material);
             ingredientNames.Add(Text("Ingredient name",recipeStage,SphereCatalog.Current.ElementName(element),26,new Vector2(240,45),Vector2.zero));

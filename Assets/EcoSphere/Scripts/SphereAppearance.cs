@@ -8,12 +8,14 @@ namespace EcoSphere
         public Transform icon;
         public Transform glow;
         public float spin = 12;
-        float longitude;
+        public SphereShape shape;
+        float elapsed;
+        void Start() { if (shape != SphereShape.Sphere) elapsed = Random.Range(0, 100f); } // De-synchronize wobbling neighbors.
         void LateUpdate()
         {
-            // Only the mesh turns: neither travel nor the board imparts rolling to the sphere.
-            longitude += spin * Time.deltaTime;
-            if (surface) surface.rotation = Quaternion.Euler(0, longitude, 0);
+            // Only the body moves: neither travel nor the board imparts rolling to the sphere.
+            elapsed += Time.deltaTime;
+            if (surface) surface.rotation = SphereShapes.Orientation(shape, elapsed, spin);
             if (icon) icon.rotation = Quaternion.identity;
             if (glow) glow.rotation = Quaternion.identity;
         }

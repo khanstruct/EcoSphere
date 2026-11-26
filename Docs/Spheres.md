@@ -19,6 +19,8 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Plant Life | 7 | Life: 1, Plant: 2, Null: 1 | Element; DEV available, normal locked |
 | Life | 8 | Life: 3, Null: 1 | Element; DEV available, Water + Mud recipe |
 | Mud | 9 | Water: 1, Stone: 1, Mud: 2 | Element; DEV available, Stone + Water recipe |
+| Air | 10 | Air: 3, Null: 1 | Element; DEV available |
+| Crystal | 11 | Stone: 1, Magic: 1, Crystal: 2 | Element; faceted crystal shape, DEV available, Stone + Magic recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -78,6 +80,18 @@ Life uses the pink-white cellular surface and cell icon in Art/Spheres/Life, pal
 ## Mud sphere
 
 Mud (sphere ID 9, appended element ID 52) uses its wet-mud artwork, light brown #CA9C6B (distinct from pale-gray Stone #D0D3D8), and pelitosphere voice. Its four units are 1 Water / 1 Stone / 2 Mud, with no Null: a 12-point sphere yields 3 Water, 3 Stone and 6 Mud; a 50-point breakaway yields 12.5 Water, 12.5 Stone and 25 Mud. Stone + Water unlocks Mud; Water + Mud unlocks Life through the shared recipe/discovery rules. Both are available for DEV testing while remaining locked normally until earned. Mud's planet profile contributes Soil at weight 1, compared with Life 0.2 and Plant 0.25, strongly warming exposed land toward brown through the existing percentage/buildup and soil shader response. The Water and Stone units additionally use their existing independent planet profiles.
+
+## Crystal sphere and shapes
+
+Crystal (sphere ID 11, element ID 26) uses the faceted violet surface and crystal-cluster icon in Art/Spheres/Crystal, magenta pink #E36CF2 (the pinkest streaks in its texture), and the latisphere voice, which plays under the same shared large-match/breakaway rules as the other sphere voices. Its four units are 1 Stone / 1 Magic / 2 Crystal: a 12-point sphere yields 3 Stone, 3 Magic and 6 Crystal. Stone + Magic unlocks it through the shared recipe rules; it is DEV available and locked normally.
+
+`SphereDefinition.shape` (Sphere or Crystal) is visual only: collision, matching, scoring and the hex footprint always use the round sphere. `SphereShapes` is the single builder every surface goes through (board, ammo, chambers, setup/results previews, discovery reveal, match flash). Crystal bodies are a code-generated pointy-top hexagonal gem (flat front table, triangular crown facets, thin girdle, pointed back) whose corners touch the sphere footprint and whose flat sides face the six board neighbors. They keep facing the camera with a gentle tilt instead of the round spheres' Y spin. Mesh proportions, texture jitter, smoothness and wobble live in `Resources/SphereShapeStyle`.
+
+### Shot deflection
+
+`SphereDefinition.deflectedHits` makes any element sphere a deflector (Crystal: 2). A shot of a different sphere type that touches it bounces off like a boundary, reflecting about the contact normal. That bounce counts as a ricochet everywhere a wall bounce does (the per-shot ricochet bonus on a match and the impressive callout) and plays the definition's `deflectSound` (crystal-hit) instead of the wall ricochet sound. The hit after `deflectedHits` breaks it: the sphere is simply lost (no score, no element contributions, no streak), `breakSound` (crystal-breaking) plays, and the shot takes its cell and resolves matches and breakaways from there. Shots of the same type (Crystal into Crystal) attach normally. `ShotDeflection.Resolve` is the single rule (attach, deflect or break); hit counts live on the board sphere in `SphereDamage`, which future cracked-crystal art can read. The aim guide still stops at the first sphere it touches; it does not predict deflections.
+
+Magic has no sphere yet. Elements without a namesake sphere take their visualizer/reveal color from `SphereCatalog.elementColors` (Magic: purple #7A3CE0), falling back to the sphere that contributes most of them. `SphereCatalog.ElementColor` is the one lookup for element colors.
 
 ## Match clear visuals
 
