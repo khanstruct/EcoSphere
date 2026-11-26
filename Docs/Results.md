@@ -36,7 +36,7 @@ Recipe reveal audio timing uses the actual sphere-combine clip length rather tha
 
 ## Day/night view
 
-A **Toggle Day/Night** button (the standard `CelestialButton`) sits centered over the completed-world globe; the discovery overlay stays above it. `PlanetDayNight` (on the Results view) eases between day and night over `PlanetVisualStyle.dayNightTransitionSeconds` (0.6 s). Night:
+A **Toggle Day/Night** button (the standard `CelestialButton`, scaled to 75% as a whole) sits centered just above the completed-world globe, between the title and the planet, in both portrait and wide layouts. The globe was made slightly smaller and moved down to make room. The discovery overlay stays above it. `PlanetDayNight` (on the Results view) eases between day and night over `PlanetVisualStyle.dayNightTransitionSeconds` (0.6 s). Night:
 
 - dims the Results sun to `nightLightScale` (25%);
 - sets three shared planet-shader globals:
@@ -46,4 +46,4 @@ A **Toggle Day/Night** button (the standard `CelestialButton`) sits centered ove
 
 The planet never goes fully dark. Lava and other emissive effects ignore lighting, so they stand out as the light falls. The globals default to 0 and are reset when the view is destroyed, so gameplay, System and setup globes are unaffected. Unity's ambient color is not used for this: the planet shaders do not follow it at runtime (each has its own ambient term), so the shared globals are the one switch.
 
-The Results smoke clicks the button with real pointer input on a sample world with Civilization and Technology. With city lights off, night must be under 70% of day's brightness and over 15% (lava and the half-strength atmosphere keep some light). City lights must make up at least 1.5× the share of the image they do by day, and a second click must restore day. Renders: `Logs/results-day.png`, `results-night.png`, and their `-globe` versions.
+The Results smoke checks, in portrait and wide layouts, that the button is centered on the planet, entirely above it and below the title. It then clicks the button with real pointer input on a sample world with Civilization and Technology. With city lights off, night must be under 70% of day's brightness and over 15% (lava and the half-strength atmosphere keep some light). City lights must make up at least 1.5× the share of the image they do by day, and a second click must restore day. Renders: `Logs/results-day.png`, `results-night.png`, and their `-globe` versions.

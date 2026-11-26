@@ -153,8 +153,19 @@ namespace EcoSphere
         {
             void Expect(bool value,string message){if(!value)throw new Exception("Day/night: "+message);}
             var button=results.DayNightButton;var preview=results.Root.Find("Completed world globe").GetComponent<SpherePreview>();
-            Expect(button && button.GetComponent<CelestialButton>().label.text=="Toggle Day/Night" && button.transform.parent==preview.transform,"button missing from the globe");
-            Expect(((RectTransform)button.transform).anchoredPosition==Vector2.zero,"button must be centered over the planet");
+            Expect(button && button.GetComponent<CelestialButton>().label.text=="Toggle Day/Night","button missing");
+            // Above the planet, centered on it, and clear of both the planet and the title, in portrait and wide layouts.
+            foreach(var size in new[]{new Vector2Int(900,1600),new Vector2Int(1600,900)})
+            {
+                var target=new RenderTexture(size.x,size.y,24);var camera=results.View;float aspect=camera.aspect;
+                camera.targetTexture=target;camera.aspect=(float)size.x/size.y;results.Reflow();Canvas.ForceUpdateCanvases();
+                Rect Bounds(Transform t){var c=new Vector3[4];((RectTransform)t).GetWorldCorners(c);return Rect.MinMaxRect(c[0].x,c[0].y,c[2].x,c[2].y);}
+                var b=Bounds(button.transform);var g=Bounds(preview.transform);var title=Bounds(results.Root.Find("Planet"));
+                camera.targetTexture=null;camera.aspect=aspect;results.Reflow();target.Release();Destroy(target);
+                Expect(Mathf.Abs(b.center.x-g.center.x)<.01f,"button must be centered on the planet ("+size+")");
+                Expect(b.yMin>=g.yMax-.001f,"button must sit above the planet, not on it ("+size+")");
+                Expect(b.yMax<=title.yMin+.001f,"button must stay below the title ("+size+")");
+            }
             Expect(GameServices.Progress.Pending.world.planetStats[PlanetStat.Civilization]>0,"check world needs city lights");
             var sun=GameObject.Find("Results light").GetComponent<Light>();float dayIntensity=sun.intensity;
             var mouse=UnityEngine.InputSystem.Mouse.current ?? UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Mouse>();

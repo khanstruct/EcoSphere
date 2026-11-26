@@ -40,6 +40,8 @@ namespace EcoSphere
         Texture2D fillTexture;
         Sprite fillSprite;
         Vector2 previousSize;
+        // The day/night button is the standard button scaled down as a whole, so it fits between the title and the planet.
+        const float DayNightButtonScale=.75f, DayNightButtonGap=12;
         Rect previousSafe;
 
         RectTransform Rect(string name, Transform parent, Vector2 size, Vector2 position)
@@ -126,8 +128,8 @@ namespace EcoSphere
             var worldPreview = worldGlobe.gameObject.AddComponent<SpherePreview>();
             worldPreview.ConfigurePlanet(result.world,completedWorldMaterial);
             DayNight=gameObject.AddComponent<PlanetDayNight>();DayNight.Initialize(light);
-            // Centered over the globe; the discovery overlay (built later) stays above it.
-            DayNightButton=Button("Toggle Day/Night",worldGlobe,DayNight.Toggle);
+            // Placed above the globe in Reflow; the discovery overlay (built later) stays above it.
+            DayNightButton=Button("Toggle Day/Night",Root,DayNight.Toggle);DayNightButton.transform.localScale=Vector3.one*DayNightButtonScale;
             descriptionFrame = Frame("World description placeholder", Root);
             var climate=result.world.AppearanceStats;
             TemperatureLabel=Text("Average temperature",descriptionFrame,PlanetTemperatureDisplay.Average(climate.TemperatureFahrenheit),32,new Vector2(700,90),Vector2.zero);
@@ -267,18 +269,21 @@ namespace EcoSphere
             if (m.wide)
             {
                 float width = (m.width - 140) * .5f;
-                ScreenLayout.Place(worldGlobe, Vector2.one * Mathf.Min(width, 520), new Vector2(-m.width * .25f, 0));
+                ScreenLayout.Place(worldGlobe, Vector2.one * Mathf.Min(width, 460), new Vector2(-m.width * .25f, -35));
                 PlaceFrame(descriptionFrame, new Vector2(width, 260), new Vector2(m.width * .25f, 130));
                 PlaceFrame(collectionFrame, new Vector2(width, 260), new Vector2(m.width * .25f, -160));
             }
             else
             {
                 float width = Mathf.Min(m.width - 60, 950);
-                ScreenLayout.Place(worldGlobe, Vector2.one * Mathf.Min(width, 480), new Vector2(0, 360));
+                ScreenLayout.Place(worldGlobe, Vector2.one * Mathf.Min(width, 420), new Vector2(0, 285));
                 PlaceFrame(descriptionFrame, new Vector2(width, 280), new Vector2(0, -80));
                 PlaceFrame(collectionFrame, new Vector2(width, 260), new Vector2(0, -420));
             }
             ScreenLayout.Place(ContinueButton.GetComponent<RectTransform>(), new Vector2(360, 120), new Vector2(m.width * .5f - 180, -m.height * .5f + 62));
+            // Day/night sits centered just above the planet.
+            var dayNight=(RectTransform)DayNightButton.transform;
+            ScreenLayout.Place(dayNight,new Vector2(360,120),worldGlobe.anchoredPosition+new Vector2(0,worldGlobe.sizeDelta.y*.5f+DayNightButtonGap+60*DayNightButtonScale));
             ScreenLayout.Place(TemperatureLabel.rectTransform,descriptionFrame.sizeDelta-new Vector2(80,60),Vector2.zero);
             if (slots.Count > 0)
             {
