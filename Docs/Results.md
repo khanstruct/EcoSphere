@@ -33,3 +33,17 @@ Assets: Resources/RecipeRevealStyle.asset supplies the sphere/flare materials an
 RecipeRevealTools.Configure builds/validates the two material assets. RecipeRevealTools.Smoke with -recipeRevealSmoke checks an actual natural + pair + self award sequence, ingredient serialization even after the recipe book changes, blocked input during animation, every reveal phase, sequential collection, portrait/landscape renders and historical results without repeated awards. Alpha followup, natural-results and contribution/award regressions also pass. Preview frames are under the validation project's Logs/Recipe-*.png.
 
 Recipe reveal audio timing uses the actual sphere-combine clip length rather than fixed phase seconds. The five combination phase values on RecipeRevealStyle act as relative weights across that duration. The existing element-discovered voice is scheduled on the same DSP clock at the exact end; after-reveal hold and collection still use their own durations. Play-mode checks verify pair/self combine counts, scheduled clip-length handoff, no premature discovery announcement, and unchanged natural/revisited results.
+
+## Day/night view
+
+A **Toggle Day/Night** button (the standard `CelestialButton`) sits centered over the completed-world globe; the discovery overlay stays above it. `PlanetDayNight` (on the Results view) eases between day and night over `PlanetVisualStyle.dayNightTransitionSeconds` (0.6 s). Night:
+
+- dims the Results sun to `nightLightScale` (25%);
+- sets three shared planet-shader globals:
+  - `_PlanetNight`: city lights show at full night strength everywhere;
+  - `_PlanetNightAmbientDim`: the surface and cloud ambient term drops to `nightAmbientScale` (40%);
+  - `_PlanetNightAtmosphereDim`: the atmosphere glow drops to `nightAtmosphereScale` (50%).
+
+The planet never goes fully dark. Lava and other emissive effects ignore lighting, so they stand out as the light falls. The globals default to 0 and are reset when the view is destroyed, so gameplay, System and setup globes are unaffected. Unity's ambient color is not used for this: the planet shaders do not follow it at runtime (each has its own ambient term), so the shared globals are the one switch.
+
+The Results smoke clicks the button with real pointer input on a sample world with Civilization and Technology. With city lights off, night must be under 70% of day's brightness and over 15% (lava and the half-strength atmosphere keep some light). City lights must make up at least 1.5× the share of the image they do by day, and a second click must restore day. Renders: `Logs/results-day.png`, `results-night.png`, and their `-globe` versions.

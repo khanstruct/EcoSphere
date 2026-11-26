@@ -20,6 +20,14 @@ namespace EcoSphere
         public Material cloudMaterial;
         [Range(1.001f,1.05f)] public float cloudShellScale=1.012f;
         public float cloudDriftSpeed=.008f;
+        [Header("Day/night view (Results)")]
+        [Range(0,1),Tooltip("Sunlight at night, as a share of daylight. Kept above zero so the planet never goes fully dark.")]
+        public float nightLightScale=.25f;
+        [Range(0,1),Tooltip("Ambient light on the surface and clouds at night, as a share of daylight.")]
+        public float nightAmbientScale=.4f;
+        [Range(0,1),Tooltip("Atmosphere glow at night, as a share of daylight.")]
+        public float nightAtmosphereScale=.5f;
+        [Min(.01f)] public float dayNightTransitionSeconds=.6f;
         public System.Collections.Generic.List<PlanetTerrainStyle> terrains=new System.Collections.Generic.List<PlanetTerrainStyle>();
         public Material Terrain(string id,Material fallback)
         {

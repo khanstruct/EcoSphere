@@ -27,6 +27,7 @@ Shader "EcoSphere/Planet Clouds"
                 float _Coverage,_Density,_Darkness,_Drift,_LightningStrength;
                 float4 _LightningCenter;
             CBUFFER_END
+            float _PlanetNightAmbientDim;
             struct Attributes{float4 positionOS:POSITION;float3 normalOS:NORMAL;float2 uv:TEXCOORD0;};
             struct Varyings{float4 positionCS:SV_POSITION;float3 normalWS:TEXCOORD0;float3 normalOS:TEXCOORD1;float2 uv:TEXCOORD2;float3 positionWS:TEXCOORD3;};
             Varyings Vert(Attributes input)
@@ -47,7 +48,8 @@ Shader "EcoSphere/Planet Clouds"
                 alpha*=smoothstep(0,.16,facing);
                 Light light=GetMainLight();float diffuse=saturate(dot(normalize(i.normalWS),light.direction));
                 float3 color=lerp(float3(.97,.98,1),float3(.18,.19,.22),_Darkness);
-                color*=(float3(.23,.25,.3)+light.color*diffuse*.77)*lerp(.8,1,mask);
+                // _PlanetNightAmbientDim (global, 0 by default) dims the fixed ambient term in the day/night view.
+                color*=(float3(.23,.25,.3)*(1-_PlanetNightAmbientDim)+light.color*diffuse*.77)*lerp(.8,1,mask);
                 float distanceFromFlash=1-dot(normalize(i.normalOS),normalize(_LightningCenter.xyz));
                 float flash=exp(-distanceFromFlash/max(.001,_LightningCenter.w))*_LightningStrength;
                 color+=float3(.72,.82,1)*flash*cloud;

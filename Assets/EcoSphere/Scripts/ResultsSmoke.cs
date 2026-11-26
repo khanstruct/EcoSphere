@@ -104,6 +104,7 @@ namespace EcoSphere
             three.world.seaLevel=.35f;
             var materials=new double[System.Enum.GetValues(typeof(ElementId)).Length];
             materials[(int)ElementId.Fire]=400;materials[(int)ElementId.Water]=400;materials[(int)ElementId.Stone]=200;
+            materials[(int)ElementId.Civilization]=300;materials[(int)ElementId.Technology]=300;   // city lights for the day/night check
             three.world.SetStats(PlanetStatCalculator.Evaluate(materials));
             three.discoveries.AddRange(new[] { 0, 1, 3 });
             SceneManager.LoadScene("Results");
@@ -139,10 +140,71 @@ namespace EcoSphere
             results = FindAnyObjectByType<ResultsView>();
             if (!results.Settled || !results.ContinueButton.interactable || results.DiscoveryPlayCount != 0 || results.OkButton)
                 throw new Exception("No-discovery results should allow immediate Continue without discovery audio");
-            Debug.Log("ECOSPHERE_RESULTS_SMOKE_PASSED: actual win transition, Stone sound, Ok animation, Continue, rotating saved map world, 0/1/3/4 discoveries, responsive renders");
+            yield return CheckDayNight(results);
+            Debug.Log("ECOSPHERE_RESULTS_SMOKE_PASSED: actual win transition, Stone sound, Ok animation, Continue, rotating saved map world, 0/1/3/4 discoveries, responsive renders, day/night toggle");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif
+        }
+
+        // Real pointer clicks on "Toggle Day/Night" over the globe: night dims the planet without blacking it out and
+        // city lights become a larger share of what is visible; a second click restores day.
+        IEnumerator CheckDayNight(ResultsView results)
+        {
+            void Expect(bool value,string message){if(!value)throw new Exception("Day/night: "+message);}
+            var button=results.DayNightButton;var preview=results.Root.Find("Completed world globe").GetComponent<SpherePreview>();
+            Expect(button && button.GetComponent<CelestialButton>().label.text=="Toggle Day/Night" && button.transform.parent==preview.transform,"button missing from the globe");
+            Expect(((RectTransform)button.transform).anchoredPosition==Vector2.zero,"button must be centered over the planet");
+            Expect(GameServices.Progress.Pending.world.planetStats[PlanetStat.Civilization]>0,"check world needs city lights");
+            var sun=GameObject.Find("Results light").GetComponent<Light>();float dayIntensity=sun.intensity;
+            var mouse=UnityEngine.InputSystem.Mouse.current ?? UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Mouse>();
+            UnityEngine.InputSystem.InputSystem.settings.backgroundBehavior=UnityEngine.InputSystem.InputSettings.BackgroundBehavior.IgnoreFocus;
+            UnityEngine.InputSystem.InputSystem.settings.editorInputBehaviorInPlayMode=UnityEngine.InputSystem.InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+            IEnumerator Click()
+            {
+                Canvas.ForceUpdateCanvases();
+                Vector2 point=RectTransformUtility.WorldToScreenPoint(results.View,button.transform.position);
+                var hits=new List<UnityEngine.EventSystems.RaycastResult>();
+                UnityEngine.EventSystems.EventSystem.current.RaycastAll(new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current){position=point},hits);
+                Expect(hits.Count>0 && hits[0].gameObject.transform.IsChildOf(button.transform),"button is blocked from pointer input");
+                UnityEngine.InputSystem.InputSystem.QueueStateEvent(mouse,new UnityEngine.InputSystem.LowLevel.MouseState{position=point});yield return null;yield return null;
+                UnityEngine.InputSystem.InputSystem.QueueStateEvent(mouse,new UnityEngine.InputSystem.LowLevel.MouseState{position=point,buttons=1});yield return null;yield return null;
+                UnityEngine.InputSystem.InputSystem.QueueStateEvent(mouse,new UnityEngine.InputSystem.LowLevel.MouseState{position=point});yield return null;yield return null;
+                yield return new WaitForSecondsRealtime(PlanetVisualStyle.Current.dayNightTransitionSeconds+.2f);
+            }
+            // Light and city-light emission of the globe render: emission is the difference with lights switched off.
+            (float total,float lights,float unlit) Measure(string name)
+            {
+                Texture2D Read()
+                {
+                    preview.PreviewCamera.Render();var texture=preview.PreviewCamera.targetTexture;var previous=RenderTexture.active;RenderTexture.active=texture;
+                    var pixels=new Texture2D(texture.width,texture.height,TextureFormat.RGB24,false);pixels.ReadPixels(new Rect(0,0,texture.width,texture.height),0,0);pixels.Apply();
+                    RenderTexture.active=previous;return pixels;
+                }
+                var with=Read();File.WriteAllBytes(Path.Combine(Application.dataPath,"../Logs/results-"+name+"-globe.png"),with.EncodeToPNG());
+                var block=new MaterialPropertyBlock();preview.BodyRenderer.GetPropertyBlock(block);float civilization=block.GetFloat("_Civilization");
+                block.SetFloat("_Civilization",0);preview.BodyRenderer.SetPropertyBlock(block);var without=Read();
+                block.SetFloat("_Civilization",civilization);preview.BodyRenderer.SetPropertyBlock(block);
+                float total=0,lights=0,unlit=0;
+                for(int y=0;y<with.height;y+=2)for(int x=0;x<with.width;x+=2)
+                {
+                    Color a=with.GetPixel(x,y),b=without.GetPixel(x,y);
+                    total+=a.r*.2126f+a.g*.7152f+a.b*.0722f;unlit+=b.r*.2126f+b.g*.7152f+b.b*.0722f;lights+=Mathf.Max(0,(a.r-b.r)*.2126f+(a.g-b.g)*.7152f+(a.b-b.b)*.0722f);
+                }
+                Destroy(with);Destroy(without);return (total,lights,unlit);
+            }
+            var day=Measure("day");Capture(results,"day",900,1600);
+            yield return Click();
+            Expect(results.DayNight.IsNight && Mathf.Approximately(results.DayNight.Blend,1) && Mathf.Approximately(Shader.GetGlobalFloat("_PlanetNight"),1),"click did not switch to night");
+            Expect(Mathf.Approximately(sun.intensity,dayIntensity*PlanetVisualStyle.Current.nightLightScale),"night must dim the sun to the style level");
+            var night=Measure("night");Capture(results,"night",900,1600);
+            // Darkness is judged with city lights off (they are meant to stay bright). Lava and the half-strength
+            // atmosphere still glow, so a fire world keeps more light than its surface alone would.
+            Expect(night.unlit<day.unlit*.7f && night.unlit>day.unlit*.15f,$"night must darken the planet without blacking it out (day {day.unlit:0}, night {night.unlit:0})");
+            Expect(night.lights/night.total>day.lights/day.total*1.5f,$"city lights must stand out more at night (day {day.lights/day.total:0.000}, night {night.lights/night.total:0.000})");
+            yield return Click();
+            Expect(!results.DayNight.IsNight && results.DayNight.Blend==0 && Shader.GetGlobalFloat("_PlanetNight")==0 &&
+                Mathf.Approximately(sun.intensity,dayIntensity) && Shader.GetGlobalFloat("_PlanetNightAmbientDim")==0 && Shader.GetGlobalFloat("_PlanetNightAtmosphereDim")==0,"second click must restore day");
         }
 
         static void CheckGlobe(ResultsView results, Material expectedMaterial)

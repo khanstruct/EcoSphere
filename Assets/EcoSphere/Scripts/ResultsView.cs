@@ -20,6 +20,8 @@ namespace EcoSphere
         public Material completedWorldMaterial;
         public Button ContinueButton { get; private set; }
         public Button OkButton { get; private set; }
+        public Button DayNightButton { get; private set; }
+        public PlanetDayNight DayNight { get; private set; }
         public bool Settled { get; private set; }
         public int DiscoveryPlayCount { get; private set; }
         public Camera View { get; private set; }
@@ -123,6 +125,9 @@ namespace EcoSphere
             worldGlobe.gameObject.AddComponent<RawImage>().raycastTarget = false;
             var worldPreview = worldGlobe.gameObject.AddComponent<SpherePreview>();
             worldPreview.ConfigurePlanet(result.world,completedWorldMaterial);
+            DayNight=gameObject.AddComponent<PlanetDayNight>();DayNight.Initialize(light);
+            // Centered over the globe; the discovery overlay (built later) stays above it.
+            DayNightButton=Button("Toggle Day/Night",worldGlobe,DayNight.Toggle);
             descriptionFrame = Frame("World description placeholder", Root);
             var climate=result.world.AppearanceStats;
             TemperatureLabel=Text("Average temperature",descriptionFrame,PlanetTemperatureDisplay.Average(climate.TemperatureFahrenheit),32,new Vector2(700,90),Vector2.zero);

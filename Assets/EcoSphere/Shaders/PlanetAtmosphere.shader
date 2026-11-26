@@ -21,6 +21,7 @@ Shader "EcoSphere/Planet Atmosphere"
                 half4 _AtmosphereColor;
                 float _Strength, _Width;
             CBUFFER_END
+            float _PlanetNightAtmosphereDim;
             struct Attributes {float4 positionOS:POSITION;float3 normalOS:NORMAL;};
             struct Varyings {float4 positionCS:SV_POSITION;float3 positionWS:TEXCOORD0;float3 normalWS:TEXCOORD1;};
             Varyings Vert(Attributes input)
@@ -38,7 +39,8 @@ Shader "EcoSphere/Planet Atmosphere"
                 // A faint veil across the face rises toward the limb, then softens outward.
                 float rim=pow(saturate(radius/surfaceRadius),10);
                 float outwardFade=1-smoothstep(surfaceRadius,1,radius);
-                float opacity=lerp(.018,.8,rim)*outwardFade*saturate(_Strength);
+                // _PlanetNightAtmosphereDim (global, 0 by default) fades the sunlit glow in the day/night view.
+                float opacity=lerp(.018,.8,rim)*outwardFade*saturate(_Strength)*(1-_PlanetNightAtmosphereDim);
                 return half4(_AtmosphereColor.rgb,opacity);
             }
             ENDHLSL

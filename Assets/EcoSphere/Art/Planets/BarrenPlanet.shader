@@ -66,6 +66,8 @@ Shader "EcoSphere/Barren Planet"
                 float _Civilization, _CityLightIntensity;
                 float4 _TerrainBounds;
             CBUFFER_END
+            // Global, set by PlanetDayNight: 0 = day view, 1 = night view (luminescent effects at full night strength everywhere).
+            float _PlanetNight, _PlanetNightAmbientDim;
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float4 tangentOS : TANGENT; float2 uv : TEXCOORD0; };
             struct Varyings { float4 positionCS : SV_POSITION; half3 normalWS : TEXCOORD0; float2 uv : TEXCOORD1; float3 positionWS : TEXCOORD2; half4 tangentWS : TEXCOORD3; float3 planetDirection : TEXCOORD4; };
             float IceHash(float3 p)
@@ -186,7 +188,8 @@ Shader "EcoSphere/Barren Planet"
                 normal = normalize(normal - tangent*relief.x - bitangent*relief.y);
                 Light light = GetMainLight();
                 half diffuse = saturate(dot(normal, light.direction));
-                half3 illumination = max(SampleSH(normal), half3(.18, .18, .18)) + light.color * diffuse * .65;
+                // _PlanetNightAmbientDim (global, 0 by default) dims the ambient term in the day/night view.
+                half3 illumination = max(SampleSH(normal), half3(.18, .18, .18))*(1-_PlanetNightAmbientDim) + light.color * diffuse * .65;
                 half3 halfDirection = normalize(light.direction + GetWorldSpaceNormalizeViewDir(input.positionWS));
                 half glint = pow(saturate(dot(normal, halfDirection)), 64) * water * diffuse * (1-ice*.8);
                 // City lights. Civilization sets coverage: regions light up in a stable order with scattered settlements;
@@ -207,7 +210,7 @@ Shader "EcoSphere/Barren Planet"
                     half urban=lerp(scattered,max(scattered,dense),smoothstep(.45,1,saturate(_CityLightIntensity)));
                     half onLand=(1-water)*(1-ice)*(1-crust);
                     // Full strength past the terminator; a dimmer floor keeps lights readable on the lit face the game cameras show.
-                    half night=lerp(_CityLightsDayVisibility,1,smoothstep(.1,-.3,dot(normalize(input.normalWS),light.direction)));
+                    half night=lerp(lerp(_CityLightsDayVisibility,1,smoothstep(.1,-.3,dot(normalize(input.normalWS),light.direction))),1,saturate(_PlanetNight));
                     float3 cell=floor(planetDirection*60);
                     half twinkle=.85+.15*sin(_Time.y*(1.5+IceHash(cell)*2)+IceHash(cell+7.1)*6.283);
                     half brightness=lerp(_CityLightsBrightness.x,_CityLightsBrightness.y,saturate(_CityLightIntensity));
