@@ -97,6 +97,9 @@ namespace EcoSphere.Editor
             new SphereSeed { id = SphereIds.Metal, label = "Metal", element = ElementId.Metal, color = new Color32(90,97,112,255), voice = "ferrosphere",
                 description = "Veins of ore run through the world, the raw strength that tools and industry are built from.",
                 contributions = new[] { C(ElementId.Metal,2) }, unallocated = 2, naturalWeight = 1 },
+            new SphereSeed { id = SphereIds.Wind, label = "Wind", element = ElementId.Wind, color = new Color32(220,214,245,255), category = SphereCategory.Weather, voice = "atmosphere",
+                description = "Sets the skies in motion, stirring up the planet's weather.",
+                contributions = new[] { C(ElementId.Wind,1), C(ElementId.Air,2) }, unallocated = 1 },
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 

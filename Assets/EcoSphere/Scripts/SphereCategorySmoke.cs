@@ -44,12 +44,20 @@ namespace EcoSphere
             Remove(0);Remove(0);
             foreach(var slot in slots)ExpectCategory(!slot.Find("Selected sphere"),"rapid cross-tab removal left a stale slot preview");
         }
-        internal void CheckLifeFilter(int expectedCount)
+        int OwnedIn(SphereCategory category){int count=0;foreach(int type in collectionTypes)if(SphereCatalog.Current.Get(type).category==category)count++;return count;}
+        // Categories with no owned selectable sphere: their tabs must not appear.
+        internal List<SphereCategory> UnrepresentedCategories()
+        {
+            var absent=new List<SphereCategory>();
+            foreach(SphereCategory category in Enum.GetValues(typeof(SphereCategory)))if(OwnedIn(category)==0)absent.Add(category);
+            return absent;
+        }
+        internal void CheckLifeFilter()
         {
             ExpectCategory(categoryTabs.Exists(tab=>tab.category==SphereCategory.Life),"Life tab missing after ownership");
             SelectCategory(SphereCategory.Life);
             CheckCategoryLight();
-            ExpectCategory(visibleTileIndices.Count==expectedCount,"Life filter has wrong owned count");
+            ExpectCategory(visibleTileIndices.Count==OwnedIn(SphereCategory.Life),"Life filter has wrong owned count");
             foreach(int index in visibleTileIndices)ExpectCategory(SphereCatalog.Current.Get(collectionTypes[index]).category==SphereCategory.Life,"Life filter leaked");
             int hidden=collectionTypes.IndexOf(SphereIds.Void);
             var preview=tiles[hidden].GetComponentInChildren<SpherePreview>(true);
@@ -65,10 +73,11 @@ namespace EcoSphere
         }
         internal void CheckAllCategoryTabs()
         {
-            ExpectCategory(categoryTabs.Count==7,"all seven tabs must fit or scroll when categories are owned");
+            int tabCount=Enum.GetValues(typeof(SphereCategory)).Length+1;
+            ExpectCategory(categoryTabs.Count==tabCount,"every category tab plus All must fit or scroll when all categories are owned");
             categoryScroll.horizontalNormalizedPosition=1;Canvas.ForceUpdateCanvases();
             SelectCategory(SphereCategory.Beyond);
-            ExpectCategory(visibleTileIndices.Count==1,"future category must filter without special code");
+            ExpectCategory(visibleTileIndices.Count==OwnedIn(SphereCategory.Beyond),"the last category must filter without special code");
         }
         internal IEnumerator CaptureCategoryLayout(string suffix)
         {
@@ -79,7 +88,7 @@ namespace EcoSphere
                 var target=new RenderTexture(size.x,size.y,24);target.Create();view.targetTexture=target;Reflow();
                 yield return null;yield return null;Canvas.ForceUpdateCanvases();
                 var viewport=(RectTransform)root.Find("Discovered Spheres/Collection viewport");
-                if(categoryTabs.Count==7 && size.x<size.y)
+                if(categoryTabs.Count==Enum.GetValues(typeof(SphereCategory)).Length+1 && size.x<size.y)
                 {
                     ExpectCategory(nextCategoryPage.gameObject.activeSelf,"overflow category navigation missing");
                     nextCategoryPage.onClick.Invoke();nextCategoryPage.onClick.Invoke();
@@ -120,20 +129,21 @@ namespace EcoSphere
             DontDestroyOnLoad(gameObject);yield return null;yield return null;
             var prep=FindAnyObjectByType<LevelPrepView>();prep.DismissSetupTutorialForSmoke();yield return null;
             prep.CheckInitialCategories();
-            foreach(var category in new[]{SphereCategory.Weather,SphereCategory.Technology,SphereCategory.Beyond})prep.CheckCategoryAbsent(category);
+            foreach(var category in prep.UnrepresentedCategories())prep.CheckCategoryAbsent(category);
             if(!DevelopmentMode.Enabled)
             {
-                prep.CheckCategoryAbsent(SphereCategory.Life);yield return prep.CaptureCategoryLayout("normal");
+                if(!prep.UnrepresentedCategories().Contains(SphereCategory.Life))throw new Exception("Categories: normal play must start without Life spheres");
+                yield return prep.CaptureCategoryLayout("normal");
                 var totals=new double[ElementComposition.Capacity];totals[(int)ElementId.Water]=500;totals[(int)ElementId.Mud]=500;
                 GameServices.Progress.Complete(7,0,-.02f,0,null,totals);
                 SceneManager.LoadScene("LevelPrep");yield return null;yield return null;
                 prep=FindAnyObjectByType<LevelPrepView>();prep.DismissSetupTutorialForSmoke();yield return null;
                 if(prep.SelectedCategory.HasValue)throw new Exception("Reopened setup must default to All");
-                prep.CheckLifeFilter(1);yield return prep.CaptureCategoryLayout("unlocked");
+                prep.CheckLifeFilter();yield return prep.CaptureCategoryLayout("unlocked");
             }
             else
             {
-                prep.CheckLifeFilter(2);yield return prep.CaptureCategoryLayout("dev");
+                prep.CheckLifeFilter();yield return prep.CaptureCategoryLayout("dev");
                 int[] types={SphereIds.Fire,SphereIds.Sunlight,SphereIds.Ice};
                 var previous=new SphereCategory[3];var future=new[]{SphereCategory.Weather,SphereCategory.Technology,SphereCategory.Beyond};
                 try
@@ -144,7 +154,7 @@ namespace EcoSphere
                 }
                 finally{for(int i=0;i<types.Length;i++)SphereCatalog.Current.Get(types[i]).category=previous[i];}
             }
-            Debug.Log("ECOSPHERE_SPHERE_CATEGORY_GAMEPLAY_PASSED: "+(DevelopmentMode.Enabled?"DEV collection and all seven future tabs":"normal locked categories and earned Life tab")+"; All default, ordered filters, cross-tab loadout/Begin, hidden preview cameras, portrait/wide layouts");
+            Debug.Log("ECOSPHERE_SPHERE_CATEGORY_GAMEPLAY_PASSED: "+(DevelopmentMode.Enabled?"DEV collection and every category tab":"normal locked categories and earned Life tab")+"; All default, ordered filters, cross-tab loadout/Begin, hidden preview cameras, portrait/wide layouts");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

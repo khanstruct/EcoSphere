@@ -48,6 +48,8 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Life,ElementId.Air,SphereIds.Bird);
             SeedRecipe(catalog,ElementId.Life,ElementId.Wind,SphereIds.Bird);
             SeedRecipe(catalog,ElementId.Lava,ElementId.Stone,SphereIds.Metal);
+            SeedRecipe(catalog,ElementId.Air,ElementId.Air,SphereIds.Wind);
+            SeedRecipe(catalog,ElementId.Sunlight,ElementId.Air,SphereIds.Wind);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -291,6 +293,13 @@ namespace EcoSphere.Editor
                 metal.ContributionSummary()=="Metal 50%" && metal.unallocatedWeight==2 && metal.resourceVoice && metal.resourceVoice.name=="ferrosphere" && metal.OccursNaturally,
                 "Metal identity: dark gray, Basic, 2 Metal / 2 Null, ferrosphere, occurs naturally");
             Expect(catalog.recipeBook.TryCombine(ElementId.Stone,ElementId.Lava,out var metalFrom) && metalFrom==metal,"Lava + Stone must unlock Metal");
+            var wind=catalog.Get(SphereIds.Wind);
+            Expect(wind.namesakeElement==ElementId.Wind && wind.color==(Color)new Color32(220,214,245,255) && wind.category==SphereCategory.Weather && wind.AmmoEligible && !wind.availableAtStart &&
+                wind.surface && wind.surface.name=="wind-surface-v1" && wind.icon && wind.icon.texture.name=="wind-icon-v1" &&
+                wind.ContributionSummary()=="Air 50% · Wind 25%" && wind.unallocatedWeight==1 && wind.resourceVoice && wind.resourceVoice.name=="atmosphere" && !wind.OccursNaturally,
+                "Wind identity: pale lavender-white, Weather, 1 Wind / 2 Air / 1 Null, atmosphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Air,ElementId.Air,out var windFrom) && windFrom==wind && catalog.recipeBook.TryCombine(ElementId.Air,ElementId.Sunlight,out var windFromSun) && windFromSun==wind,"Air + Air and Sunlight + Air must unlock Wind");
+            Expect(catalog.ElementAppearance(ElementId.Wind)==wind && !catalog.elementColors.Exists(entry=>entry.element==ElementId.Wind),"Wind's sphere must supply its element color");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",
