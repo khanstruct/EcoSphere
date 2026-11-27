@@ -54,6 +54,8 @@ namespace EcoSphere
             foreach(var modifier in catalog.proceduralModifiers)
                 if(modifier.guaranteedSystem==number && !slots[modifier.guaranteedSlot].modifiers.Contains(modifier.id))
                     slots[modifier.guaranteedSlot].modifiers.Add(modifier.id);
+            // At most one naturally occurring sphere in the whole system, after modifiers so it never shifts them.
+            NaturalOccurrence.Roll(system, slots, save, SphereCatalog.Current, catalog.naturalOccurrenceChance);
             system.worlds.AddRange(slots);
             // Commit placement and the finished system together; no reservation is made for incomplete generation.
             save.systems.Add(system); save.placedPredefinedWorlds.AddRange(newlyPlaced);
@@ -72,7 +74,7 @@ namespace EcoSphere
         static bool Eligible(PlayerProfile save, PredefinedWorld definition)
         {
             foreach (int sphere in definition.requiredUnlockedSpheres)
-                if (!save.unlockedSpheres.Contains(sphere) && !SphereCatalog.Current.Get(sphere).availableAtStart) return false;
+                if (!ProfileService.Owns(save, sphere)) return false;
             foreach (string required in definition.requiredCompletedWorlds)
             {
                 bool found = false;

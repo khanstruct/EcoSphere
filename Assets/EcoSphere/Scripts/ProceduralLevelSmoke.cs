@@ -15,7 +15,8 @@ namespace EcoSphere
                 throw new Exception("Procedural gameplay did not apply its world or four-sphere loadout");
             var repeated=new BoardRules(); ProceduralCluster.Populate(repeated,selected,InitialRings,expected.seed,expected.rules.clustering,WorldCatalog.Current.clusterGroups);
             foreach(var cell in board.Cells)
-                if(repeated.Cells[cell.Key]!=cell.Value || Array.IndexOf(selected,cell.Value)<0)throw new Exception("Gameplay discarded procedural seed, clustering or selected types");
+                if(IsNaturalPlacement(cell.Key,cell.Value))continue;   // natural spheres replace their cell's procedural type
+                else if(repeated.Cells[cell.Key]!=cell.Value || Array.IndexOf(selected,cell.Value)<0)throw new Exception("Gameplay discarded procedural seed, clustering or selected types");
         }
         internal IEnumerator ExerciseProceduralShot()
         {

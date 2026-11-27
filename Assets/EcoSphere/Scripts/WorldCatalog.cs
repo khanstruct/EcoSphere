@@ -58,6 +58,9 @@ namespace EcoSphere
         [Min(4)] public int minimumProceduralSpheres = 4, maximumProceduralSpheres = 4;
         public WorldRules proceduralRules = new WorldRules();
         [Range(0,1)] public float minimumClustering=.1f, maximumClustering=.9f;
+        [Range(0,1), Tooltip("When a system is created, each procedural world in turn has this chance to hold a naturally occurring sphere. " +
+            "The first world that rolls it gets one and no other world in that system does (see NaturalOccurrence).")]
+        public float naturalOccurrenceChance=.1f;
         [Tooltip("Starting group shapes for procedural clusters. Each world's clustering value tilts these sizes and merge chances.")]
         public ClusterGroupSettings clusterGroups=new ClusterGroupSettings();
         public string proceduralGameplayScene=WorldLevels.ProceduralSceneName;

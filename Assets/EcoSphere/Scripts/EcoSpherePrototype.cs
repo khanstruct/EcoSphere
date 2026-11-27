@@ -281,10 +281,12 @@ namespace EcoSphere
         {
             foreach(var natural in preparedWorld.naturalSpheres)
             {
-                if(!board.Cells.ContainsKey(natural.cell))throw new System.InvalidOperationException("Natural sphere placement lies outside the cluster");
+                if(!board.Cells.ContainsKey(natural.cell) || !NaturalOccurrence.IsAllowedCell(natural.cell,InitialRings))throw new System.InvalidOperationException("Natural sphere placement lies outside the cluster or touches the core");
                 board.Cells[natural.cell]=natural.sphereId;
             }
         }
+        // Whether this cell still holds the natural sphere the world placed there (authored or rolled; see NaturalOccurrence).
+        bool IsNaturalPlacement(Vector2Int cell,int type)=>preparedWorld!=null && preparedWorld.naturalSpheres.Exists(natural=>natural.cell==cell && natural.sphereId==type);
         void LoadNext()
         {
             if (complete || failed) return;
@@ -485,7 +487,7 @@ namespace EcoSphere
                 if(!released && board.Infested.Contains(cell))continue;
                 if(board.Infested.Contains(cell)){KnockOffAlien(cell,false);freedAliens++;}
                 int type = board.Cells[cell];
-                if(released && preparedWorld.naturalSpheres.Exists(natural=>natural.cell==cell && natural.sphereId==type))releasedNaturalSpheres.Add(type);
+                if(released && IsNaturalPlacement(cell,type))releasedNaturalSpheres.Add(type);
                 var definition = Definition(type);
                 if(voicePoints!=null && definition.Matchable)
                 {

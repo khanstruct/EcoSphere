@@ -33,6 +33,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 930157878bf4c3c4fb9e7a5db6c81ef6, type: 2}
   - {fileID: 11400000, guid: 80b628d9a2e09c74fa8edde613b0a89c, type: 2}
   - {fileID: 11400000, guid: 30c98131d2e491f48abdf53a40e24c66, type: 2}
+  - {fileID: 11400000, guid: 15901fa2184e2d5479e112e44e294e56, type: 2}
   recipeBook: {fileID: 11400000, guid: 0caf164c424b4d94b9bf93f2f6829a4e, type: 2}
   openingSpheres: 0400000005000000i
   elementColors: []

@@ -80,8 +80,9 @@ namespace EcoSphere
         IEnumerable<int> ElementTypes()
         {
             bool found = false;
-            foreach (int type in board.Cells.Values)
-                if (Definition(type).AmmoEligible) { found = true; yield return type; }
+            // A sphere placed by nature is never offered as ammo; it has to be released to be discovered.
+            foreach (var cell in board.Cells)
+                if (Definition(cell.Value).AmmoEligible && !IsNaturalPlacement(cell.Key, cell.Value)) { found = true; yield return cell.Value; }
             // A lone armed laser still needs ordinary turns to finish counting down.
             if (!found && board.Cells.Count > 0) { foreach (int type in activeSphereTypes) yield return type; }
         }

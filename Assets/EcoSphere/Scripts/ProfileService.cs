@@ -40,10 +40,13 @@ namespace EcoSphere
         {
             var record=GetSystem(system);if(index<0 || index>=record.worlds.Count)throw new ArgumentOutOfRangeException(nameof(index));return record.worlds[index];
         }
-        public bool OwnsSphere(int id)
+        public bool OwnsSphere(int id)=>Owns(Active,id);
+        // The one ownership rule (collection, selection, discoveries, rewards and world generation): available at start,
+        // unlocked on this profile, or any ammo-eligible sphere in DEV mode.
+        public static bool Owns(PlayerProfile profile,int id)
         {
             var sphere=SphereCatalog.Current.Get(id);
-            return sphere.availableAtStart || Active.unlockedSpheres.Contains(id) || (DevelopmentMode.Enabled && sphere.AmmoEligible);
+            return sphere.availableAtStart || profile.unlockedSpheres.Contains(id) || (DevelopmentMode.Enabled && sphere.AmmoEligible);
         }
         public bool UnlockSphere(int id)
         {

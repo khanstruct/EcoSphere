@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18, Bird = 19;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
@@ -100,6 +100,12 @@ namespace EcoSphere
             "Hazarded spheres (e.g. infested) don't count. Anything it was holding falls away as a normal breakaway.")]
         public bool erodesOnMiss;
         [Tooltip("Played when this sphere erodes.")] public AudioClip erodeSound;
+        [Header("Natural occurrence")]
+        [Min(0), UnityEngine.Serialization.FormerlySerializedAs("naturalChance"),
+         Tooltip("Relative weight of this sphere when a system's natural occurrence picks one of the spheres the player doesn't own yet " +
+            "(the per-world chance is WorldCatalog.naturalOccurrenceChance). Releasing it in a breakaway discovers it. 0 = never occurs naturally.")]
+        public float naturalWeight;
+        public bool OccursNaturally => naturalWeight > 0 && AmmoEligible;
         [Header("Lost without points (eroded, broken)")]
         [Tooltip("Particle burst where the sphere was: Crumble falls away, Shatter scatters. Profiles live in SphereShapeStyle.")]
         public SphereBurst lostBurst;

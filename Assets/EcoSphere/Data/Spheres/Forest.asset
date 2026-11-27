@@ -48,5 +48,9 @@ MonoBehaviour:
   deflectedHits: 0
   deflectSound: {fileID: 0}
   breakSound: {fileID: 0}
+  damagedOverlay: {fileID: 0}
   erodesOnMiss: 0
   erodeSound: {fileID: 0}
+  naturalWeight: 0
+  lostBurst: 0
+  lostBurstColor: {r: 0, g: 0, b: 0, a: 0}

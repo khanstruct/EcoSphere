@@ -24,10 +24,11 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Civilization | 12 | Human: 1, Civilization: 2 (capped by Human), Null: 1 | Element; sandstone #E8B772, Technology category, politosphere voice, DEV available, no recipe yet |
 | Magic | 13 | Magic: 3, Void: 1 | Element; turquoise #35CBB6, Beyond category, arcanosphere voice, DEV available, Human + Void or Forest + Spirit recipes |
 | Technology | 14 | Civilization: 1, Technology: 2, Null: 1 | Element; electric blue #0D98ED, Technology category, technosphere voice, DEV available, no recipe yet |
-| Spirit | 15 | Magic: 1, Spirit: 2, Void: 1 | Element; mint #A8E6C2, Beyond category, ectosphere voice, DEV available, no recipe (natural occurrence planned) |
+| Spirit | 15 | Magic: 1, Spirit: 2, Void: 1 | Element; mint #A8E6C2, Beyond category, ectosphere voice, DEV available, no recipe; occurs naturally (at most one natural sphere per system) |
 | Forest | 16 | Forest: 2, Plant: 1, Water: 1 | Element; forest green #1F6B2A, Life category, florasphere voice, DEV available, Plant + Plant recipe |
 | Fish | 17 | Life: 2 (capped by Water), Water: 1, Fish: 1 | Element; orange #F76B0D, Life category, biosphere voice, Water's surface with the v2 fish icon, DEV available, Life + Water recipe |
 | Sand | 18 | Sunlight: 1, Sand: 2, Null: 1 | Element; pale yellow #FADE9B, Basic category, lithosphere voice, erodes on a miss (sandfall), DEV available, Wind + Stone recipe |
+| Bird | 19 | Bird: 2, Life: 1 (capped by Air), Air: 1 | Element; sky blue #78BEF5, Life category, biosphere voice, feather surface with the v2 bird icon, DEV available, Life + Air or Life + Wind recipes |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -114,7 +115,7 @@ Civilization (ID 12) represents population sprawl. It adds the appended `Element
 
 ## Spirit and Forest spheres
 
-**Spirit** (ID 15) is mint and contributes 1 Magic, 2 Spirit and 1 Void. Its Air + Life recipe was retired (Air + Life is reserved for Bird). Spirit will instead get a chance to occur naturally, through the same mechanism planned for Metal; until then it is only available in DEV mode. It now supplies the Spirit element's color, so the old gray-blue stand-in was dropped automatically.
+**Spirit** (ID 15) is mint and contributes 1 Magic, 2 Spirit and 1 Void. Its Air + Life recipe was retired (Air + Life is reserved for Bird). Spirit instead occurs naturally (see Natural occurrence below). It now supplies the Spirit element's color, so the old gray-blue stand-in was dropped automatically.
 
 **Forest** (ID 16) is forest green and contributes 2 Forest, 1 Plant and 1 Water. Plant + Plant (a self-recipe) unlocks it, and Forest + Spirit is Magic's second recipe (the earlier Plant + Spirit stand-in was retired with `RetireRecipe`). Forest represents the appended `ElementId.Forest`. Its planet profile (`PlanetStatCatalog.SeedForest`) shapes the planet more than Plant does:
 
@@ -217,3 +218,34 @@ Civilization uses its house icon (`civilization-icon-v2.png`) so it no longer re
 Civilization's 2 Civilization units are capped by Human (an `ElementContribution` limited by Human, ratio 1), the same limited-contribution rule Fish uses: without Human in the world it adds no Civilization, and the shortage notice reports the clipped line. `SphereIntroSmoke 12` checks the capped yield.
 
 When one breakaway frees at least `InfestationModifierDefinition.breakawayVoiceMinimum` (default 2) infested spheres, the infestation's `breakawayVoice` (`Audio/Voice/xenosphere.mp3`) plays through `LevelAudio.Announce`. Both are modifier data seeded by `InfestationTools.Configure`. The erosion smoke drops two, then one, infested sphere with real shots and expects xenosphere only for two.
+
+## Sphere seed table
+
+`Editor/SphereSeeds.cs` holds each sphere's authored starting data in one table: label, display name, namesake element, color, role, starter flag, category, voice, description, contributions (with any caps), Null units, natural weight, and an optional `extra` step for traits beyond the common fields (Crystal's shape and deflection, Sand's erosion, Void's glow). `SphereCatalogTools.Configure` seeds a new asset from its entry, and `ReseedSphere` and `SeedNaturalWeight` re-apply parts of an entry to existing assets. Existing assets otherwise keep their Inspector edits. This replaced the per-ID branches for categories, descriptions, voices and contributions; a new sphere is now one entry here, plus its ID, its art (default file names or an `ArtOverrides` entry) and its recipes.
+
+## Bird sphere
+
+Bird (ID 19, the existing `ElementId.Bird`) is sky blue #78BEF5, sampled from its feather surface. It uses `bird-surface-v1.png` and the red-bird `bird-icon-v2.png` through `ArtOverrides`, plus the biosphere voice and the Life category. It contributes 2 Bird, 1 Life and 1 Air, with no Null. Its Life is capped by the planet's Air, the same limited-contribution rule as Fish (Life by Water) and Civilization (Civilization by Human). Life + Air and Life + Wind both unlock it. Wind has no sphere yet, so the second recipe becomes reachable once one supplies Wind. Bird's planet profile is empty for now (`EnsureProfiles`), so it doesn't change the globe yet. `SphereIntroSmoke 19` covers it.
+
+## Natural occurrence
+
+A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit has weight 1, and Metal will use the same field. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.
+
+The roll uses its own random stream from the system seed, so tuning the chance or the weights never changes world names, rules or boards.
+
+A natural sphere never touches the core. `NaturalOccurrence.IsAllowedCell` allows ring 2 out to the cluster edge, because the player never has that sphere as ammo, can't match it, and has to be able to break it away. Rolled spheres also stay off the outer ring when the cluster is big enough, so they have to be dug out. The same rule applies to authored placements: gameplay refuses a placement that breaks it, and `GameplayGeometryChecks` validates the authored worlds against it.
+
+A rolled sphere becomes an ordinary `NaturalSpherePlacement` on the world record. From there it takes the same path as Genesis Beta's authored Stone: the board places it, `IsNaturalPlacement` marks it, releasing it in a breakaway counts it as released, and completion records a Natural discovery that Results shows.
+
+- **Ammo:** naturally placed spheres are never offered as ammo, so the only way to get one is to release it. Ordinary spheres of the same type still count.
+- **Ownership:** generation uses the shared `ProfileService.Owns(profile, id)`, the same rule as collection, selection and rewards. In DEV mode every collectable sphere is owned, so nothing occurs naturally there. `WorldGeneration.Eligible` (predefined-world sphere requirements) uses the same rule.
+- **Existing saves:** only systems generated after this change roll. Systems already in a save don't gain natural spheres.
+
+The natural-occurrence smoke (`SphereIntroTools.Smoke -naturalSmoke`) checks these cases on throwaway profiles:
+- at chance 1, only the first procedural world gets one;
+- over 200 systems, never more than one per system, never touching the core, and roughly the expected number of systems with one;
+- the pick draws from every unowned candidate and skips owned ones;
+- nothing is placed when every candidate is owned, at chance 0, or in DEV;
+- rolls are deterministic and don't reshuffle the rest of generation.
+
+It then plays a real world record: the rolled Spirit stays out of ammo through setup and a real shot, then releases and is discovered as Natural on Results.

@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6221ada88df1f8f4b92be8060335312f, type: 3}
+  m_Name: Bird
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereDefinition
+  id: 19
+  namesakeElement: 41
+  displayName: Bird
+  description: Fills the skies with birdsong, though that life can only flourish as far as the planet's air allows.
+  category: 3
+  surface: {fileID: 2800000, guid: edd9604bd0b75b5439d0319eec85bd44, type: 3}
+  icon: {fileID: 21300000, guid: 8cb3686b977de9242939592788ce2af3, type: 3}
+  color: {r: 0.47058824, g: 0.74509805, b: 0.9607843, a: 1}
+  shape: 0
+  glowColor: {r: 1, g: 1, b: 1, a: 1}
+  glowStrength: 0
+  resourceVoice: {fileID: 8300000, guid: 5dd00b3b7e8d7124cb2e2a76c23910cd, type: 3}
+  role: 0
+  availableAtStart: 0
+  selectable: 1
+  unlit: 0
+  contributions:
+  - element: 41
+    amount: 2
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  - element: 11
+    amount: 1
+    limited: 1
+    limitedBy: 8
+    limitRatio: 1
+  - element: 8
+    amount: 1
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  unallocatedWeight: 0
+  deflectedHits: 0
+  deflectSound: {fileID: 0}
+  breakSound: {fileID: 0}
+  damagedOverlay: {fileID: 0}
+  erodesOnMiss: 0
+  erodeSound: {fileID: 0}
+  naturalWeight: 0
+  lostBurst: 0
+  lostBurstColor: {r: 0, g: 0, b: 0, a: 0}

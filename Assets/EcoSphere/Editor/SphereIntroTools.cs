@@ -5,8 +5,8 @@ namespace EcoSphere.Editor
     // Setup and checks for newly added spheres. Each label names an Art/Spheres/<Label> folder with surface and icon art.
     public static class SphereIntroTools
     {
-        // (label, art version). Fish has only an icon in its folder (it borrows Water's surface); Civilization's v2 is its house icon.
-        static readonly (string label,string version)[] Spheres = { ("Civilization","v2"), ("Magic","v1"), ("Technology","v1"), ("Spirit","v1"), ("Forest","v1"), ("Fish","v2"), ("Sand","v1") };
+        // (label, art version). Fish has only an icon in its folder (it borrows Water's surface); Civilization's v2 is its house icon; Bird uses its v1 surface and v2 icon.
+        static readonly (string label,string version)[] Spheres = { ("Civilization","v2"), ("Magic","v1"), ("Technology","v1"), ("Spirit","v1"), ("Forest","v1"), ("Fish","v2"), ("Sand","v1"), ("Bird","v1"), ("Bird","v2") };
 
         // Imports the art, seeds the spheres and their planet profiles, then validates the catalog and city light data.
         public static void Configure()
@@ -23,6 +23,8 @@ namespace EcoSphere.Editor
             SphereCatalogTools.ReseedSphere(SphereIds.Civilization,ElementId.Civilization);
             // Crystal now cracks on its first hit and shatters on the next.
             SphereCatalogTools.ConfigureCrystalDamage();
+            // Spirit lost its recipe and now occurs naturally.
+            SphereCatalogTools.SeedNaturalWeight(SphereIds.Spirit);
             // Profiles first: the color and city light checks below sample them.
             var planetStats=PlanetStatCatalog.Current;planetStats.EnsureProfiles();planetStats.SeedForest();
             EditorUtility.SetDirty(planetStats);AssetDatabase.SaveAssets();

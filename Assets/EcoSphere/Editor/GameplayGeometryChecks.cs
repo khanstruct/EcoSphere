@@ -49,8 +49,8 @@ namespace EcoSphere.Editor
                 }
             }
             foreach(var world in WorldCatalog.Current.predefinedWorlds)foreach(var natural in world.naturalSpheres)
-                if(Mathf.Max(Mathf.Abs(natural.cell.x),Mathf.Abs(natural.cell.y),Mathf.Abs(natural.cell.x+natural.cell.y))>world.rules.clusterRings)
-                    throw new Exception("Authored natural sphere lies outside its world's cluster");
+                if(!NaturalOccurrence.IsAllowedCell(natural.cell,world.rules.clusterRings))
+                    throw new Exception("Authored natural sphere lies outside its world's cluster or touches the core");
             StoneTutorialTools.Validate();
             Debug.Log("ECOSPHERE_LARGE_SPHERES_PASSED: shared size/spacing, both side bank-shot routes, full 360-degree border clearance, natural placements and guided Stone support");
         }
