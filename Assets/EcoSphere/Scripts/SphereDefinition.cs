@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18, Bird = 19, Metal = 20, Wind = 21, Lava = 22, Mountain = 23;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18, Bird = 19, Metal = 20, Wind = 21, Lava = 22, Mountain = 23, Obsidian = 24;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.

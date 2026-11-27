@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6221ada88df1f8f4b92be8060335312f, type: 3}
+  m_Name: Obsidian
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereDefinition
+  id: 24
+  namesakeElement: -1
+  displayName: Obsidian
+  description: Volcanic glass, born where lava meets water, glinting with a dark violet light.
+  category: 0
+  surface: {fileID: 2800000, guid: a23e8f860949b5f4aad5f5b93b4e197a, type: 3}
+  surfaceTint: {r: 1, g: 1, b: 1, a: 1}
+  icon: {fileID: 21300000, guid: 9544fa094304ac344b36cb38e487355a, type: 3}
+  color: {r: 0.13725491, g: 0.10980392, b: 0.18039216, a: 1}
+  shape: 0
+  glowColor: {r: 0.5882353, g: 0.3137255, b: 1, a: 1}
+  glowStrength: 0.4
+  resourceVoice: {fileID: 8300000, guid: 9c2443ee6b6e408469446abc7bda67c8, type: 3}
+  role: 0
+  availableAtStart: 0
+  selectable: 1
+  unlit: 0
+  contributions:
+  - element: 2
+    amount: 2
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  - element: 4
+    amount: 2
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  unallocatedWeight: 0
+  deflectedHits: 0
+  deflectSound: {fileID: 0}
+  breakSound: {fileID: 0}
+  damagedOverlay: {fileID: 0}
+  erodesOnMiss: 0
+  erodeSound: {fileID: 0}
+  naturalWeight: 0
+  lostBurst: 0
+  lostBurstColor: {r: 0, g: 0, b: 0, a: 0}

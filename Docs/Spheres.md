@@ -33,6 +33,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Wind | 21 | Wind: 1, Air: 2, Null: 1 | Element; pale lavender-white #DCD6F5, Weather category, atmosphere voice, DEV available, Air + Air or Sunlight + Air recipes |
 | Lava | 22 | Lava: 2, Fire: 1, Null: 1 | Element; deep red-orange #CC2A14, Basic category, pyrosphere voice, self-lit with an orange glow, DEV available, Fire + Stone recipe |
 | Mountain | 23 | Mountain: 1, Stone: 2, Null: 1 | Element; pale purple #A893D6, Basic category, lithosphere voice, Stone's surface tinted pale purple, DEV available, Stone + Stone recipe |
+| Obsidian | 24 | Stone: 2, Void: 2 | Element; near-black #231C2E, Basic category, lithosphere voice, purple glow, no namesake element, DEV available, Lava + Water recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -257,6 +258,11 @@ Mountain (ID 23) adds the appended `ElementId.Mountain`. It has its own icon (`m
 Mountain raises the land much more than Stone does. The planet has no separate land-height stat: land shows as high when less of it is under the sea, and sea level comes from the SurfaceWater stat. So Mountain's profile has SurfaceWater -0.7, which lowers the sea so the land stands out of it. It also has TerrainRuggedness 1 and Mineralization 0.15. Stone only affects ruggedness and minerals, never sea level. With 400 Water each, Water + Stone leaves the planet fully under water (sea cover 1.00), while Water + Mountain leaves two-thirds of it as land (0.33). Catalog validation checks that comparison.
 
 The profile is set with the new general `PlanetStatCatalog.SeedEffects(element, effects…)` instead of a per-element method. `SeedForest` predates it and could move to it later. `SphereIntroSmoke 23` covers the sphere.
+## Obsidian sphere
+
+Obsidian (ID 24) uses `obsidian-{surface,icon}-v1.png`, the lithosphere voice and the Basic category. It contributes 2 Stone and 2 Void, with no Null. It has no element of its own (no namesake, as Forest had before it gained the Forest element), so it needs no planet profile: its Stone and Void use theirs. Lava + Water unlocks it.
+
+It is black, with a hint of purple (#231C2E) so its streak isn't pure black. Its purple glow (#9650FF, strength 0.4) uses the same `SphereGlow` data as Void and Lava, and it shows on the board, the ammo, the chambers and every preview. Unlike Lava, it isn't self-lit, so its glassy surface still catches the light. `SphereIntroSmoke 24` covers it.
 ## Natural occurrence
 
 A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit and Metal each have weight 1. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.

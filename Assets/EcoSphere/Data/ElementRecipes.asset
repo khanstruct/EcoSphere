@@ -58,9 +58,12 @@ MonoBehaviour:
   - first: 3
     second: 2
     output: {fileID: 11400000, guid: 61d9ff652dd5e544697c13b20d400ed7, type: 2}
-  - first: 11
-    second: 8
-    output: {fileID: 11400000, guid: 15901fa2184e2d5479e112e44e294e56, type: 2}
   - first: 2
     second: 2
     output: {fileID: 11400000, guid: 94f41119bf0d80f4e8a994eda103c647, type: 2}
+  - first: 11
+    second: 8
+    output: {fileID: 11400000, guid: 15901fa2184e2d5479e112e44e294e56, type: 2}
+  - first: 18
+    second: 5
+    output: {fileID: 11400000, guid: b0694843bf79fd740b7f976b2a46ccd6, type: 2}

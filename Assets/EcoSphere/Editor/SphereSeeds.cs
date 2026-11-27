@@ -108,6 +108,11 @@ namespace EcoSphere.Editor
                 description = "Thrusts the land up into towering peaks.",
                 contributions = new[] { C(ElementId.Mountain,1), C(ElementId.Stone,2) }, unallocated = 1,
                 extra = d => d.surfaceTint = new Color32(255,222,255,255) },   // Stone's surface in pale purple
+            // No Obsidian element: it adds Stone and Void, so it has no namesake.
+            new SphereSeed { id = SphereIds.Obsidian, label = "Obsidian", element = SphereDefinition.NoNamesake, color = new Color32(35,28,46,255), voice = "lithosphere",
+                description = "Volcanic glass, born where lava meets water, glinting with a dark violet light.",
+                contributions = new[] { C(ElementId.Stone,2), C(ElementId.Void,2) },
+                extra = d => { d.glowColor = new Color32(150,80,255,255); d.glowStrength = .4f; } },   // purple glow in gameplay
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 

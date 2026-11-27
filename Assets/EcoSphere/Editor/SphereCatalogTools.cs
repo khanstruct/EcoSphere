@@ -52,6 +52,7 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Sunlight,ElementId.Air,SphereIds.Wind);
             SeedRecipe(catalog,ElementId.Fire,ElementId.Stone,SphereIds.Lava);
             SeedRecipe(catalog,ElementId.Stone,ElementId.Stone,SphereIds.Mountain);
+            SeedRecipe(catalog,ElementId.Lava,ElementId.Water,SphereIds.Obsidian);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -326,6 +327,13 @@ namespace EcoSphere.Editor
                     "Mountain must raise more land out of the sea than Stone (sea cover "+withMountain.SurfaceWater.ToString("0.00")+" vs "+withStone.SurfaceWater.ToString("0.00")+")");
                 UnityEngine.Debug.Log("ECOSPHERE_MOUNTAIN_LAND: sea cover with Water+Stone "+withStone.SurfaceWater.ToString("0.00")+", with Water+Mountain "+withMountain.SurfaceWater.ToString("0.00"));
             }
+            var obsidian=catalog.Get(SphereIds.Obsidian);
+            Expect(!obsidian.HasNamesake && obsidian.color==(Color)new Color32(35,28,46,255) && obsidian.category==SphereCategory.Basic && obsidian.AmmoEligible && !obsidian.availableAtStart &&
+                obsidian.surface && obsidian.surface.name=="obsidian-surface-v1" && obsidian.icon && obsidian.icon.texture.name=="obsidian-icon-v1" &&
+                obsidian.glowStrength>0 && obsidian.glowColor.b>obsidian.glowColor.g && !obsidian.unlit &&
+                obsidian.ContributionSummary()=="Stone 50% · Void 50%" && obsidian.unallocatedWeight==0 && obsidian.resourceVoice && obsidian.resourceVoice.name=="lithosphere",
+                "Obsidian identity: near-black, Basic, purple glow, 2 Stone / 2 Void, no namesake, lithosphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Water,ElementId.Lava,out var obsidianFrom) && obsidianFrom==obsidian,"Lava + Water must unlock Obsidian");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",
