@@ -16,10 +16,24 @@ namespace EcoSphere
             Expect(cells.Count>=2,"sphere missing from the selected board");
             foreach(var cell in cells)Expect(visuals[cell].GetComponent<SphereAppearance>().shape==sphere.shape,"board body does not follow the sphere shape");
             var before=(double[])totals.Clone();
+            var usedBefore=new Dictionary<ElementId,double>();
+            foreach(var entry in sphere.contributions)if(entry.limited)usedBefore[entry.element]=Elements.LimitedYield(sphere.id,entry.element);
+            var shortages=new List<ElementShortage>();Elements.ShortageOccurred+=shortages.Add;
             var visual=visuals[cells[0]];
             RemoveCells(new HashSet<Vector2Int>{cells[0]},ElementScoring.Breakaway,true);UpdateVisualizer();
-            var expected=new double[totals.Length];sphere.AddContributions(expected,ElementScoring.Breakaway);
+            Elements.ShortageOccurred-=shortages.Add;
+            // Expected yield follows the ledger's rule: unlimited lines land first, then each limited line adds at most
+            // what is left under its cap (the limiting element's total after this removal, minus what this sphere already added).
+            var expected=new double[totals.Length];bool clipped=false;
+            foreach(var entry in sphere.contributions)
+            {
+                double raw=sphere.ContributionYield(entry,ElementScoring.Breakaway);
+                if(!entry.limited){expected[(int)entry.element]+=raw;continue;}
+                double room=Math.Max(0,totals[(int)entry.limitedBy]*entry.limitRatio-usedBefore[entry.element]);
+                expected[(int)entry.element]+=Math.Min(raw,room);clipped|=raw>room+1e-9;
+            }
             for(int i=0;i<totals.Length;i++)Expect(Math.Abs(totals[i]-before[i]-expected[i])<1e-9,"breakaway yield wrong for "+(ElementId)i);
+            Expect(clipped==(shortages.Count>0),"a clipped contribution must report a shortage, and only then");
             foreach(var entry in sphere.contributions)
             {
                 int bar=displayedElements.IndexOf(entry.element);

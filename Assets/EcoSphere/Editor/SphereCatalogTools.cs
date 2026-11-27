@@ -40,6 +40,7 @@ namespace EcoSphere.Editor
             Add(catalog, SphereIds.Technology, "Technology", ElementId.Technology, new Color32(13,152,237,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Spirit, "Spirit", ElementId.Spirit, new Color32(168,230,194,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Forest, "Forest", ElementId.Forest,new Color32(31,107,42,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Fish, "Fish", ElementId.Fish, new Color32(247,107,13,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Core, "Core", ElementId.Core, new Color32(163, 64, 255, 255), SphereRole.Core, false);
             if (!catalog.recipeBook)
             {
@@ -72,19 +73,31 @@ namespace EcoSphere.Editor
         }
 
         // Shared import settings for a sphere's art folder: the icon is a transparent sprite, the surface a repeating texture.
+        // Sphere art that does not follow Art/Spheres/<Label>/<label>-{surface,icon}-v1.png (paths relative to Art/).
+        static readonly Dictionary<int,(string surface,string icon)> ArtOverrides=new Dictionary<int,(string,string)>
+        {
+            {SphereIds.Stone,("Spheres/Stone/stone-surface-v2.png","Spheres/Stone/stone-icon-v2.png")},
+            {SphereIds.Fish,("Spheres/Water/water-surface-v1.png","Spheres/Fish/fish-icon-v2.png")},   // Fish swims in Water's surface
+        };
+
+        // A folder may hold only some of the art (Fish has an icon and borrows Water's surface); at least one file must exist.
         public static void ImportSphereArt(string label,string version="v1")
         {
             AssetDatabase.Refresh();
             string stem="Assets/EcoSphere/Art/Spheres/"+label+"/"+label.ToLowerInvariant()+"-";
+            int imported=0;
             foreach(string kind in new[]{"surface","icon"})
             {
-                var importer=(TextureImporter)AssetImporter.GetAtPath(stem+kind+"-"+version+".png") ?? throw new Exception("Missing "+label+" "+kind+" art");
+                var importer=(TextureImporter)AssetImporter.GetAtPath(stem+kind+"-"+version+".png");
+                if(!importer)continue;
+                imported++;
                 importer.textureType=kind=="icon" ? TextureImporterType.Sprite : TextureImporterType.Default;
                 importer.spriteImportMode=SpriteImportMode.Single;importer.maxTextureSize=256;
                 importer.alphaIsTransparency=kind=="icon";importer.mipmapEnabled=kind=="surface";
                 importer.wrapMode=kind=="surface" ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
                 importer.textureCompression=TextureImporterCompression.Uncompressed;importer.SaveAndReimport();
             }
+            if(imported==0)throw new Exception("Missing "+label+" art ("+version+")");
         }
 
         // A stand-in visualizer color for an element without a sphere. Skipped once the element has a namesake sphere.
@@ -128,7 +141,7 @@ namespace EcoSphere.Editor
                 definition.category=id==SphereIds.Plant || id==SphereIds.Life ? SphereCategory.Life :
                     id==SphereIds.Void || role==SphereRole.Core ? SphereCategory.Forces :
                     role==SphereRole.Laser || id==SphereIds.Civilization || id==SphereIds.Technology ? SphereCategory.Technology :
-                    id==SphereIds.Magic || id==SphereIds.Spirit ? SphereCategory.Beyond : id==SphereIds.Forest ? SphereCategory.Life : SphereCategory.Basic;
+                    id==SphereIds.Magic || id==SphereIds.Spirit ? SphereCategory.Beyond : id==SphereIds.Forest || id==SphereIds.Fish ? SphereCategory.Life : SphereCategory.Basic;
                 if(id==SphereIds.Plant)definition.displayName="Plant Life";
                 definition.role = role; definition.selectable = role == SphereRole.Element;
                 definition.availableAtStart = starter;
@@ -142,12 +155,15 @@ namespace EcoSphere.Editor
                 if(id==SphereIds.Technology)definition.description="Powers civilization, making its city lights shine brighter.";
                 if(id==SphereIds.Spirit)definition.description="Fills the world with an unseen presence, a quiet bridge between life and magic.";
                 if(id==SphereIds.Forest)definition.description="Blankets the land in dense woodland, adding a wealth of plant life.";
+                if(id==SphereIds.Fish)definition.description="Fills the seas with life, though that life can only flourish as far as the planet's water allows.";
                 SeedContributions(definition,element);
                 string art = "Assets/EcoSphere/Art/";
                 string stem = "Spheres/" + label + "/" + label.ToLowerInvariant();
-                string version=id==SphereIds.Stone ? "v2" : "v1";
-                definition.surface = AssetDatabase.LoadAssetAtPath<Texture2D>(art + (role == SphereRole.Core ? "Core/core-surface-v2.png" : stem + "-surface-"+version+".png"));
-                definition.icon = AssetDatabase.LoadAssetAtPath<Sprite>(art + (role == SphereRole.Core ? "Core/core-halo-v1.png" : stem + "-icon-"+version+".png"));
+                string surfacePath=stem+"-surface-v1.png",iconPath=stem+"-icon-v1.png";
+                if(role==SphereRole.Core){surfacePath="Core/core-surface-v2.png";iconPath="Core/core-halo-v1.png";}
+                else if(ArtOverrides.TryGetValue(id,out var overrideArt)){surfacePath=overrideArt.surface;iconPath=overrideArt.icon;}
+                definition.surface = AssetDatabase.LoadAssetAtPath<Texture2D>(art + surfacePath);
+                definition.icon = AssetDatabase.LoadAssetAtPath<Sprite>(art + iconPath);
                 AssetDatabase.CreateAsset(definition, path);
             }
             if (!catalog.spheres.Contains(definition)) catalog.spheres.Add(definition);
@@ -155,7 +171,7 @@ namespace EcoSphere.Editor
             if (!definition.resourceVoice)
             {
                 string voice = id == SphereIds.Ice ? "cryosphere" : id == SphereIds.Sunlight ? "heliosphere" :
-                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : id == SphereIds.Civilization ? "politosphere" : id == SphereIds.Magic ? "arcanosphere" : id == SphereIds.Technology ? "technosphere" : id == SphereIds.Spirit ? "ectosphere" : id == SphereIds.Forest ? "florasphere" : null;
+                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : id == SphereIds.Civilization ? "politosphere" : id == SphereIds.Magic ? "arcanosphere" : id == SphereIds.Technology ? "technosphere" : id == SphereIds.Spirit ? "ectosphere" : id == SphereIds.Forest ? "florasphere" : id == SphereIds.Fish ? "biosphere" : null;
                 if (voice != null)
                 {
                     definition.resourceVoice = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/Voice/" + voice + ".mp3");
@@ -196,6 +212,8 @@ namespace EcoSphere.Editor
                     sphere.contributions.Add(new ElementContribution(ElementId.Magic,1));sphere.contributions.Add(new ElementContribution(ElementId.Spirit,2));sphere.contributions.Add(new ElementContribution(ElementId.Void,1));break;
                 case SphereIds.Forest:
                     sphere.contributions.Add(new ElementContribution(ElementId.Forest,2));sphere.contributions.Add(new ElementContribution(ElementId.Plant,1));sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.unallocatedWeight=0;break;
+                case SphereIds.Fish:   // its Life can never exceed the planet's Water (a limited contribution)
+                    sphere.contributions.Add(new ElementContribution(ElementId.Life,2,ElementId.Water));sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.contributions.Add(new ElementContribution(ElementId.Fish,1));sphere.unallocatedWeight=0;break;
                 default:sphere.contributions.Add(new ElementContribution(fallback,1));break;
             }
         }
@@ -277,6 +295,15 @@ namespace EcoSphere.Editor
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",
                 "Forest identity: Forest element, forest green, Life, 2 Forest / 1 Plant / 1 Water, florasphere");
             Expect(catalog.ElementColor(ElementId.Forest)==forest.color,"the Forest element must use the Forest sphere color");
+            var fish=catalog.Get(SphereIds.Fish);var water=catalog.Get(SphereIds.Water);
+            Expect(fish.namesakeElement==ElementId.Fish && fish.color==(Color)new Color32(247,107,13,255) && fish.category==SphereCategory.Life && fish.AmmoEligible && !fish.availableAtStart &&
+                fish.surface==water.surface && fish.icon && fish.icon.texture.name=="fish-icon-v2" &&
+                fish.ContributionSummary()=="Life 50% · Water 25% · Fish 25%" && fish.unallocatedWeight==0 && fish.resourceVoice && fish.resourceVoice.name=="biosphere",
+                "Fish identity: orange, Life, Water's surface with the v2 fish icon, 2 Life / 1 Water / 1 Fish, biosphere");
+            var fishLife=fish.contributions.Find(entry=>entry.element==ElementId.Life);
+            Expect(fishLife.limited && fishLife.limitedBy==ElementId.Water && Mathf.Approximately(fishLife.limitRatio,1) &&
+                !fish.contributions.Exists(entry=>entry.element!=ElementId.Life && entry.limited),"Fish's Life (only) must be capped by the planet's Water");
+            foreach(var recipe in catalog.recipeBook.recipes)Expect(recipe.output!=fish,"Fish recipe should remain unset for now");
             Expect(catalog.recipeBook.TryCombine(ElementId.Plant,ElementId.Plant,out var forestFrom) && forestFrom==forest,"Plant + Plant must unlock Forest");
             Expect(catalog.ElementAppearance(ElementId.Plant)==catalog.Get(SphereIds.Plant) && catalog.ElementColor(ElementId.Plant)==catalog.Get(SphereIds.Plant).color,"Forest must not take over Plant's color or art");
             // Generated body: every corner stays inside the round footprint, faces point outward, front table stays behind the icon.
