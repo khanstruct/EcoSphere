@@ -94,6 +94,9 @@ namespace EcoSphere.Editor
             new SphereSeed { id = SphereIds.Bird, label = "Bird", element = ElementId.Bird, color = new Color32(120,190,245,255), category = SphereCategory.Life, voice = "biosphere",
                 description = "Fills the skies with birdsong, though that life can only flourish as far as the planet's air allows.",
                 contributions = new[] { C(ElementId.Bird,2), Capped(ElementId.Life,1,ElementId.Air), C(ElementId.Air,1) } },
+            new SphereSeed { id = SphereIds.Metal, label = "Metal", element = ElementId.Metal, color = new Color32(90,97,112,255), voice = "ferrosphere",
+                description = "Veins of ore run through the world, the raw strength that tools and industry are built from.",
+                contributions = new[] { C(ElementId.Metal,2) }, unallocated = 2, naturalWeight = 1 },
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 

@@ -47,11 +47,14 @@ namespace EcoSphere
                 // At chance 1 the first procedural world in slot order takes it, and no other world in the system gets one.
                 worlds.naturalOccurrenceChance=1;
                 var system=Generate(new PlayerProfile{universeSeed=1234},3);var rolled=Rolled(system);
-                Expect(rolled.Count==1 && rolled[0].world==system.worlds.Find(w=>w.IsProcedural) && rolled[0].natural.sphereId==SphereIds.Spirit,"chance 1 must give exactly the first procedural world one natural Spirit");
-                foreach(var world in system.worlds)if(!world.IsProcedural)Expect(!world.naturalSpheres.Exists(n=>n.sphereId==SphereIds.Spirit),"predefined worlds keep their authored placements only");
+                Expect(rolled.Count==1 && rolled[0].world==system.worlds.Find(w=>w.IsProcedural) && catalog.Get(rolled[0].natural.sphereId).OccursNaturally,"chance 1 must give exactly the first procedural world one natural sphere");
+                foreach(var world in system.worlds)if(!world.IsProcedural)Expect(!world.naturalSpheres.Exists(n=>catalog.Get(n.sphereId).OccursNaturally),"predefined worlds keep their authored placements only");
                 // At the authored chance: never more than one per system, never touching the core, inside the cluster.
                 worlds.naturalOccurrenceChance=authoredChance;bird.naturalWeight=1;
-                var profile=new PlayerProfile{universeSeed=99};int systemsWithOne=0,spirits=0,birds=0,outerRing=0;const int Systems=200;
+                var candidates=new List<int>();foreach(var sphere in catalog.spheres)if(sphere.OccursNaturally)candidates.Add(sphere.id);
+                Expect(candidates.Count>=3,"the pick check needs several candidates (Spirit, Metal and the temporary Bird)");
+                var picks=new Dictionary<int,int>();
+                var profile=new PlayerProfile{universeSeed=99};int systemsWithOne=0,outerRing=0;const int Systems=200;
                 for(int number=1;number<=Systems;number++)
                 {
                     var found=Rolled(Generate(profile,number));
@@ -59,17 +62,17 @@ namespace EcoSphere
                     if(found.Count==0)continue;
                     systemsWithOne++;var cell=found[0].natural.cell;if(NaturalOccurrence.Ring(cell)==found[0].world.rules.clusterRings)outerRing++;
                     Expect(NaturalOccurrence.IsAllowedCell(cell,found[0].world.rules.clusterRings) && NaturalOccurrence.Ring(cell)>=2,"a natural sphere touches the core or leaves the cluster ("+cell+")");
-                    if(found[0].natural.sphereId==SphereIds.Spirit)spirits++;else if(found[0].natural.sphereId==SphereIds.Bird)birds++;
-                    else Expect(false,"picked a sphere that doesn't occur naturally");
+                    Expect(candidates.Contains(found[0].natural.sphereId),"picked a sphere that doesn't occur naturally");
+                    picks.TryGetValue(found[0].natural.sphereId,out int count);picks[found[0].natural.sphereId]=count+1;
                 }
                 int procedural=Generate(new PlayerProfile{universeSeed=1234},3).worlds.FindAll(w=>w.IsProcedural).Count;
                 double expected=Systems*(1-Math.Pow(1-authoredChance,procedural));
                 Expect(Math.Abs(systemsWithOne-expected)<expected*.5+5,"systems with a natural sphere: "+systemsWithOne+", expected about "+expected.ToString("0"));
                 Expect(outerRing>0,"natural spheres may sit on the outer ring too");
-                Expect(spirits>0 && birds>0,"the pick must draw from every unowned candidate ("+spirits+" Spirit, "+birds+" Bird)");
+                foreach(int id in candidates)Expect(picks.ContainsKey(id),"the pick must draw from every unowned candidate (never picked "+catalog.Get(id).displayName+")");
                 var owner=new PlayerProfile{universeSeed=99};owner.unlockedSpheres.Add(SphereIds.Spirit);
-                for(int number=1;number<=Systems;number++)foreach(var found in Rolled(Generate(owner,number)))Expect(found.natural.sphereId==SphereIds.Bird,"an owned sphere must not occur naturally");
-                owner.unlockedSpheres.Add(SphereIds.Bird);worlds.naturalOccurrenceChance=1;
+                for(int number=1;number<=Systems;number++)foreach(var found in Rolled(Generate(owner,number)))Expect(found.natural.sphereId!=SphereIds.Spirit,"an owned sphere must not occur naturally");
+                owner.unlockedSpheres.AddRange(candidates);worlds.naturalOccurrenceChance=1;
                 Expect(Rolled(Generate(owner,Systems+1)).Count==0,"with every candidate owned nothing occurs naturally");
                 bird.naturalWeight=birdWeight;
                 // Deterministic, and the roll never reshuffles the rest of generation.
@@ -89,7 +92,8 @@ namespace EcoSphere
             Vector2Int naturalCell;
             try{settings.devModeEnabled=false;NaturalOccurrence.Roll(new SystemRecord{seed=7},new[]{record},GameServices.Profile.Active,catalog,1);}
             finally{settings.devModeEnabled=previousDev;}
-            Expect(record.naturalSpheres.Count==1 && record.naturalSpheres[0].sphereId==SphereIds.Spirit,"the roll did not place Spirit on the test world");
+            int naturalId=record.naturalSpheres.Count==1 ? record.naturalSpheres[0].sphereId : -1;
+            Expect(naturalId>=0 && catalog.Get(naturalId).OccursNaturally,"the roll did not place a natural sphere on the test world");
             naturalCell=record.naturalSpheres[0].cell;
             var view=FindAnyObjectByType<SystemView>();view.RefreshSystemHeading();view.OpenPlanet(2);yield return null;yield return null;
             var prep=FindAnyObjectByType<LevelPrepView>();
@@ -98,24 +102,24 @@ namespace EcoSphere
             prep.Begin.onClick.Invoke();yield return null;yield return null;
             var game=FindAnyObjectByType<EcoSpherePrototype>();
             for(float t=0;t<1f;t+=Time.deltaTime)yield return null;
-            game.CheckNaturalPlacement(SphereIds.Spirit,naturalCell);
+            game.CheckNaturalPlacement(naturalId,naturalCell);
             yield return game.ExerciseProceduralShot();
-            if(!game.ReleasedNatural(SphereIds.Spirit))game.CheckNaturalPlacement(SphereIds.Spirit,naturalCell);   // ammo stays clear after a real reload
+            if(!game.ReleasedNatural(naturalId))game.CheckNaturalPlacement(naturalId,naturalCell);   // ammo stays clear after a real reload
             // Normal ownership for the reward: DEV would treat Spirit as already owned and suppress the discovery.
             settings.devModeEnabled=false;
             try
             {
-                Expect(!GameServices.Profile.OwnsSphere(SphereIds.Spirit),"the test profile must not own Spirit yet");
+                Expect(!GameServices.Profile.OwnsSphere(naturalId),"the test profile must not own the natural sphere yet");
                 game.FinishProceduralForSmoke();
-                Expect(game.ReleasedNatural(SphereIds.Spirit),"the natural Spirit did not count as released");
+                Expect(game.ReleasedNatural(naturalId),"the natural sphere did not count as released");
                 float deadline=Time.realtimeSinceStartup+25;
                 while(SceneManager.GetActiveScene().name!="Results" && Time.realtimeSinceStartup<deadline)
                 { var rating=FindAnyObjectByType<StarRatingPresentation>(); if(rating && rating.RevealComplete)rating.ContinueButton.onClick.Invoke(); yield return null; }
                 var result=GameServices.Progress.Find(1,2);
                 Expect(SceneManager.GetActiveScene().name=="Results" && result!=null,"results did not open");
-                int index=result.discoveries.IndexOf(SphereIds.Spirit);
-                Expect(index>=0 && result.discoveryDetails[index].kind==DiscoveryKind.Natural,"releasing the natural Spirit must discover it as Natural");
-                Expect(GameServices.Profile.OwnsSphere(SphereIds.Spirit),"the discovery must grant Spirit");
+                int index=result.discoveries.IndexOf(naturalId);
+                Expect(index>=0 && result.discoveryDetails[index].kind==DiscoveryKind.Natural,"releasing the natural sphere must discover it as Natural");
+                Expect(GameServices.Profile.OwnsSphere(naturalId),"the discovery must grant the natural sphere");
             }
             finally{settings.devModeEnabled=previousDev;}
             Debug.Log("ECOSPHERE_NATURAL_OCCURRENCE_PASSED: at most one per system (first procedural world to roll), weighted pick among unowned candidates, never touching the core, deterministic, no reshuffle, none when owned or in DEV, on the board but never ammo through a real shot, released and discovered as Natural on results");

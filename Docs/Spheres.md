@@ -29,6 +29,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Fish | 17 | Life: 2 (capped by Water), Water: 1, Fish: 1 | Element; orange #F76B0D, Life category, biosphere voice, Water's surface with the v2 fish icon, DEV available, Life + Water recipe |
 | Sand | 18 | Sunlight: 1, Sand: 2, Null: 1 | Element; pale yellow #FADE9B, Basic category, lithosphere voice, erodes on a miss (sandfall), DEV available, Wind + Stone recipe |
 | Bird | 19 | Bird: 2, Life: 1 (capped by Air), Air: 1 | Element; sky blue #78BEF5, Life category, biosphere voice, feather surface with the v2 bird icon, DEV available, Life + Air or Life + Wind recipes |
+| Metal | 20 | Metal: 2, Null: 2 | Element; dark gray #5A6170, Basic category, ferrosphere voice, DEV available, Lava + Stone recipe; occurs naturally |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -227,9 +228,14 @@ When one breakaway frees at least `InfestationModifierDefinition.breakawayVoiceM
 
 Bird (ID 19, the existing `ElementId.Bird`) is sky blue #78BEF5, sampled from its feather surface. It uses `bird-surface-v1.png` and the red-bird `bird-icon-v2.png` through `ArtOverrides`, plus the biosphere voice and the Life category. It contributes 2 Bird, 1 Life and 1 Air, with no Null. Its Life is capped by the planet's Air, the same limited-contribution rule as Fish (Life by Water) and Civilization (Civilization by Human). Life + Air and Life + Wind both unlock it. Wind has no sphere yet, so the second recipe becomes reachable once one supplies Wind. Bird's planet profile is empty for now (`EnsureProfiles`), so it doesn't change the globe yet. `SphereIntroSmoke 19` covers it.
 
+## Metal sphere
+
+Metal (ID 20, the existing `ElementId.Metal`) is dark gray #5A6170, uses its brushed-steel surface and ingot icon (`metal-{surface,icon}-v1.png`), the ferrosphere voice and the Basic category. It contributes 2 Metal and 2 Null. Lava + Stone unlocks it, and until then it can occur naturally (weight 1). Lava has no sphere yet, so for now natural occurrence is the only way to find Metal outside DEV. Its planet profile is empty for now. `SphereIntroSmoke 20` covers it.
+
+Metal is the element that Magnet and Tools will contribute, and spheres that contribute Metal won't be repelled by magnets.
 ## Natural occurrence
 
-A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit has weight 1, and Metal will use the same field. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.
+A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit and Metal each have weight 1. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.
 
 The roll uses its own random stream from the system seed, so tuning the chance or the weights never changes world names, rules or boards.
 

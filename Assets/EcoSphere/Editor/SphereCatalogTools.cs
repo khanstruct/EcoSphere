@@ -47,6 +47,7 @@ namespace EcoSphere.Editor
             RetireRecipe(catalog,ElementId.Air,ElementId.Life);   // the earlier Spirit recipe; Spirit now occurs naturally (SphereDefinition.naturalWeight)
             SeedRecipe(catalog,ElementId.Life,ElementId.Air,SphereIds.Bird);
             SeedRecipe(catalog,ElementId.Life,ElementId.Wind,SphereIds.Bird);
+            SeedRecipe(catalog,ElementId.Lava,ElementId.Stone,SphereIds.Metal);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -284,6 +285,12 @@ namespace EcoSphere.Editor
                 !bird.contributions.Exists(entry=>entry.element!=ElementId.Life && entry.limited),"Bird's Life (only) must be capped by the planet's Air");
             Expect(catalog.recipeBook.TryCombine(ElementId.Air,ElementId.Life,out var birdFromAir) && birdFromAir==bird &&
                 catalog.recipeBook.TryCombine(ElementId.Wind,ElementId.Life,out var birdFromWind) && birdFromWind==bird,"Life + Air and Life + Wind must unlock Bird");
+            var metal=catalog.Get(SphereIds.Metal);
+            Expect(metal.namesakeElement==ElementId.Metal && metal.color==(Color)new Color32(90,97,112,255) && metal.category==SphereCategory.Basic && metal.AmmoEligible && !metal.availableAtStart &&
+                metal.surface && metal.surface.name=="metal-surface-v1" && metal.icon && metal.icon.texture.name=="metal-icon-v1" &&
+                metal.ContributionSummary()=="Metal 50%" && metal.unallocatedWeight==2 && metal.resourceVoice && metal.resourceVoice.name=="ferrosphere" && metal.OccursNaturally,
+                "Metal identity: dark gray, Basic, 2 Metal / 2 Null, ferrosphere, occurs naturally");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Stone,ElementId.Lava,out var metalFrom) && metalFrom==metal,"Lava + Stone must unlock Metal");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",
