@@ -23,6 +23,14 @@ namespace EcoSphere
             InputSystem.settings.editorInputBehaviorInPlayMode=InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
             var scroll=root.Find("Discovered Spheres").GetComponent<ScrollRect>();var list=scroll.content;var viewport=scroll.viewport;
             Expect(list.sizeDelta.y>viewport.rect.height+50,"needs enough spheres to scroll (DEV mode)");
+            // Alphabetical by name, laid out left to right then down the rows.
+            for(int i=1;i<collectionTypes.Count;i++)
+            {
+                Expect(SphereCatalog.Current.CompareForDisplay(collectionTypes[i-1],collectionTypes[i])<0,
+                    "spheres must be alphabetical: "+SphereCatalog.Current.Get(collectionTypes[i-1]).displayName+" before "+SphereCatalog.Current.Get(collectionTypes[i]).displayName);
+                Vector2 previous=tiles[i-1].rectTransform.anchoredPosition,current=tiles[i].rectTransform.anchoredPosition;
+                Expect(current.y<previous.y-1 || (Mathf.Abs(current.y-previous.y)<1 && current.x>previous.x),"tiles must be laid out in list order");
+            }
             IEnumerator Click(Image tile)
             {
                 Canvas.ForceUpdateCanvases();

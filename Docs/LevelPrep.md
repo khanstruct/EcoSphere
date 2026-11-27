@@ -20,6 +20,8 @@ LevelPrepTools.Build creates the scene and registers it in build settings. The r
 
 ## Choosing spheres
 
+Spheres are listed alphabetically by name (`SphereCatalog.CompareForDisplay`, case-insensitive, ID as tie-break), the shared player-facing order the collection screen will reuse. The selection smoke checks the order and that the tiles are laid out in it.
+
 Clicking a sphere tile chooses it, and clicking a chosen tile removes it (`LevelPrepView.ToggleSphere`; the loadout slots still remove on click too). A chosen tile is fully opaque and shows the gold checkbox (`Art/UI/gold-checkbox-v1.png`, the `selectedCheck` sprite) just inside its upper-right corner.
 
 Choosing or removing a sphere relays out the screen. The sphere list keeps its scroll position through that relayout (clamped to the new bounds), so it no longer jumps to the top. Only switching category tabs returns the list to the top. `LevelPrepTools.ConfigureSelectionCheck` imports the checkbox and assigns it in the existing setup scene; `LevelPrepTools.Build` assigns it when rebuilding the scene.

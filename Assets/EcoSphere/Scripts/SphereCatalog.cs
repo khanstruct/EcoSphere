@@ -53,6 +53,13 @@ namespace EcoSphere
         public bool TryGet(int id,out SphereDefinition sphere){EnsureIndexes();return byId.TryGetValue(id,out sphere);}
         public SphereDefinition Get(int id) => TryGet(id,out var sphere) ? sphere : throw new InvalidOperationException("Unknown sphere ID: "+id);
         public string ElementName(ElementId element)=>element.ToString();
+        // The order spheres are listed in for players (setup now, the collection screen later): alphabetical by
+        // display name, case-insensitive; ties fall back to ID so the order is always stable.
+        public int CompareForDisplay(int first,int second)
+        {
+            int byName=string.Compare(Get(first).displayName,Get(second).displayName,StringComparison.OrdinalIgnoreCase);
+            return byName!=0 ? byName : first.CompareTo(second);
+        }
         public SphereDefinition ElementAppearance(ElementId element)
         {
             EnsureIndexes();return byNamesake.TryGetValue(element,out var sphere) ? sphere : null;

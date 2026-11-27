@@ -250,11 +250,8 @@ namespace EcoSphere
             scroll.horizontal=false; scroll.vertical=true; scroll.movementType=ScrollRect.MovementType.Clamped;
             foreach (var sphere in SphereCatalog.Current.spheres)
                 if (sphere.AmmoEligible && GameServices.Progress.IsSphereAvailable(sphere.id)) collectionTypes.Add(sphere.id);
-            // Put the opening pair first, regardless of asset-list ordering.
-            collectionTypes.Sort((a,b) => {
-                int Rank(int id) { int index = System.Array.IndexOf(SphereCatalog.Current.openingSpheres, id); return index >= 0 ? index : id + 100; }
-                return Rank(a).CompareTo(Rank(b));
-            });
+            // The shared player-facing order: alphabetical by name.
+            collectionTypes.Sort(SphereCatalog.Current.CompareForDisplay);
             for(int i=0;i<collectionTypes.Count;i++)
             {
                 int type = collectionTypes[i];
