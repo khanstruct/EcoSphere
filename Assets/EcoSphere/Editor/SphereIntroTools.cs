@@ -15,8 +15,14 @@ namespace EcoSphere.Editor
             SphereCatalogTools.Configure();
             // Forest became an element after its sphere was first created: re-apply its namesake and contributions.
             SphereCatalogTools.ReseedSphere(SphereIds.Forest,ElementId.Forest);
-            // Civilization moved to its house icon so it no longer looks like Sand.
+            // Civilization moved to its house icon so it no longer looks like Sand; Stone moved to its v3 icon.
+            SphereCatalogTools.ImportSphereArt("Stone","v3");
             SphereCatalogTools.ReapplyArt(SphereIds.Civilization);
+            SphereCatalogTools.ReapplyArt(SphereIds.Stone);
+            // Civilization's Civilization is now capped by Human: re-apply its contributions.
+            SphereCatalogTools.ReseedSphere(SphereIds.Civilization,ElementId.Civilization);
+            // Crystal now cracks on its first hit and shatters on the next.
+            SphereCatalogTools.ConfigureCrystalDamage();
             // Profiles first: the color and city light checks below sample them.
             var planetStats=PlanetStatCatalog.Current;planetStats.EnsureProfiles();planetStats.SeedForest();
             EditorUtility.SetDirty(planetStats);AssetDatabase.SaveAssets();

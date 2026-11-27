@@ -72,6 +72,8 @@ namespace EcoSphere
                 int ricochetsBefore=ricochets,lostBefore=lost,scoreBefore=score;var visual=visuals[target];
                 yield return Shoot(SphereIds.Fire,target);
                 Expect(board.Cells[target]==SphereIds.Crystal && visuals[target]==visual && SphereDamage.HitsOn(visual)==hit,"hit "+hit+" must deflect and leave the crystal with "+hit+" hits");
+            Expect(visual.transform.Find("Damaged overlay") && visual.transform.Find("Damaged overlay").GetComponent<SpriteRenderer>().sprite==crystal.damagedOverlay,"a struck crystal must show its cracks");
+                CaptureBurst("cracked-crystal",visual.transform.position);
                 Expect(ricochets==ricochetsBefore+1 && shotRicochets==1,"a deflection must count as one ricochet");
                 Expect(played.Contains(crystal.deflectSound) && !played.Contains(levelAudio.ricochet),"deflection must play crystal-hit instead of the wall ricochet");
                 Expect(lost==lostBefore+1 && score==scoreBefore && !board.Cells.ContainsValue(SphereIds.Fire),"a head-on deflection must bounce the shot back out the bottom");

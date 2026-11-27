@@ -21,11 +21,13 @@ MonoBehaviour:
   guaranteedSlot: 2
   minimumInfested: 8
   maximumInfested: 12
-  alienScale: 1.25
-  showHostMarker: 0
   alienSprite: {fileID: 21300000, guid: 5128342e46bd4643b7769a69aa169bf6, type: 3}
   alienAlternateSprite: {fileID: 21300000, guid: 58e1e55799b241b89b35d2f051a9219b, type: 3}
   animationFramesPerSecond: 2
   animationSpeedVariation: 0.15
   overlayMaterial: {fileID: 2100000, guid: 2003dde0451ff914aab2ab5cbd10442d, type: 2}
   hitAudio: {fileID: 8300000, guid: c6b067d85f3eb1d4eb34237e3b733e8f, type: 3}
+  breakawayVoice: {fileID: 8300000, guid: 19430cc4a65c4dd44bd83f3a73312b96, type: 3}
+  breakawayVoiceMinimum: 2
+  alienScale: 1.25
+  showHostMarker: 0

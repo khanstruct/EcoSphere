@@ -372,7 +372,7 @@ namespace EcoSphere
                     if (impact==ShotImpact.Attach) { Attach(hitCell, projectileDirection); return; }
                     if (impact==ShotImpact.Break) { BreakDeflector(hitCell); Place(hitCell); return; }
                     // A deflecting sphere bounces the shot like a boundary, and it counts as a ricochet.
-                    SphereDamage.Strike(struck);
+                    SphereDamage.Strike(struck);ShowDamage(struck,target);
                     normal=(origin+projectileDirection*nearest-collisionSnapshot.Centers[contact.SphereIndex]).normalized;
                     bounceSound=target.deflectSound;
                 }
@@ -479,10 +479,11 @@ namespace EcoSphere
         {
             var delays=!released && matchOrigin.HasValue ? MatchWave.Delays(cells,matchOrigin.Value) : null;
             Vector2Int representative=delays!=null ? MatchWave.LastCell(delays) : default;
+            int freedAliens=0;
             foreach (var cell in cells)
             {
                 if(!released && board.Infested.Contains(cell))continue;
-                if(board.Infested.Contains(cell))KnockOffAlien(cell,false);
+                if(board.Infested.Contains(cell)){KnockOffAlien(cell,false);freedAliens++;}
                 int type = board.Cells[cell];
                 if(released && preparedWorld.naturalSpheres.Exists(natural=>natural.cell==cell && natural.sphereId==type))releasedNaturalSpheres.Add(type);
                 var definition = Definition(type);
@@ -501,6 +502,8 @@ namespace EcoSphere
                 else StartCoroutine(DissolveMatch(visual,delays!=null && delays.TryGetValue(cell,out var delay) ? delay : 0,
                     delays!=null && cell==representative ? type : (int?)null));
             }
+            // Several aliens breaking away together get their own callout.
+            if(released && infestation && levelAudio && freedAliens>=infestation.breakawayVoiceMinimum)levelAudio.Announce(infestation.breakawayVoice);
         }
 
         Material matchFlareMaterial;

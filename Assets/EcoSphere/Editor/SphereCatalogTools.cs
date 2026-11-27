@@ -63,10 +63,11 @@ namespace EcoSphere.Editor
             // Plant + Spirit stood in for Forest + Spirit while Forest was not an element.
             RetireRecipe(catalog,ElementId.Plant,ElementId.Spirit);
             SeedRecipe(catalog,ElementId.Forest,ElementId.Spirit,SphereIds.Magic);
-            SeedRecipe(catalog,ElementId.Air,ElementId.Life,SphereIds.Spirit);
+            RetireRecipe(catalog,ElementId.Air,ElementId.Life);   // Spirit will occur naturally instead; Air + Life is for Bird
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
-            SeedRecipe(catalog,ElementId.Stone,ElementId.Sunlight,SphereIds.Sand);
+            RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
+            SeedRecipe(catalog,ElementId.Wind,ElementId.Stone,SphereIds.Sand);
             // Stand-in visualizer colors are only for elements without a sphere; drop any whose element has gained one.
             catalog.InvalidateIndexes();catalog.elementColors.RemoveAll(entry=>catalog.ElementAppearance(entry.element));
             // Bursts when lost without points: sand crumbles in its own color, crystal shatters in purple.
@@ -82,7 +83,7 @@ namespace EcoSphere.Editor
         // Sphere art that does not follow Art/Spheres/<Label>/<label>-{surface,icon}-v1.png (paths relative to Art/).
         static readonly Dictionary<int,(string surface,string icon)> ArtOverrides=new Dictionary<int,(string,string)>
         {
-            {SphereIds.Stone,("Spheres/Stone/stone-surface-v2.png","Spheres/Stone/stone-icon-v2.png")},
+            {SphereIds.Stone,("Spheres/Stone/stone-surface-v2.png","Spheres/Stone/stone-icon-v3.png")},
             {SphereIds.Fish,("Spheres/Water/water-surface-v1.png","Spheres/Fish/fish-icon-v2.png")},   // Fish swims in Water's surface
             {SphereIds.Civilization,("Spheres/Civilization/civilization-surface-v1.png","Spheres/Civilization/civilization-icon-v2.png")},   // house icon, distinct from Sand
         };
@@ -96,6 +97,17 @@ namespace EcoSphere.Editor
             else if(ArtOverrides.TryGetValue(id,out var overrideArt)){surfacePath=overrideArt.surface;iconPath=overrideArt.icon;}
             definition.surface=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/EcoSphere/Art/"+surfacePath);
             definition.icon=AssetDatabase.LoadAssetAtPath<Sprite>("Assets/EcoSphere/Art/"+iconPath);
+        }
+        const string CrystalCracksArt="Assets/EcoSphere/Art/Spheres/Crystal/crystal-cracks-v1.png";
+        // Crystal cracks on its first hit (showing its cracks overlay) and shatters on the next.
+        public static void ConfigureCrystalDamage()
+        {
+            var importer=(TextureImporter)AssetImporter.GetAtPath(CrystalCracksArt) ?? throw new Exception("Missing crystal cracks art");
+            importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;importer.alphaIsTransparency=true;
+            importer.mipmapEnabled=false;importer.maxTextureSize=256;importer.wrapMode=TextureWrapMode.Clamp;importer.textureCompression=TextureImporterCompression.Uncompressed;importer.SaveAndReimport();
+            var crystal=SphereCatalog.Current.Get(SphereIds.Crystal);
+            crystal.deflectedHits=1;crystal.damagedOverlay=AssetDatabase.LoadAssetAtPath<Sprite>(CrystalCracksArt);
+            EditorUtility.SetDirty(crystal);AssetDatabase.SaveAssets();
         }
         // Re-applies the art table to an existing sphere asset (seeding only fills new ones), e.g. after its icon changes.
         public static void ReapplyArt(int id)
@@ -181,7 +193,7 @@ namespace EcoSphere.Editor
                 definition.availableAtStart = starter;
                 definition.unlit = role == SphereRole.Core || id == SphereIds.Void;
                 if(id==SphereIds.Void) { definition.glowColor=Color.white; definition.glowStrength=.42f; }
-                if(id==SphereIds.Crystal) { definition.shape=SphereShape.Crystal; definition.deflectedHits=2;
+                if(id==SphereIds.Crystal) { definition.shape=SphereShape.Crystal; definition.deflectedHits=1; definition.damagedOverlay=AssetDatabase.LoadAssetAtPath<Sprite>(CrystalCracksArt);
                     definition.deflectSound=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/crystal-hit.mp3"); definition.breakSound=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/crystal-breaking.mp3");
                     definition.description="Adds a bit of magic to the world, while reflecting other elements."; }
                 if(id==SphereIds.Civilization)definition.description="Spreads settlements across the land. Their lights glow brighter as technology advances.";
@@ -233,7 +245,7 @@ namespace EcoSphere.Editor
                 case SphereIds.Crystal:
                     sphere.contributions.Add(new ElementContribution(ElementId.Stone,1));sphere.contributions.Add(new ElementContribution(ElementId.Magic,1));sphere.contributions.Add(new ElementContribution(ElementId.Crystal,2));break;
                 case SphereIds.Civilization:
-                    sphere.contributions.Add(new ElementContribution(ElementId.Human,1));sphere.contributions.Add(new ElementContribution(ElementId.Civilization,2));sphere.unallocatedWeight=1;break;
+                    sphere.contributions.Add(new ElementContribution(ElementId.Human,1));sphere.contributions.Add(new ElementContribution(ElementId.Civilization,2,ElementId.Human));sphere.unallocatedWeight=1;break;   // Civilization capped by the planet's Human
                 case SphereIds.Magic:
                     sphere.contributions.Add(new ElementContribution(ElementId.Magic,3));sphere.contributions.Add(new ElementContribution(ElementId.Void,1));break;
                 case SphereIds.Technology:
@@ -295,9 +307,9 @@ namespace EcoSphere.Editor
             Expect(crystal.shape==SphereShape.Crystal && crystal.AmmoEligible && !crystal.availableAtStart && crystal.TotalContributionUnits==4 &&
                 crystal.ContributionSummary()=="Crystal 50% · Stone 25% · Magic 25%","Crystal identity, shape and 1 Stone / 1 Magic / 2 Crystal");
             Expect(crystal.resourceVoice && crystal.resourceVoice.name=="latisphere" && LevelAudio.MatchVoice(SphereIds.Crystal,voiceMinimum)==crystal.resourceVoice && !LevelAudio.MatchVoice(SphereIds.Crystal,voiceMinimum-1),"Crystal must use latisphere at the shared large-match threshold");
-            Expect(crystal.deflectedHits==2 && crystal.deflectSound && crystal.deflectSound.name=="crystal-hit" && crystal.breakSound && crystal.breakSound.name=="crystal-breaking","Crystal deflects two hits with crystal-hit, breaks with crystal-breaking");
-            Expect(ShotDeflection.Resolve(crystal,SphereIds.Fire,0)==ShotImpact.Deflect && ShotDeflection.Resolve(crystal,SphereIds.Fire,1)==ShotImpact.Deflect && ShotDeflection.Resolve(crystal,SphereIds.Fire,2)==ShotImpact.Break &&
-                ShotDeflection.Resolve(crystal,SphereIds.Crystal,0)==ShotImpact.Attach && ShotDeflection.Resolve(catalog.Get(SphereIds.Stone),SphereIds.Fire,5)==ShotImpact.Attach,"deflection rule: two deflections, third hit breaks, same type and ordinary spheres attach");
+            Expect(crystal.deflectedHits==1 && crystal.damagedOverlay && crystal.damagedOverlay.texture.name=="crystal-cracks-v1" && crystal.deflectSound && crystal.deflectSound.name=="crystal-hit" && crystal.breakSound && crystal.breakSound.name=="crystal-breaking","Crystal deflects (and cracks on) one hit with crystal-hit, then breaks with crystal-breaking");
+            Expect(ShotDeflection.Resolve(crystal,SphereIds.Fire,0)==ShotImpact.Deflect && ShotDeflection.Resolve(crystal,SphereIds.Fire,1)==ShotImpact.Break &&
+                ShotDeflection.Resolve(crystal,SphereIds.Crystal,0)==ShotImpact.Attach && ShotDeflection.Resolve(catalog.Get(SphereIds.Stone),SphereIds.Fire,5)==ShotImpact.Attach,"deflection rule: one deflection, the next hit breaks, same type and ordinary spheres attach");
             Expect(catalog.recipeBook.TryCombine(ElementId.Magic,ElementId.Stone,out var crystalRecipe) && crystalRecipe==crystal,"Stone + Magic must unlock Crystal");
             var magic=catalog.Get(SphereIds.Magic);
             Expect(catalog.ElementAppearance(ElementId.Magic)==magic && catalog.ElementColor(ElementId.Magic)==magic.color && !catalog.elementColors.Exists(entry=>entry.element==ElementId.Magic) &&
@@ -309,6 +321,9 @@ namespace EcoSphere.Editor
                 "Civilization identity: sandstone, Technology category, 1 Human / 2 Civilization / 1 Null, art");
             Expect(civilization.icon.texture.name=="civilization-icon-v2" && civilization.surface.name=="civilization-surface-v1","Civilization must use its house icon (v2) and v1 surface");
             Expect(civilization.resourceVoice && civilization.resourceVoice.name=="politosphere" && LevelAudio.MatchVoice(SphereIds.Civilization,voiceMinimum)==civilization.resourceVoice,"Civilization must use politosphere");
+            var civilizationLine=civilization.contributions.Find(entry=>entry.element==ElementId.Civilization);
+            Expect(civilizationLine.limited && civilizationLine.limitedBy==ElementId.Human && Mathf.Approximately(civilizationLine.limitRatio,1),"Civilization's Civilization must be capped by the planet's Human");
+            var stone=catalog.Get(SphereIds.Stone);Expect(stone.icon.texture.name=="stone-icon-v3" && stone.surface.name=="stone-surface-v2","Stone must use its v3 icon");
             foreach(var recipe in catalog.recipeBook.recipes)Expect(recipe.output!=civilization,"Civilization recipe should remain unset for now");
             Expect(magic.namesakeElement==ElementId.Magic && magic.color==(Color)new Color32(53,203,182,255) && magic.category==SphereCategory.Beyond && magic.AmmoEligible && !magic.availableAtStart &&
                 magic.ContributionSummary()=="Magic 75% · Void 25%" && magic.unallocatedWeight==0 && magic.resourceVoice && magic.resourceVoice.name=="arcanosphere","Magic identity: turquoise, Beyond, 3 Magic / 1 Void, arcanosphere");
@@ -322,7 +337,8 @@ namespace EcoSphere.Editor
             var spirit=catalog.Get(SphereIds.Spirit);
             Expect(spirit.namesakeElement==ElementId.Spirit && spirit.color==(Color)new Color32(168,230,194,255) && spirit.category==SphereCategory.Beyond && spirit.AmmoEligible && !spirit.availableAtStart &&
                 spirit.ContributionSummary()=="Spirit 50% · Magic 25% · Void 25%" && spirit.unallocatedWeight==0 && spirit.resourceVoice && spirit.resourceVoice.name=="ectosphere","Spirit identity: mint, Beyond, 1 Magic / 2 Spirit / 1 Void, ectosphere");
-            Expect(catalog.recipeBook.TryCombine(ElementId.Life,ElementId.Air,out var spiritFrom) && spiritFrom==spirit,"Air + Life must unlock Spirit");
+            foreach(var recipe in catalog.recipeBook.recipes)Expect(recipe.output!=spirit,"Spirit has no recipe for now (it will occur naturally)");
+            Expect(!catalog.recipeBook.TryCombine(ElementId.Life,ElementId.Air,out var lifeAir) || lifeAir!=spirit,"Air + Life no longer unlocks Spirit");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",
@@ -345,7 +361,7 @@ namespace EcoSphere.Editor
             Expect(sand.lostBurst==SphereBurst.Crumble && sand.LostBurstColor==sand.color && crystal.lostBurst==SphereBurst.Shatter && crystal.LostBurstColor==(Color)new Color32(155,90,235,255),
                 "Sand must crumble in its own color; Crystal must shatter in purple");
             foreach(var other in catalog.spheres)Expect(other==sand || !other.erodesOnMiss,"only Sand erodes for now: "+other.displayName);
-            Expect(catalog.recipeBook.TryCombine(ElementId.Sunlight,ElementId.Stone,out var sandFrom) && sandFrom==sand,"Stone + Sunlight must unlock Sand");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Stone,ElementId.Wind,out var sandFrom) && sandFrom==sand && !catalog.recipeBook.TryCombine(ElementId.Stone,ElementId.Sunlight,out _),"Wind + Stone (not Stone + Sunlight) must unlock Sand");
             Expect(catalog.recipeBook.TryCombine(ElementId.Plant,ElementId.Plant,out var forestFrom) && forestFrom==forest,"Plant + Plant must unlock Forest");
             Expect(catalog.ElementAppearance(ElementId.Plant)==catalog.Get(SphereIds.Plant) && catalog.ElementColor(ElementId.Plant)==catalog.Get(SphereIds.Plant).color,"Forest must not take over Plant's color or art");
             // Generated body: every corner stays inside the round footprint, faces point outward, front table stays behind the icon.

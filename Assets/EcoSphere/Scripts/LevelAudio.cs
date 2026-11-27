@@ -203,10 +203,13 @@ namespace EcoSphere
             return true;
         }
 
+        // Announcements queue after any voice already playing. VoiceQueued reports each queued clip (used by checks).
+        public event System.Action<AudioClip> VoiceQueued;
+        public void Announce(AudioClip clip) => QueueVoice(clip);
         void QueueVoice(AudioClip clip)
         {
             if (!clip || !voiceSource) return;
-            voiceQueue.Enqueue(clip);
+            voiceQueue.Enqueue(clip); VoiceQueued?.Invoke(clip);
             if (voiceRoutine == null) voiceRoutine = StartCoroutine(PlayVoices());
         }
 

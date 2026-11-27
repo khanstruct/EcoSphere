@@ -91,6 +91,28 @@ namespace EcoSphere
             ErodeAfterLostShot(SphereIds.Stone);
             Expect(ErosionCount==erosions+1 && !board.Cells.ContainsKey(new Vector2Int(-1,-2)) && score==scoreBefore+ElementScoring.Breakaway,"a lost shot must erode and drop what the sand held");
             levelAudio.EffectPlayed-=played.Add;
+
+            // 6. Several aliens breaking away together call out xenosphere; a single one does not. The eroding sand
+            // drops infested spheres through the real breakaway path (rules only; no alien art needed).
+            var aliensModifier=(InfestationModifierDefinition)WorldCatalog.Current.Modifier("alien-infestation");
+            Expect(aliensModifier && aliensModifier.breakawayVoice && aliensModifier.breakawayVoice.name=="xenosphere","infestation needs its xenosphere breakaway voice");
+            var previousInfestation=infestation;infestation=aliensModifier;
+            var voices=new List<AudioClip>();levelAudio.VoiceQueued+=voices.Add;
+            try
+            {
+                foreach(int count in new[]{2,1})
+                {
+                    var cells=new List<(int x,int y,int type,bool infested)>{(0,-1,SphereIds.Void,false),(1,0,SphereIds.Fire,false),(0,-2,SphereIds.Sand,false),(-1,-2,SphereIds.Stone,true)};
+                    if(count==2)cells.Add((-1,-3,SphereIds.Stone,true));
+                    Board(cells.ToArray());
+                    voices.Clear();
+                    yield return Shoot(SphereIds.Fire,new Vector2Int(1,0));
+                    Expect(board.Infested.Count==0 && !board.Cells.ContainsKey(new Vector2Int(-1,-2)),"the infested spheres must break away with the eroded sand");
+                    Expect(voices.Contains(aliensModifier.breakawayVoice)==(count>=aliensModifier.breakawayVoiceMinimum),
+                        count+" alien(s) breaking away: xenosphere "+(count>=aliensModifier.breakawayVoiceMinimum ? "expected" : "not expected"));
+                }
+            }
+            finally{levelAudio.VoiceQueued-=voices.Add;infestation=previousInfestation;}
         }
 
         // Close-up render of a burst for review (Logs/burst-<name>.png).
@@ -120,7 +142,7 @@ namespace EcoSphere
             var game=FindAnyObjectByType<EcoSpherePrototype>();
             for(float t=0;t<1.5f;t+=Time.deltaTime)yield return null;
             yield return game.CheckErosion();
-            Debug.Log("ECOSPHERE_EROSION_PASSED: real-shot miss erodes the farthest non-infested sand with sandfall and crumble, normal breakaway of what it held, no points or elements from the sand, ammo replaced after erosion, no erosion on a match, infested sand exempt, lost shots erode");
+            Debug.Log("ECOSPHERE_EROSION_PASSED: real-shot miss erodes the farthest non-infested sand with sandfall and crumble, normal breakaway of what it held, no points or elements from the sand, ammo replaced after erosion, no erosion on a match, infested sand exempt, lost shots erode, xenosphere when several aliens break away");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

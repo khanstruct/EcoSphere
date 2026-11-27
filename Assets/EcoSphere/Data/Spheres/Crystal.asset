@@ -45,9 +45,10 @@ MonoBehaviour:
     limitedBy: 0
     limitRatio: 0
   unallocatedWeight: 0
-  deflectedHits: 2
+  deflectedHits: 1
   deflectSound: {fileID: 8300000, guid: 916d3d28e3033ad4c9dacfe0bbb3a4ac, type: 3}
   breakSound: {fileID: 8300000, guid: ea54bcf196d87d34686679a41480ef4d, type: 3}
+  damagedOverlay: {fileID: 21300000, guid: cb6e1e5a71768bb4899712903feedde5, type: 3}
   erodesOnMiss: 0
   erodeSound: {fileID: 0}
   lostBurst: 2

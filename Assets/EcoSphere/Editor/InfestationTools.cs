@@ -42,6 +42,7 @@ namespace EcoSphere.Editor
                 AssetDatabase.CreateAsset(modifier,path);
             }
             if(!modifier.alienAlternateSprite){modifier.alienAlternateSprite=AssetDatabase.LoadAssetAtPath<Sprite>(alternatePath);EditorUtility.SetDirty(modifier);}
+            if(!modifier.breakawayVoice){modifier.breakawayVoice=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/Voice/xenosphere.mp3");modifier.breakawayVoiceMinimum=2;EditorUtility.SetDirty(modifier);}
             if(!catalog.proceduralModifiers.Contains(modifier))catalog.proceduralModifiers.Add(modifier);
             return modifier;
         }

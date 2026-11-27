@@ -36,13 +36,14 @@ MonoBehaviour:
     limitRatio: 0
   - element: 53
     amount: 2
-    limited: 0
-    limitedBy: 0
-    limitRatio: 0
+    limited: 1
+    limitedBy: 44
+    limitRatio: 1
   unallocatedWeight: 1
   deflectedHits: 0
   deflectSound: {fileID: 0}
   breakSound: {fileID: 0}
+  damagedOverlay: {fileID: 0}
   erodesOnMiss: 0
   erodeSound: {fileID: 0}
   lostBurst: 0

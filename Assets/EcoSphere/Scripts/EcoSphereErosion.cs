@@ -56,6 +56,13 @@ namespace EcoSphere
             complete = board.Cells.Count == 0;
         }
 
+        // A damaged sphere (struck but not broken) shows its definition's damaged overlay, e.g. Crystal's cracks, over the whole sphere.
+        void ShowDamage(GameObject sphere, SphereDefinition definition)
+        {
+            if (!sphere || !definition || !definition.damagedOverlay || sphere.transform.Find("Damaged overlay")) return;
+            SpritePart("Damaged overlay", definition.damagedOverlay, sphere.transform, new Vector3(0, 0, -.5f * VisualScale), Radius * 2, 5);
+        }
+
         // Removes a sphere without points or elements (a broken deflector, an eroded sphere): it dissolves, plays its sound
         // and bursts into its definition's particles (Sand crumbles, Crystal shatters).
         void LoseSphere(Vector2Int cell, AudioClip sound)

@@ -94,6 +94,7 @@ namespace EcoSphere
         public int deflectedHits;
         [Tooltip("Played when this sphere deflects a shot.")] public AudioClip deflectSound;
         [Tooltip("Played when a shot breaks this sphere.")] public AudioClip breakSound;
+        [Tooltip("Drawn over the sphere once it has taken a hit and not yet broken (e.g. Crystal's cracks).")] public Sprite damagedOverlay;
         [Header("Erosion")]
         [Tooltip("After a shot that makes no match, the eroding sphere farthest from the core disappears (no points or elements). " +
             "Hazarded spheres (e.g. infested) don't count. Anything it was holding falls away as a normal breakaway.")]

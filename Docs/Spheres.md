@@ -21,13 +21,13 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Mud | 9 | Water: 1, Stone: 1, Mud: 2 | Element; DEV available, Stone + Water recipe |
 | Air | 10 | Air: 3, Null: 1 | Element; DEV available |
 | Crystal | 11 | Stone: 1, Magic: 1, Crystal: 2 | Element; faceted crystal shape, DEV available, Stone + Magic recipe |
-| Civilization | 12 | Human: 1, Civilization: 2, Null: 1 | Element; sandstone #E8B772, Technology category, politosphere voice, DEV available, no recipe yet |
+| Civilization | 12 | Human: 1, Civilization: 2 (capped by Human), Null: 1 | Element; sandstone #E8B772, Technology category, politosphere voice, DEV available, no recipe yet |
 | Magic | 13 | Magic: 3, Void: 1 | Element; turquoise #35CBB6, Beyond category, arcanosphere voice, DEV available, Human + Void or Forest + Spirit recipes |
 | Technology | 14 | Civilization: 1, Technology: 2, Null: 1 | Element; electric blue #0D98ED, Technology category, technosphere voice, DEV available, no recipe yet |
-| Spirit | 15 | Magic: 1, Spirit: 2, Void: 1 | Element; mint #A8E6C2, Beyond category, ectosphere voice, DEV available, Air + Life recipe |
+| Spirit | 15 | Magic: 1, Spirit: 2, Void: 1 | Element; mint #A8E6C2, Beyond category, ectosphere voice, DEV available, no recipe (natural occurrence planned) |
 | Forest | 16 | Forest: 2, Plant: 1, Water: 1 | Element; forest green #1F6B2A, Life category, florasphere voice, DEV available, Plant + Plant recipe |
 | Fish | 17 | Life: 2 (capped by Water), Water: 1, Fish: 1 | Element; orange #F76B0D, Life category, biosphere voice, Water's surface with the v2 fish icon, DEV available, Life + Water recipe |
-| Sand | 18 | Sunlight: 1, Sand: 2, Null: 1 | Element; pale yellow #FADE9B, Basic category, lithosphere voice, erodes on a miss (sandfall), DEV available, Stone + Sunlight recipe |
+| Sand | 18 | Sunlight: 1, Sand: 2, Null: 1 | Element; pale yellow #FADE9B, Basic category, lithosphere voice, erodes on a miss (sandfall), DEV available, Wind + Stone recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -114,7 +114,7 @@ Civilization (ID 12) represents population sprawl. It adds the appended `Element
 
 ## Spirit and Forest spheres
 
-**Spirit** (ID 15) is mint and contributes 1 Magic, 2 Spirit and 1 Void. Air + Life unlocks it. It now supplies the Spirit element's color, so the old gray-blue stand-in was dropped automatically.
+**Spirit** (ID 15) is mint and contributes 1 Magic, 2 Spirit and 1 Void. Its Air + Life recipe was retired (Air + Life is reserved for Bird). Spirit will instead get a chance to occur naturally, through the same mechanism planned for Metal; until then it is only available in DEV mode. It now supplies the Spirit element's color, so the old gray-blue stand-in was dropped automatically.
 
 **Forest** (ID 16) is forest green and contributes 2 Forest, 1 Plant and 1 Water. Plant + Plant (a self-recipe) unlocks it, and Forest + Spirit is Magic's second recipe (the earlier Plant + Spirit stand-in was retired with `RetireRecipe`). Forest represents the appended `ElementId.Forest`. Its planet profile (`PlanetStatCatalog.SeedForest`) shapes the planet more than Plant does:
 
@@ -137,7 +137,7 @@ Crystal (sphere ID 11, element ID 26) uses the faceted violet surface and crysta
 
 ### Shot deflection
 
-`SphereDefinition.deflectedHits` makes any element sphere a deflector (Crystal: 2). A shot of a different sphere type that touches it bounces off like a boundary, reflecting about the contact normal. That bounce counts as a ricochet everywhere a wall bounce does (the per-shot ricochet bonus on a match and the impressive callout) and plays the definition's `deflectSound` (crystal-hit) instead of the wall ricochet sound. The hit after `deflectedHits` breaks it: the sphere is simply lost (no score, no element contributions, no streak), `breakSound` (crystal-breaking) plays, and the shot takes its cell and resolves matches and breakaways from there. Shots of the same type (Crystal into Crystal) attach normally. `ShotDeflection.Resolve` is the single rule (attach, deflect or break); hit counts live on the board sphere in `SphereDamage`, which future cracked-crystal art can read. The aim guide still stops at the first sphere it touches; it does not predict deflections.
+`SphereDefinition.deflectedHits` makes any element sphere a deflector (Crystal: 1). A shot of a different sphere type that touches it bounces off like a boundary, reflecting about the contact normal. That bounce counts as a ricochet everywhere a wall bounce does (the per-shot ricochet bonus on a match and the impressive callout) and plays the definition's `deflectSound` (crystal-hit) instead of the wall ricochet sound. The hit after `deflectedHits` breaks it: the sphere is simply lost (no score, no element contributions, no streak), `breakSound` (crystal-breaking) plays, and the shot takes its cell and resolves matches and breakaways from there. Shots of the same type (Crystal into Crystal) attach normally. `ShotDeflection.Resolve` is the single rule (attach, deflect or break); hit counts live on the board sphere in `SphereDamage`. Crystal goes solid, then cracked, then shatters: a struck deflector shows its definition's `damagedOverlay` (Crystal: `crystal-cracks-v1.png`) over the whole sphere until it breaks. The Crystal smoke checks the overlay and saves a close-up, `Logs/burst-cracked-crystal.png`. The aim guide still stops at the first sphere it touches; it does not predict deflections.
 
 Magic has no sphere yet. Elements without a namesake sphere take their visualizer/reveal color from `SphereCatalog.elementColors` (Magic: purple #7A3CE0), falling back to the sphere that contributes most of them. `SphereCatalog.ElementColor` is the one lookup for element colors.
 
@@ -153,7 +153,7 @@ A shot match still clears within the MatchWave time budget. Exactly one sphere f
 
 PlanetStreakTools.Configure checks 500 randomized paths for initial downward motion, accelerating approach, endpoint surface geometry and impact variation. PlanetStreakTools.Smoke with -planetStreakSmoke checks breakaway counts, initial falls, impact flashes, representative selection on tied branches, scores and effect cleanup.
 
-Stone now uses stone-surface-v2.png and stone-icon-v2.png, a pale-gray rock/mountain motif, through its shared sphere definition. Its #D0D3D8 color drives both streaks and visualizer bars. The original brown v1 artwork remains archived; the lithosphere voice and 3 Stone / 1 Null contributions are unchanged.
+Stone now uses stone-surface-v2.png and stone-icon-v3.png (icon updated from v2), a pale-gray rock/mountain motif, through its shared sphere definition. Its #D0D3D8 color drives both streaks and visualizer bars. The original brown v1 artwork remains archived; the lithosphere voice and 3 Stone / 1 Null contributions are unchanged.
 
 ## Setup categories
 
@@ -183,7 +183,7 @@ Spheres whose art doesn't follow the `<label>-{surface,icon}-v1.png` pattern are
 
 ## Sand sphere and erosion
 
-Sand (ID 18) is pale yellow (#FADE9B, between the icon's highlights and mid-tones), uses the lithosphere voice, and contributes 1 Sunlight, 2 Sand and 1 Null. Stone + Sunlight unlocks it.
+Sand (ID 18) is pale yellow (#FADE9B, between the icon's highlights and mid-tones), uses the lithosphere voice, and contributes 1 Sunlight, 2 Sand and 1 Null. Wind + Stone unlocks it (the earlier Stone + Sunlight recipe was retired). Wind has no sphere yet, so this recipe becomes reachable once one supplies Wind.
 
 Sand **erodes**: `SphereDefinition.erodesOnMiss` with `erodeSound` (`Audio/sandfall.mp3`). This is sphere data, not a Sand-only branch; validation requires an erode sound on a matchable sphere. After any shot of a matchable sphere that makes no match (it attaches without matching, breaks a Crystal without matching, or is lost out the bottom):
 
@@ -211,3 +211,9 @@ A sphere lost without points (eroded, or broken by a shot) bursts into particles
 Both share the saved particle material `Art/Effects/sphere-crumble.mat` (`burstMaterial`), so builds include its shader. Sand crumbles in its own color, and Crystal shatters in purple (#9B5AEB). `SeedLostBurst` only sets a burst that is still unset, so later Inspector edits stay. The erosion smoke checks the crumble and the Crystal smoke checks the shatter. Close-ups: `Logs/burst-crumble.png` and `burst-shatter.png`.
 
 Civilization uses its house icon (`civilization-icon-v2.png`) so it no longer resembles Sand. The art table (`ArtOverrides`) is the single source for spheres whose art doesn't follow the default file names, and `ReapplyArt` updates an existing sphere asset from it.
+
+## Civilization cap and xenosphere
+
+Civilization's 2 Civilization units are capped by Human (an `ElementContribution` limited by Human, ratio 1), the same limited-contribution rule Fish uses: without Human in the world it adds no Civilization, and the shortage notice reports the clipped line. `SphereIntroSmoke 12` checks the capped yield.
+
+When one breakaway frees at least `InfestationModifierDefinition.breakawayVoiceMinimum` (default 2) infested spheres, the infestation's `breakawayVoice` (`Audio/Voice/xenosphere.mp3`) plays through `LevelAudio.Announce`. Both are modifier data seeded by `InfestationTools.Configure`. The erosion smoke drops two, then one, infested sphere with real shots and expects xenosphere only for two.
