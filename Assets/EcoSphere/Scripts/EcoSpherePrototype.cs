@@ -88,6 +88,7 @@ namespace EcoSphere
             if (!levelAudio) levelAudio = gameObject.AddComponent<LevelAudio>();
             levelAudio.Initialize();
             BuildInterface();
+            StartCoroutine(PrewarmShortageNotice());
             BuildBoard();
             CaptureCompositionBaseline();
             ApplyInfestation();

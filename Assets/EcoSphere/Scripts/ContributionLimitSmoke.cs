@@ -79,30 +79,37 @@ namespace EcoSphere
                 Expect(shortages.Count == 1 && shortages[0].limitedBy == ElementId.Water && shortages[0].element == ElementId.Life && shortages[0].sphere == fire &&
                     Math.Abs(shortages[0].lost - (perSphere - room)) < 1e-9, "shortage must name Water, Life, the sphere and the lost amount");
 
-                // 3. The notice: "Not enough Water" in Water's visualizer color, above the Life bar.
+                // 3. The notice: "Not enough Water" in Water's visualizer color, just above the visualizer, spanning its width.
                 yield return null;
                 Expect(ShortageNotices.TryGetValue(ElementId.Water, out var notice) && notice, "no shortage notice shown");
                 var waterColor = Catalog.ElementColor(ElementId.Water);
                 Expect(notice.text == string.Format(visualizerStyle.shortageFormat, "Water") && notice.text == "Not enough Water", "wrong notice text: " + notice.text);
                 Expect(Mathf.Approximately(notice.color.r, waterColor.r) && Mathf.Approximately(notice.color.g, waterColor.g) && Mathf.Approximately(notice.color.b, waterColor.b),
                     "notice must use the Water element color");
-                var lifeBar = energyBars[displayedElements.IndexOf(ElementId.Life)].rectTransform;
-                // Checked while rising and again in the capture layout: the notice follows the bar as it eases and re-lays out.
-                void ExpectAboveLife(string when)
+                var noticeMaterial = notice.fontSharedMaterial;
+                Expect(noticeMaterial.IsKeywordEnabled(TMPro.ShaderUtilities.Keyword_Outline) && noticeMaterial.IsKeywordEnabled(TMPro.ShaderUtilities.Keyword_Underlay) &&
+                    noticeMaterial.GetFloat(TMPro.ShaderUtilities.ID_OutlineWidth) > 0, "notice needs its dark outline and drop shadow");
+                Expect(noticeMaterial == visualizerStyle.shortageMaterial && ShortagePrewarmed && !resourcePanel.Find("Shortage notice prewarm"),
+                    "notice must use the saved style material, prewarmed at level start, with no prewarm label left behind");
+                var noticeLayer = notice.GetComponent<Canvas>();
+                Expect(noticeLayer && noticeLayer.overrideSorting && noticeLayer.sortingOrder > resourcePanel.GetComponentInParent<Canvas>().rootCanvas.sortingOrder, "notice must draw above the HUD text around it");
+                // Checked while rising and again in the capture layout: the notice follows the visualizer as it re-lays out.
+                void ExpectAboveVisualizer(string when)
                 {
                     Expect(notice, "notice vanished " + when);
-                    var r = notice.rectTransform; float left = r.anchoredPosition.x - r.sizeDelta.x * .5f, right = r.anchoredPosition.x + r.sizeDelta.x * .5f;
-                    Expect(left <= lifeBar.anchoredPosition.x && right >= lifeBar.anchoredPosition.x, "notice must be over the capped Life bar " + when);
-                    Expect(left >= guideLeft - .01f && right <= guideRight + .01f, "notice must stay inside the visualizer frame " + when);
-                    Expect(r.anchoredPosition.y >= Mathf.Min(lifeBar.anchoredPosition.y + lifeBar.sizeDelta.y + visualizerStyle.shortageOffset, ShortageCeiling) - .01f &&
-                        r.anchoredPosition.y <= ShortageCeiling + .01f, "notice must clear the Life value label and stay under the score strip " + when);
+                    Canvas.ForceUpdateCanvases(); notice.ForceMeshUpdate();
+                    var corners = new Vector3[4]; notice.rectTransform.GetWorldCorners(corners); var panel = new Vector3[4]; resourcePanel.GetWorldCorners(panel);
+                    Expect(Mathf.Abs((corners[2].x - corners[0].x) - (panel[2].x - panel[0].x)) < .01f && Mathf.Abs((corners[0].x + corners[2].x) - (panel[0].x + panel[2].x)) < .01f,
+                        "notice must span the visualizer's full width " + when);
+                    Expect(corners[0].y >= panel[1].y - .001f, "notice must sit above the visualizer, not on it " + when);
+                    Expect(notice.fontSize > 40, "notice text must be large (" + notice.fontSize + ") " + when);
                 }
                 for (float t = 0; t < .3f; t += Time.deltaTime) yield return null;
-                ExpectAboveLife("while rising");
-                // Portrait capture: lay out at 900x1600, let the notice follow the re-laid-out bar for a frame, then render.
+                ExpectAboveVisualizer("while rising");
+                // Portrait capture: lay out at 900x1600, let the notice follow the re-laid-out visualizer for a frame, then render.
                 var capture = new RenderTexture(900, 1600, 24); capture.Create();
                 SetPreviewTarget(capture); yield return null; yield return null;
-                ExpectAboveLife("after re-layout");
+                ExpectAboveVisualizer("after re-layout");
                 RenderPresentation();
                 var previous = RenderTexture.active; RenderTexture.active = capture;
                 var pixels = new Texture2D(900, 1600, TextureFormat.RGB24, false); pixels.ReadPixels(new Rect(0, 0, 900, 1600), 0, 0); pixels.Apply();
@@ -143,7 +150,7 @@ namespace EcoSphere
             var game = FindAnyObjectByType<EcoSpherePrototype>();
             for (float t = 0; t < 1.5f; t += Time.deltaTime) yield return null;
             yield return game.CheckContributionLimits();
-            Debug.Log("ECOSPHERE_CONTRIBUTION_LIMIT_PASSED: real-shot resolution raises the cap before checking, Life clipped at Water with excess lost, score and unlimited yield unchanged, per-sphere budget, colored 'Not enough Water' notice above the Life bar, validation, reset");
+            Debug.Log("ECOSPHERE_CONTRIBUTION_LIMIT_PASSED: real-shot resolution raises the cap before checking, Life clipped at Water with excess lost, score and unlimited yield unchanged, per-sphere budget, colored, outlined 'Not enough Water' notice spanning the visualizer just above it, validation, reset");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.Exit(0);
 #endif

@@ -8,66 +8,74 @@ namespace EcoSphere
     public sealed partial class EcoSpherePrototype
     {
         // One notice per limiting element; a repeat shortage restarts it instead of stacking copies.
+        // Different limiting elements at once stack upward, in the order they appeared.
         readonly Dictionary<ElementId, TMP_Text> shortageNotices = new Dictionary<ElementId, TMP_Text>();
+        readonly List<TMP_Text> shortageOrder = new List<TMP_Text>();
         internal IReadOnlyDictionary<ElementId, TMP_Text> ShortageNotices => shortageNotices;
         Material shortageMaterial;
 
         void ShowShortage(ElementShortage shortage)
         {
             if (!resourcePanel || !visualizerStyle) return;
-            if (shortageNotices.TryGetValue(shortage.limitedBy, out var existing) && existing) Destroy(existing.gameObject);
-            var label = Label("Shortage notice", resourcePanel, new Vector2(.5f, 0), Vector2.zero, new Vector2(240, 28),
+            if (shortageNotices.TryGetValue(shortage.limitedBy, out var existing) && existing) { shortageOrder.Remove(existing); Destroy(existing.gameObject); }
+            var label = Label("Shortage notice", resourcePanel, new Vector2(.5f, 1), Vector2.zero, Vector2.zero,
                 string.Format(visualizerStyle.shortageFormat, Catalog.ElementName(shortage.limitedBy)), Mathf.RoundToInt(visualizerStyle.shortageFontSize));
             label.color = Catalog.ElementColor(shortage.limitedBy);
             label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.enableAutoSizing = true; label.fontSizeMin = 14; label.fontSizeMax = visualizerStyle.shortageFontSize;
             label.fontSharedMaterial = ShortageMaterial(label);
-            label.rectTransform.sizeDelta = new Vector2(label.preferredWidth + 8, label.rectTransform.sizeDelta.y);
-            shortageNotices[shortage.limitedBy] = label;
-            StartCoroutine(RiseShortage(label, shortage.element));
+            label.rectTransform.pivot = new Vector2(.5f, 0);
+            // Its own sorting layer keeps it above the HUD text that shares the space above the visualizer.
+            var layer = label.gameObject.AddComponent<Canvas>(); layer.overrideSorting = true;
+            layer.sortingOrder = resourcePanel.GetComponentInParent<Canvas>().sortingOrder + 10;
+            shortageNotices[shortage.limitedBy] = label; shortageOrder.Add(label);
+            StartCoroutine(RiseShortage(label));
         }
 
-        // A dark outline keeps element-colored text readable over bars and the dark frame. Shared by all notices.
+        // A thick dark outline plus a soft drop shadow keep element-colored text readable over any background. Shared by all notices.
+        // Prefers the saved style material (so builds include its shader variant); a runtime copy is the fallback for another font.
         Material ShortageMaterial(TMP_Text label)
         {
             if (shortageMaterial) return shortageMaterial;
+            var saved = visualizerStyle.shortageMaterial;
+            if (saved && label.font && saved.mainTexture == label.font.atlasTexture) return shortageMaterial = saved;
             shortageMaterial = new Material(label.fontSharedMaterial) { name = "Shortage notice outline" };
-            shortageMaterial.EnableKeyword(ShaderUtilities.Keyword_Outline);
-            shortageMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, visualizerStyle.shortageOutline);
-            shortageMaterial.SetColor(ShaderUtilities.ID_OutlineColor, visualizerStyle.shortageOutlineColor);
+            visualizerStyle.ApplyShortageLook(shortageMaterial);
             materials.Add(shortageMaterial);
             return shortageMaterial;
         }
 
-        // Lowest the notice may sit this frame: above the capped bar and its value label (mid-frame if it has no bar).
-        // Read every frame because bars ease toward their values and re-lay out when the screen changes.
-        Vector2 ShortageAnchor(ElementId capped)
+        // Draws a practically invisible notice for a moment at level start, so the first real "Not enough" message
+        // never waits on its shader (the editor shows a cyan placeholder while a shader variant compiles).
+        internal bool ShortagePrewarmed { get; private set; }
+        IEnumerator PrewarmShortageNotice()
         {
-            int bar = displayedElements.IndexOf(capped);
-            if (bar < 0 || bar >= energyBars.Count || !energyBars[bar]) return new Vector2(0, barBaseline + maximumBarHeight * .5f);
-            var barRect = energyBars[bar].rectTransform;
-            return new Vector2(barRect.anchoredPosition.x, barRect.anchoredPosition.y + barRect.sizeDelta.y + visualizerStyle.shortageOffset);
+            if (!resourcePanel || !visualizerStyle) yield break;
+            var label = Label("Shortage notice prewarm", resourcePanel, new Vector2(.5f, .5f), Vector2.zero, new Vector2(200, 40), "Not enough", 24);
+            label.fontSharedMaterial = ShortageMaterial(label); label.color = new Color(1, 1, 1, .004f);
+            for (int frame = 0; frame < 3; frame++) yield return null;
+            Destroy(label.gameObject); ShortagePrewarmed = true;
         }
-        // Highest it may rise: just under the star score strip.
-        float ShortageCeiling => barBaseline + maximumBarHeight + 24;
 
-        // Floats up from the capped element's bar while fading, kept inside the visualizer frame.
-        IEnumerator RiseShortage(TMP_Text label, ElementId capped)
+        // Rises from just above the visualizer's top edge while fading; spans the visualizer's full width.
+        // Size and position are read every frame so the notice follows responsive relayouts.
+        IEnumerator RiseShortage(TMP_Text label)
         {
             var rect = label.rectTransform;
             Color color = label.color;
             float duration = visualizerStyle.shortageDuration;
             for (float t = 0; t < duration && label; t += Time.deltaTime)
             {
-                float p = t / duration, half = rect.sizeDelta.x * .5f;
-                var position = ShortageAnchor(capped) + Vector2.up * visualizerStyle.shortageRise * Mathf.SmoothStep(0, 1, p);
-                position.x = guideRight - guideLeft > half * 2 ? Mathf.Clamp(position.x, guideLeft + half, guideRight - half) : 0;
-                position.y = Mathf.Min(position.y, ShortageCeiling);
-                rect.anchoredPosition = position;
+                float p = t / duration;
+                int slot = Mathf.Max(0, shortageOrder.IndexOf(label));
+                rect.sizeDelta = new Vector2(resourcePanel.rect.width, visualizerStyle.shortageHeight);
+                rect.anchoredPosition = new Vector2(0, visualizerStyle.shortageOffset + slot * visualizerStyle.shortageHeight
+                    + visualizerStyle.shortageRise * Mathf.SmoothStep(0, 1, p));
                 color.a = 1 - Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.6f, 1, p));
                 label.color = color;
                 yield return null;
             }
-            if (label) Destroy(label.gameObject);
+            if (label) { shortageOrder.Remove(label); Destroy(label.gameObject); }
         }
     }
 }

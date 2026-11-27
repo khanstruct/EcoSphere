@@ -31,3 +31,16 @@ MonoBehaviour:
   scoreRangePastThreeStars: 1.15
   scoreTrackColor: {r: 1, g: 1, b: 1, a: 0.08}
   scoreFillColor: {r: 1, g: 0.78, b: 0.3, a: 0.85}
+  shortageFormat: Not enough {0}
+  shortageFontSize: 150
+  shortageHeight: 118
+  shortageDuration: 1.6
+  shortageRise: 24
+  shortageOffset: 8
+  shortageOutline: 0.4
+  shortageOutlineColor: {r: 0, g: 0, b: 0, a: 0.95}
+  shortageShadowOffset: {x: 0.8, y: -0.8}
+  shortageShadowDilate: 0.5
+  shortageShadowSoftness: 0.35
+  shortageShadowColor: {r: 0, g: 0, b: 0, a: 0.85}
+  shortageMaterial: {fileID: 2100000, guid: 1881cafcef4b013498baae3b944b63c1, type: 2}

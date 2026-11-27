@@ -30,15 +30,38 @@ namespace EcoSphere
         public Color scoreTrackColor=new Color(1,1,1,.08f);
         public Color scoreFillColor=new Color(1,.78f,.3f,.85f);
 
-        [Header("Contribution shortage notice (rises above the capped element's bar)")]
+        [Header("Contribution shortage notice (rises just above the visualizer, spanning its width)")]
         [Tooltip("{0} is the limiting element's name. The text uses that element's visualizer color.")]
         public string shortageFormat="Not enough {0}";
-        [Min(6)] public float shortageFontSize=18;
+        [Min(6),Tooltip("Largest font size; the text auto-sizes to fill the visualizer's width within the notice height.")]
+        public float shortageFontSize=150;
+        [Min(10),Tooltip("Height of one notice line; simultaneous notices stack by this much.")]
+        public float shortageHeight=118;
         [Min(.1f)] public float shortageDuration=1.6f;
         [Min(0)] public float shortageRise=24;
-        [Tooltip("Start height above the capped bar's top, clearing its value label.")]
-        [Min(0)] public float shortageOffset=42;
-        [Range(0,.5f)] public float shortageOutline=.25f;
-        public Color shortageOutlineColor=new Color(0,0,0,.9f);
+        [Tooltip("Gap between the top of the visualizer and the notice.")]
+        [Min(0)] public float shortageOffset=8;
+        [Range(0,1)] public float shortageOutline=.4f;
+        public Color shortageOutlineColor=new Color(0,0,0,.95f);
+        [Tooltip("Soft drop shadow behind the outlined text, in TextMeshPro underlay units.")]
+        public Vector2 shortageShadowOffset=new Vector2(.8f,-.8f);
+        [Range(0,1),Tooltip("Spreads the shadow beyond the letter shapes.")] public float shortageShadowDilate=.5f;
+        [Range(0,1)] public float shortageShadowSoftness=.35f;
+        public Color shortageShadowColor=new Color(0,0,0,.85f);
+        [Tooltip("Saved outline + shadow text material (built by ContributionLimitTools.Configure from the settings above), so builds include its shader variant.")]
+        public Material shortageMaterial;
+        // The one place that turns the shortage settings above into TextMeshPro material properties.
+        public void ApplyShortageLook(Material material)
+        {
+            material.EnableKeyword(TMPro.ShaderUtilities.Keyword_Outline);
+            material.SetFloat(TMPro.ShaderUtilities.ID_OutlineWidth,shortageOutline);
+            material.SetColor(TMPro.ShaderUtilities.ID_OutlineColor,shortageOutlineColor);
+            material.EnableKeyword(TMPro.ShaderUtilities.Keyword_Underlay);
+            material.SetColor(TMPro.ShaderUtilities.ID_UnderlayColor,shortageShadowColor);
+            material.SetFloat(TMPro.ShaderUtilities.ID_UnderlayOffsetX,shortageShadowOffset.x);
+            material.SetFloat(TMPro.ShaderUtilities.ID_UnderlayOffsetY,shortageShadowOffset.y);
+            material.SetFloat(TMPro.ShaderUtilities.ID_UnderlaySoftness,shortageShadowSoftness);
+            material.SetFloat(TMPro.ShaderUtilities.ID_UnderlayDilate,shortageShadowDilate);
+        }
     }
 }
