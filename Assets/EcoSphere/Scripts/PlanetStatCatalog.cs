@@ -129,6 +129,7 @@ namespace EcoSphere
             Tint(ElementId.Plant,PlanetColorTrait.Water,new Color(.04f,.23f,.25f).gamma,.026f);     // same hue as the former WaterGreenness, kept equally faint
             Tint(ElementId.Algae,PlanetColorTrait.Water,new Color(.05f,.3f,.2f),.8f);
             Tint(ElementId.Algae,PlanetColorTrait.Vegetation,new Color(.1f,.45f,.4f),.6f);
+            Tint(ElementId.Forest,PlanetColorTrait.Vegetation,new Color(.04f,.24f,.07f),.9f);   // deep, dense green
             Tint(ElementId.Mud,PlanetColorTrait.Water,new Color(.2f,.14f,.07f),.45f);
             Tint(ElementId.Swamp,PlanetColorTrait.Water,new Color(.12f,.15f,.06f),.6f);
             Tint(ElementId.Poison,PlanetColorTrait.Water,new Color(.25f,.32f,.05f),.7f);
@@ -158,8 +159,11 @@ namespace EcoSphere
         // New elements appended to ElementId get an empty profile here until their effects are authored.
         public void EnsureProfiles()
         {
+            // Retired elements have no profile: drop any left over from before they were retired.
+            elements.RemoveAll(x=>ElementIds.IsRetired(x.element));
             foreach(ElementId element in Enum.GetValues(typeof(ElementId)))
-                if(element!=ElementId.Core && element!=ElementId.Laser && !elements.Exists(x=>x.element==element))elements.Add(new ElementPlanetProfile{element=element});
+                if(element!=ElementId.Core && element!=ElementId.Laser && !ElementIds.IsRetired(element) && !elements.Exists(x=>x.element==element))
+                    elements.Add(new ElementPlanetProfile{element=element});
             NotifyChanged();
         }
         public void SeedCityLights()
@@ -171,6 +175,20 @@ namespace EcoSphere
             SetEffect(ElementId.Energy,PlanetStat.CityLightIntensity,.4f);
             NotifyChanged();
         }
+        // Forest: denser vegetation than Plant (1 vs 0.8 coverage), some soil, moisture and cloud, and a stronger
+        // blue-green atmosphere. Its deep green vegetation tint lives in SeedColorTraits. PopulateDefaults and
+        // SphereIntroTools.Configure both apply it without touching other profiles.
+        public void SeedForest()
+        {
+            SetEffect(ElementId.Forest,PlanetStat.BiologicalCoverage,1);
+            SetEffect(ElementId.Forest,PlanetStat.Soil,.2f);
+            SetEffect(ElementId.Forest,PlanetStat.Moisture,.35f);
+            SetEffect(ElementId.Forest,PlanetStat.CloudCover,.15f);
+            SetEffect(ElementId.Forest,PlanetStat.AtmosphereExpansion,.18f);
+            var forest=elements.Find(x=>x.element==ElementId.Forest);
+            forest.atmosphereColor=new Color(.5f,.82f,.78f,1);forest.atmosphereStrength=.12f;
+            NotifyChanged();
+        }
         void SetEffect(ElementId element,PlanetStat stat,float amount)
         {
             var profile=elements.Find(x=>x.element==element);
@@ -180,7 +198,8 @@ namespace EcoSphere
         }
         void Tint(ElementId element,PlanetColorTrait trait,Color color,float strength)
         {
-            var profile=elements.Find(x=>x.element==element) ?? throw new InvalidOperationException("No planet profile for "+element);
+            var profile=elements.Find(x=>x.element==element);
+            if(profile==null){profile=new ElementPlanetProfile{element=element};elements.Add(profile);}
             profile.colors.Add(new PlanetColorEffect(trait,color,strength));
         }
         public void PopulateDefaults()
@@ -219,7 +238,6 @@ namespace EcoSphere
             Add(ElementId.Moss,(PlanetStat.BiologicalCoverage,.5f),(PlanetStat.Moisture,.35f));
             Add(ElementId.Fungus,(PlanetStat.BiologicalCoverage,.5f),(PlanetStat.Moisture,.3f));
             Add(ElementId.Flower,(PlanetStat.BiologicalCoverage,.6f));
-            Add(ElementId.Tree,(PlanetStat.BiologicalCoverage,1),(PlanetStat.Soil,.2f));
             Add(ElementId.Bacteria,(PlanetStat.BiologicalCoverage,.2f));
             foreach(var id in new[]{ElementId.Insect,ElementId.Fish,ElementId.Bird,ElementId.Reptile,ElementId.Mammal})Add(id);
             Add(ElementId.Human,(PlanetStat.Civilization,.25f));
@@ -242,6 +260,7 @@ namespace EcoSphere
             Atmosphere(ElementId.Poison,new Color(.65f,.8f,.4f,1),.25f);
             SeedColorTraits();
             SeedCityLights();
+            SeedForest();
             EnsureProfiles();
             NotifyChanged();
         }

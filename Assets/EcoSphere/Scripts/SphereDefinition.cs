@@ -11,11 +11,29 @@ namespace EcoSphere
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
+    // To drop an element, retire it with [Obsolete] instead of deleting it, so later IDs keep their numbers.
+    // Retired elements are hidden from inspector dropdowns, get no planet profile and are rejected by sphere/recipe validation.
     public enum ElementId { Ice, Sunlight, Stone, Fire, Void, Water, Laser, Core,
         Air, Soil, Sand, Life, Steam, Cloud, Rain, Snow, Wind, Lightning, Lava, Smoke,
         Ash, Dust, Poison, Clay, Salt, Metal, Crystal, Glass, Coal, Oil, Wood, Gravity,
-        Plant, Algae, Moss, Fungus, Flower, Tree, Bacteria, Insect, Fish, Bird, Reptile,
-        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud, Civilization, Spirit }
+        Plant, Algae, Moss, Fungus, Flower,
+        [Obsolete("Retired: unused (Forest covers it). The slot keeps later element IDs stable.")] RetiredTree,
+        Bacteria, Insect, Fish, Bird, Reptile,
+        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud, Civilization, Spirit, Forest }
+    public static class ElementIds
+    {
+        static readonly HashSet<ElementId> retired = Retired();
+        static HashSet<ElementId> Retired()
+        {
+            var result = new HashSet<ElementId>();
+            foreach (var field in typeof(ElementId).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+                if (Attribute.IsDefined(field, typeof(ObsoleteAttribute))) result.Add((ElementId)field.GetValue(null));
+            return result;
+        }
+        // Retired elements keep their numeric slot but take no part in spheres, recipes or planet profiles.
+        public static bool IsRetired(ElementId element) => retired.Contains(element);
+        public static bool IsActive(ElementId element) => Enum.IsDefined(typeof(ElementId), element) && !IsRetired(element);
+    }
     public enum SphereRole { Element, Laser, Core }
     // Append categories only: sphere definitions serialize these values. All is a UI filter, not a category.
     public enum SphereCategory { Basic = 0, Forces = 1, Weather = 2, Life = 3, Technology = 4, Beyond = 5 }
@@ -84,7 +102,7 @@ namespace EcoSphere
         {
             if(!Enum.IsDefined(typeof(SphereCategory),category))throw new InvalidOperationException(name+": invalid sphere category");
             if(!Enum.IsDefined(typeof(SphereShape),shape))throw new InvalidOperationException(name+": invalid sphere shape");
-            if(HasNamesake && !Enum.IsDefined(typeof(ElementId),namesakeElement))throw new InvalidOperationException(name+": namesake must be a valid element or none");
+            if(HasNamesake && !ElementIds.IsActive(namesakeElement))throw new InvalidOperationException(name+": namesake must be an active element or none");
             if (string.IsNullOrWhiteSpace(displayName) || !surface || !icon)
                 throw new InvalidOperationException(name + ": name, texture and icon are required");
             if (contributions == null || contributions.Count < 1 || contributions.Count > 4)
@@ -92,9 +110,9 @@ namespace EcoSphere
             if (unallocatedWeight < 0 || unallocatedWeight > 3) throw new InvalidOperationException(name + ": unallocated weight must be between zero and three");
             var seen = new HashSet<ElementId>();
             foreach (var entry in contributions)
-                if (!Enum.IsDefined(typeof(ElementId), entry.element) || entry.amount < 1 || entry.amount > 4 || !seen.Add(entry.element))
+                if (!ElementIds.IsActive(entry.element) || entry.amount < 1 || entry.amount > 4 || !seen.Add(entry.element))
                     throw new InvalidOperationException(name + ": contributions must be positive and use distinct elements");
-                else if (entry.limited && (!Enum.IsDefined(typeof(ElementId), entry.limitedBy) || entry.limitedBy == entry.element || !(entry.limitRatio > 0)))
+                else if (entry.limited && (!ElementIds.IsActive(entry.limitedBy) || entry.limitedBy == entry.element || !(entry.limitRatio > 0)))
                     throw new InvalidOperationException(name + ": a limited contribution needs a different, valid limiting element and a positive ratio");
             if (ContributionUnits + unallocatedWeight > 4) throw new InvalidOperationException(name + ": at most four contribution units including unallocated units");
             if (deflectedHits < 0 || deflectedHits > 10 || (deflectedHits > 0 && (!Matchable || !deflectSound || !breakSound)))

@@ -46,6 +46,12 @@ namespace EcoSphere.Editor
             // Plant keeps the faint water tint it had as WaterGreenness.
             var plant=Sample((ElementId.Plant,600),(ElementId.Life,300),(ElementId.Water,300));
             Expect(plant[PlanetColorTrait.Water].a>0 && plant[PlanetColorTrait.Water].a<=.04f,"Plant water tint must stay very subtle ("+plant[PlanetColorTrait.Water]+")");
+            // Forest shapes the planet more than Plant at equal points: denser vegetation and a deep green tint.
+            // Compared at a minority share: at a majority both already saturate vegetation coverage.
+            var plantWorld=Sample((ElementId.Plant,150),(ElementId.Water,850));var forestWorld=Sample((ElementId.Forest,150),(ElementId.Water,850));
+            var forestGreen=forestWorld[PlanetColorTrait.Vegetation];
+            Expect(forestWorld[PlanetStat.BiologicalCoverage]>plantWorld[PlanetStat.BiologicalCoverage] && forestWorld.VegetationPotential>plantWorld.VegetationPotential,"Forest must grow denser vegetation than Plant");
+            Expect(forestGreen.a>0 && forestGreen.g>forestGreen.r && forestGreen.g>forestGreen.b && plantWorld[PlanetColorTrait.Vegetation].a==0,"Forest must deepen the vegetation green; Plant keeps the default");
             // Snapshots keep traits; old snapshots with only WaterGreenness still draw their green water.
             var restored=JsonUtility.FromJson<PlanetStats>(JsonUtility.ToJson(magic));
             foreach(PlanetColorTrait trait in Enum.GetValues(typeof(PlanetColorTrait)))Expect(restored[trait]==magic[trait],trait+" did not survive a snapshot round trip");

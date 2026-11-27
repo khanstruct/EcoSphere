@@ -18,7 +18,8 @@ namespace EcoSphere.Editor
             Expect(catalog.coldTemperatureFahrenheit<catalog.neutralTemperatureFahrenheit && catalog.neutralTemperatureFahrenheit<catalog.hotTemperatureFahrenheit,"ordered Fahrenheit calibration");
             Expect(catalog.fullyFrozenAt<catalog.freezingStartsAt && catalog.freezingStartsAt<=0 && catalog.fullyFrozenAt>=-1,"ordered freezing response thresholds");
             Expect(catalog.minimumAtmosphereWidth>=.01f && catalog.minimumAtmosphereWidth<=catalog.baseAtmosphereWidth && catalog.baseAtmosphereWidth<=catalog.maximumAtmosphereWidth && catalog.maximumAtmosphereWidth<=.12f,"ordered atmosphere bounds");
-            Expect(catalog.elements.Count==ElementComposition.Capacity-2,"one planet profile per element, excluding Core and Laser");
+            int active=0;foreach(ElementId element in Enum.GetValues(typeof(ElementId)))if(!ElementIds.IsRetired(element))active++;
+            Expect(catalog.elements.Count==active-2 && !catalog.elements.Exists(x=>ElementIds.IsRetired(x.element)),"one planet profile per active element, excluding Core and Laser; none for retired elements");
             foreach(var profile in catalog.elements)
             {
                 Expect(unique.Add(profile.element),"duplicate element profile");

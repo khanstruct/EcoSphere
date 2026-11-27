@@ -22,10 +22,10 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Air | 10 | Air: 3, Null: 1 | Element; DEV available |
 | Crystal | 11 | Stone: 1, Magic: 1, Crystal: 2 | Element; faceted crystal shape, DEV available, Stone + Magic recipe |
 | Civilization | 12 | Human: 1, Civilization: 2, Null: 1 | Element; sandstone #E8B772, Technology category, politosphere voice, DEV available, no recipe yet |
-| Magic | 13 | Magic: 3, Void: 1 | Element; turquoise #35CBB6, Beyond category, arcanosphere voice, DEV available, Human + Void or Plant + Spirit recipes |
+| Magic | 13 | Magic: 3, Void: 1 | Element; turquoise #35CBB6, Beyond category, arcanosphere voice, DEV available, Human + Void or Forest + Spirit recipes |
 | Technology | 14 | Civilization: 1, Technology: 2, Null: 1 | Element; electric blue #0D98ED, Technology category, technosphere voice, DEV available, no recipe yet |
 | Spirit | 15 | Magic: 1, Spirit: 2, Void: 1 | Element; mint #A8E6C2, Beyond category, ectosphere voice, DEV available, Air + Life recipe |
-| Forest | 16 | Plant: 3, Null: 1 | No namesake element; forest green #1F6B2A, Life category, florasphere voice, DEV available, Plant + Plant recipe |
+| Forest | 16 | Forest: 2, Plant: 1, Water: 1 | Element; forest green #1F6B2A, Life category, florasphere voice, DEV available, Plant + Plant recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -114,7 +114,14 @@ Civilization (ID 12) represents population sprawl. It adds the appended `Element
 
 **Spirit** (ID 15) is mint and contributes 1 Magic, 2 Spirit and 1 Void. Air + Life unlocks it. It now supplies the Spirit element's color, so the old gray-blue stand-in was dropped automatically.
 
-**Forest** (ID 16) is forest green and contributes 3 Plant and 1 Null. Plant + Plant (a self-recipe) unlocks it. Forest is not an element: its `namesakeElement` is `SphereDefinition.NoNamesake`. Spheres without a namesake are skipped by the catalog's namesake index, so Plant Life keeps supplying Plant's color, art and voice, while Forest's own color is used for its streak and board. Validation rejects a namesake that is neither a real element nor none.
+**Forest** (ID 16) is forest green and contributes 2 Forest, 1 Plant and 1 Water. Plant + Plant (a self-recipe) unlocks it, and Forest + Spirit is Magic's second recipe (the earlier Plant + Spirit stand-in was retired with `RetireRecipe`). Forest represents the appended `ElementId.Forest`. Its planet profile (`PlanetStatCatalog.SeedForest`) shapes the planet more than Plant does:
+
+- vegetation coverage 1 (Plant has 0.8), so it builds coverage faster;
+- a deep green vegetation tint (strength 0.9);
+- some soil, moisture and cloud cover;
+- a stronger blue-green atmosphere.
+
+At a majority share both saturate vegetation coverage, so the visible difference is the darker, lusher green. At the same small share Forest measured about 4% more coverage and 14% darker foliage than Plant. `SphereIntroTools.Configure` migrated the existing Forest asset with `SphereCatalogTools.ReseedSphere`. The no-namesake option (`SphereDefinition.NoNamesake`) remains for future spheres that should not represent an element.
 
 ## Spirit element
 
@@ -159,3 +166,7 @@ Category tabs use dim, nearly neutral gray for inactive labels/borders. The acti
 Each definition has a short player-facing `description` (required, at most `SphereDefinition.MaximumDescriptionLength` = 160 characters). It says, in plain words, what the sphere brings to a planet (e.g. Water: "A flowing element that fills oceans and aids in humidity."); clearing spheres is a given and isn't repeated. For now it appears only on the results screen when a sphere is discovered: beneath the name in the recipe reveal, and beside the sphere under its name in the natural-discovery modal. A dedicated description screen and setup viewing are planned later. Descriptions will need revisiting when broad planet stats (such as Humidity) arrive.
 
 `ContributionSummary()` also builds an exact yield line from `contributions` (largest share first, unallocated units omitted, Core empty), e.g. Ice → "Ice 50% · Water 25%", for later detail screens. **Validate Sphere Catalog** checks descriptions and summaries; results and recipe-reveal smoke checks confirm the description is shown for each discovery.
+
+## Retired elements
+
+Element IDs are saved as numbers, so an unused element is retired rather than deleted: it keeps its slot with `[Obsolete]`, which also hides it from Unity dropdowns. `ElementIds.IsRetired` and `ElementIds.IsActive` read that attribute. Retired elements get no planet profile (`EnsureProfiles` removes leftovers), and sphere contributions, namesakes, contribution limits and recipes reject them. Tree (ID 37) is retired as `RetiredTree`; Forest covers it.

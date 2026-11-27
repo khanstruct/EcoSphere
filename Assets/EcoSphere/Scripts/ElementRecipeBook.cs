@@ -53,8 +53,8 @@ namespace EcoSphere
             if(recipes==null)throw new InvalidOperationException(name+": missing recipes");
             foreach (var recipe in recipes)
             {
-                if (recipe == null || !Enum.IsDefined(typeof(ElementId), recipe.first) ||
-                    !Enum.IsDefined(typeof(ElementId), recipe.second) || !recipe.output || !recipe.output.AmmoEligible)
+                if (recipe == null || !ElementIds.IsActive(recipe.first) ||
+                    !ElementIds.IsActive(recipe.second) || !recipe.output || !recipe.output.AmmoEligible)
                     throw new InvalidOperationException(name + ": invalid recipe");
 
             }

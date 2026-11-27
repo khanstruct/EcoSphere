@@ -12,8 +12,12 @@ namespace EcoSphere.Editor
         {
             foreach (var label in Labels) SphereCatalogTools.ImportSphereArt(label);
             SphereCatalogTools.Configure();
+            // Forest became an element after its sphere was first created: re-apply its namesake and contributions.
+            SphereCatalogTools.ReseedSphere(SphereIds.Forest,ElementId.Forest);
+            // Profiles first: the color and city light checks below sample them.
+            var planetStats=PlanetStatCatalog.Current;planetStats.EnsureProfiles();planetStats.SeedForest();
+            EditorUtility.SetDirty(planetStats);AssetDatabase.SaveAssets();
             CityLightTools.Configure();
-            var planetStats=PlanetStatCatalog.Current;planetStats.EnsureProfiles();EditorUtility.SetDirty(planetStats);AssetDatabase.SaveAssets();
             SphereCatalogTools.Validate();
             PlanetStatChecks.Validate();
         }

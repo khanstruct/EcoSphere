@@ -109,6 +109,7 @@ Default tints, all editable in `PlanetStatCatalog.asset`:
 | Magic | | violet | |
 | Crystal | | pale violet | pink-magenta |
 | Fungus | | mauve | |
+| Forest | | deep green | |
 | Flower | | warm orange | |
 | Salt | | | white |
 | Clay | | | red-orange |

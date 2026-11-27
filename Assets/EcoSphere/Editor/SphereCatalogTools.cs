@@ -39,7 +39,7 @@ namespace EcoSphere.Editor
             Add(catalog, SphereIds.Magic, "Magic", ElementId.Magic, new Color32(53,203,182,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Technology, "Technology", ElementId.Technology, new Color32(13,152,237,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Spirit, "Spirit", ElementId.Spirit, new Color32(168,230,194,255), SphereRole.Element, false);
-            Add(catalog, SphereIds.Forest, "Forest", SphereDefinition.NoNamesake, new Color32(31,107,42,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Forest, "Forest", ElementId.Forest,new Color32(31,107,42,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Core, "Core", ElementId.Core, new Color32(163, 64, 255, 255), SphereRole.Core, false);
             if (!catalog.recipeBook)
             {
@@ -58,7 +58,9 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Water,ElementId.Mud,SphereIds.Life);
             SeedRecipe(catalog,ElementId.Stone,ElementId.Magic,SphereIds.Crystal);
             SeedRecipe(catalog,ElementId.Human,ElementId.Void,SphereIds.Magic);
-            SeedRecipe(catalog,ElementId.Plant,ElementId.Spirit,SphereIds.Magic);   // stands in for Forest + Spirit: Forest adds only Plant
+            // Plant + Spirit stood in for Forest + Spirit while Forest was not an element.
+            RetireRecipe(catalog,ElementId.Plant,ElementId.Spirit);
+            SeedRecipe(catalog,ElementId.Forest,ElementId.Spirit,SphereIds.Magic);
             SeedRecipe(catalog,ElementId.Air,ElementId.Life,SphereIds.Spirit);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             // Stand-in visualizer colors are only for elements without a sphere; drop any whose element has gained one.
@@ -91,6 +93,21 @@ namespace EcoSphere.Editor
             catalog.InvalidateIndexes();
             if(catalog.ElementAppearance(element) || catalog.elementColors.Exists(entry=>entry.element==element))return;
             catalog.elementColors.Add(new ElementColorEntry{element=element,color=color});
+        }
+
+        // Re-applies the authored namesake and contributions to an existing sphere asset (seeding only fills new ones).
+        public static void ReseedSphere(int id,ElementId namesake)
+        {
+            var sphere=SphereCatalog.Current.Get(id);
+            sphere.namesakeElement=namesake;SeedContributions(sphere,namesake);
+            SphereCatalog.Current.InvalidateIndexes();EditorUtility.SetDirty(sphere);AssetDatabase.SaveAssets();
+        }
+
+        static void RetireRecipe(SphereCatalog catalog,ElementId first,ElementId second)
+        {
+            var pair=new ElementPair(first,second);
+            if(catalog.recipeBook.recipes.RemoveAll(recipe=>new ElementPair(recipe.first,recipe.second).Equals(pair))==0)return;
+            catalog.recipeBook.InvalidateIndex();EditorUtility.SetDirty(catalog.recipeBook);
         }
 
         static void SeedRecipe(SphereCatalog catalog,ElementId first,ElementId second,int output)
@@ -177,8 +194,8 @@ namespace EcoSphere.Editor
                     sphere.contributions.Add(new ElementContribution(ElementId.Civilization,1));sphere.contributions.Add(new ElementContribution(ElementId.Technology,2));sphere.unallocatedWeight=1;break;
                 case SphereIds.Spirit:
                     sphere.contributions.Add(new ElementContribution(ElementId.Magic,1));sphere.contributions.Add(new ElementContribution(ElementId.Spirit,2));sphere.contributions.Add(new ElementContribution(ElementId.Void,1));break;
-                case SphereIds.Forest:   // Forest is not an element: it adds Plant
-                    sphere.contributions.Add(new ElementContribution(ElementId.Plant,3));sphere.unallocatedWeight=1;break;
+                case SphereIds.Forest:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Forest,2));sphere.contributions.Add(new ElementContribution(ElementId.Plant,1));sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.unallocatedWeight=0;break;
                 default:sphere.contributions.Add(new ElementContribution(fallback,1));break;
             }
         }
@@ -245,7 +262,8 @@ namespace EcoSphere.Editor
             Expect(magic.namesakeElement==ElementId.Magic && magic.color==(Color)new Color32(53,203,182,255) && magic.category==SphereCategory.Beyond && magic.AmmoEligible && !magic.availableAtStart &&
                 magic.ContributionSummary()=="Magic 75% · Void 25%" && magic.unallocatedWeight==0 && magic.resourceVoice && magic.resourceVoice.name=="arcanosphere","Magic identity: turquoise, Beyond, 3 Magic / 1 Void, arcanosphere");
             Expect(catalog.recipeBook.TryCombine(ElementId.Void,ElementId.Human,out var magicRecipe) && magicRecipe==magic &&
-                catalog.recipeBook.TryCombine(ElementId.Spirit,ElementId.Plant,out var spiritRecipe) && spiritRecipe==magic,"Human + Void and Plant + Spirit must both unlock Magic");
+                catalog.recipeBook.TryCombine(ElementId.Spirit,ElementId.Forest,out var spiritRecipe) && spiritRecipe==magic && !catalog.recipeBook.TryCombine(ElementId.Plant,ElementId.Spirit,out _),
+                "Human + Void and Forest + Spirit must both unlock Magic; the Plant + Spirit stand-in is retired");
             var technology=catalog.Get(SphereIds.Technology);
             Expect(technology.namesakeElement==ElementId.Technology && technology.color==(Color)new Color32(13,152,237,255) && technology.category==SphereCategory.Technology && technology.AmmoEligible && !technology.availableAtStart &&
                 technology.ContributionSummary()=="Technology 50% · Civilization 25%" && technology.unallocatedWeight==1 && technology.resourceVoice && technology.resourceVoice.name=="technosphere","Technology identity: electric blue, Technology, 1 Civilization / 2 Technology / 1 Null, technosphere");
@@ -255,8 +273,10 @@ namespace EcoSphere.Editor
                 spirit.ContributionSummary()=="Spirit 50% · Magic 25% · Void 25%" && spirit.unallocatedWeight==0 && spirit.resourceVoice && spirit.resourceVoice.name=="ectosphere","Spirit identity: mint, Beyond, 1 Magic / 2 Spirit / 1 Void, ectosphere");
             Expect(catalog.recipeBook.TryCombine(ElementId.Life,ElementId.Air,out var spiritFrom) && spiritFrom==spirit,"Air + Life must unlock Spirit");
             var forest=catalog.Get(SphereIds.Forest);
-            Expect(!forest.HasNamesake && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
-                forest.ContributionSummary()=="Plant 75%" && forest.unallocatedWeight==1 && forest.resourceVoice && forest.resourceVoice.name=="florasphere","Forest identity: no namesake element, forest green, Life, 3 Plant / 1 Null, florasphere");
+            Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
+                forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",
+                "Forest identity: Forest element, forest green, Life, 2 Forest / 1 Plant / 1 Water, florasphere");
+            Expect(catalog.ElementColor(ElementId.Forest)==forest.color,"the Forest element must use the Forest sphere color");
             Expect(catalog.recipeBook.TryCombine(ElementId.Plant,ElementId.Plant,out var forestFrom) && forestFrom==forest,"Plant + Plant must unlock Forest");
             Expect(catalog.ElementAppearance(ElementId.Plant)==catalog.Get(SphereIds.Plant) && catalog.ElementColor(ElementId.Plant)==catalog.Get(SphereIds.Plant).color,"Forest must not take over Plant's color or art");
             // Generated body: every corner stays inside the round footprint, faces point outward, front table stays behind the icon.

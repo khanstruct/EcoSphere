@@ -75,6 +75,29 @@ namespace EcoSphere
             // The atmosphere haze over the disc softens the measured drop; a 23% Coal share darkens bare land by roughly 13%.
             Expect(Luma(tinted.land)<Luma(plain.land)*.92f,"Coal must darken the land (tinted "+tinted.land+" plain "+plain.land+", tint "+surface.Stats[PlanetColorTrait.Land]+")");
 
+            yield return Show("forest",(ElementId.Forest,450));
+            Expect(Luma(tinted.foliage)<Luma(plain.foliage)*.95f && tinted.foliage.g>tinted.foliage.r && tinted.foliage.g>tinted.foliage.b,"Forest must deepen the vegetation green");
+            // Same planet with equal Plant or Forest: Forest covers more land in vegetation.
+            int Foliage(Texture2D image)
+            {
+                int count=0;
+                for(int y=60;y<452;y+=2)for(int x=60;x<452;x+=2)
+                {
+                    if((x-256)*(x-256)+(y-256)*(y-256)>200*200)continue;
+                    var c=image.GetPixel(x,y);if(c.g>c.r*1.2f && c.g>c.b*1.15f && c.g>.08f)count++;
+                }
+                return count;
+            }
+            int[] grown=new int[2];
+            for(int i=0;i<2;i++)
+            {
+                Array.Clear(input,0,input.Length);
+                input[(int)ElementId.Water]=300;input[(int)ElementId.Stone]=300;input[(int)ElementId.Life]=300;input[i==0?(int)ElementId.Plant:(int)ElementId.Forest]=200;   // minority share: a majority saturates either
+                surface.ApplyComposition(input);yield return new WaitForSeconds(3.6f);
+                var world=Capture(i==0?"compare-plant":"compare-forest");grown[i]=Foliage(world);Destroy(world);
+            }
+            Expect(grown[1]>grown[0],"Forest must cover more land in vegetation than Plant (plant "+grown[0]+", forest "+grown[1]+")");
+
             // A completed world keeps its tints in the saved snapshot and its preview shader inputs.
             yield return Show("crystal-magic",(ElementId.Crystal,450),(ElementId.Magic,450),(ElementId.Mud,300));
             var completed=GameServices.Progress.Complete(8,0,surface.TargetSeaLevel,planet.eulerAngles.y,null,input).world;
