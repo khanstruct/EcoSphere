@@ -56,6 +56,7 @@ namespace EcoSphere
                 if (definition.resourceVoice) definition.resourceVoice.LoadAudioData();
                 if (definition.deflectSound) definition.deflectSound.LoadAudioData();
                 if (definition.breakSound) definition.breakSound.LoadAudioData();
+                if (definition.erodeSound) definition.erodeSound.LoadAudioData();
             }
             if (impressive) impressive.LoadAudioData();
             if (ecosphere) ecosphere.LoadAudioData();

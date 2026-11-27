@@ -41,6 +41,7 @@ namespace EcoSphere.Editor
             Add(catalog, SphereIds.Spirit, "Spirit", ElementId.Spirit, new Color32(168,230,194,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Forest, "Forest", ElementId.Forest,new Color32(31,107,42,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Fish, "Fish", ElementId.Fish, new Color32(247,107,13,255), SphereRole.Element, false);
+            Add(catalog, SphereIds.Sand, "Sand", ElementId.Sand, new Color32(250,222,155,255), SphereRole.Element, false);
             Add(catalog, SphereIds.Core, "Core", ElementId.Core, new Color32(163, 64, 255, 255), SphereRole.Core, false);
             if (!catalog.recipeBook)
             {
@@ -65,8 +66,12 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Air,ElementId.Life,SphereIds.Spirit);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
+            SeedRecipe(catalog,ElementId.Stone,ElementId.Sunlight,SphereIds.Sand);
             // Stand-in visualizer colors are only for elements without a sphere; drop any whose element has gained one.
             catalog.InvalidateIndexes();catalog.elementColors.RemoveAll(entry=>catalog.ElementAppearance(entry.element));
+            // Bursts when lost without points: sand crumbles in its own color, crystal shatters in purple.
+            SeedLostBurst(catalog,SphereIds.Sand,SphereBurst.Crumble,Color.clear);
+            SeedLostBurst(catalog,SphereIds.Crystal,SphereBurst.Shatter,new Color32(155,90,235,255));
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             catalog.Validate();
@@ -79,7 +84,27 @@ namespace EcoSphere.Editor
         {
             {SphereIds.Stone,("Spheres/Stone/stone-surface-v2.png","Spheres/Stone/stone-icon-v2.png")},
             {SphereIds.Fish,("Spheres/Water/water-surface-v1.png","Spheres/Fish/fish-icon-v2.png")},   // Fish swims in Water's surface
+            {SphereIds.Civilization,("Spheres/Civilization/civilization-surface-v1.png","Spheres/Civilization/civilization-icon-v2.png")},   // house icon, distinct from Sand
         };
+
+        // The one place that picks a sphere's surface and icon: the default folder files, Core's art, or an ArtOverrides entry.
+        static void AssignArt(SphereDefinition definition,int id,string label,SphereRole role)
+        {
+            string stem="Spheres/"+label+"/"+label.ToLowerInvariant();
+            string surfacePath=stem+"-surface-v1.png",iconPath=stem+"-icon-v1.png";
+            if(role==SphereRole.Core){surfacePath="Core/core-surface-v2.png";iconPath="Core/core-halo-v1.png";}
+            else if(ArtOverrides.TryGetValue(id,out var overrideArt)){surfacePath=overrideArt.surface;iconPath=overrideArt.icon;}
+            definition.surface=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/EcoSphere/Art/"+surfacePath);
+            definition.icon=AssetDatabase.LoadAssetAtPath<Sprite>("Assets/EcoSphere/Art/"+iconPath);
+        }
+        // Re-applies the art table to an existing sphere asset (seeding only fills new ones), e.g. after its icon changes.
+        public static void ReapplyArt(int id)
+        {
+            var sphere=SphereCatalog.Current.Get(id);
+            AssignArt(sphere,id,sphere.name,sphere.role);
+            if(!sphere.surface || !sphere.icon)throw new Exception(sphere.name+": art missing after re-applying the art table");
+            EditorUtility.SetDirty(sphere);AssetDatabase.SaveAssets();
+        }
 
         // A folder may hold only some of the art (Fish has an icon and borrows Water's surface); at least one file must exist.
         public static void ImportSphereArt(string label,string version="v1")
@@ -117,6 +142,13 @@ namespace EcoSphere.Editor
             SphereCatalog.Current.InvalidateIndexes();EditorUtility.SetDirty(sphere);AssetDatabase.SaveAssets();
         }
 
+        // Sets an authored lost-sphere burst on an existing sphere only while it is still unset, so later Inspector edits stay.
+        static void SeedLostBurst(SphereCatalog catalog,int id,SphereBurst burst,Color color)
+        {
+            var sphere=catalog.Get(id);if(sphere.lostBurst!=SphereBurst.None)return;
+            sphere.lostBurst=burst;sphere.lostBurstColor=color;EditorUtility.SetDirty(sphere);
+        }
+
         static void RetireRecipe(SphereCatalog catalog,ElementId first,ElementId second)
         {
             var pair=new ElementPair(first,second);
@@ -139,9 +171,10 @@ namespace EcoSphere.Editor
             {
                 definition = ScriptableObject.CreateInstance<SphereDefinition>();
                 definition.id = id; definition.namesakeElement=element; definition.displayName = label; definition.color = color;
+                // Categories sort the setup list, which only shows selectable spheres; Laser and Core never appear there.
                 definition.category=id==SphereIds.Plant || id==SphereIds.Life ? SphereCategory.Life :
-                    id==SphereIds.Void || role==SphereRole.Core ? SphereCategory.Forces :
-                    role==SphereRole.Laser || id==SphereIds.Civilization || id==SphereIds.Technology ? SphereCategory.Technology :
+                    id==SphereIds.Void ? SphereCategory.Forces :
+                    id==SphereIds.Civilization || id==SphereIds.Technology ? SphereCategory.Technology :
                     id==SphereIds.Magic || id==SphereIds.Spirit ? SphereCategory.Beyond : id==SphereIds.Forest || id==SphereIds.Fish ? SphereCategory.Life : SphereCategory.Basic;
                 if(id==SphereIds.Plant)definition.displayName="Plant Life";
                 definition.role = role; definition.selectable = role == SphereRole.Element;
@@ -157,14 +190,10 @@ namespace EcoSphere.Editor
                 if(id==SphereIds.Spirit)definition.description="Fills the world with an unseen presence, a quiet bridge between life and magic.";
                 if(id==SphereIds.Forest)definition.description="Blankets the land in dense woodland, adding a wealth of plant life.";
                 if(id==SphereIds.Fish)definition.description="Fills the seas with life, though that life can only flourish as far as the planet's water allows.";
+                if(id==SphereIds.Sand){definition.description="Shifting and restless: whenever a shot makes no match, the outermost sand slips away.";
+                    definition.erodesOnMiss=true;definition.erodeSound=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/sandfall.mp3");}
                 SeedContributions(definition,element);
-                string art = "Assets/EcoSphere/Art/";
-                string stem = "Spheres/" + label + "/" + label.ToLowerInvariant();
-                string surfacePath=stem+"-surface-v1.png",iconPath=stem+"-icon-v1.png";
-                if(role==SphereRole.Core){surfacePath="Core/core-surface-v2.png";iconPath="Core/core-halo-v1.png";}
-                else if(ArtOverrides.TryGetValue(id,out var overrideArt)){surfacePath=overrideArt.surface;iconPath=overrideArt.icon;}
-                definition.surface = AssetDatabase.LoadAssetAtPath<Texture2D>(art + surfacePath);
-                definition.icon = AssetDatabase.LoadAssetAtPath<Sprite>(art + iconPath);
+                AssignArt(definition,id,label,role);
                 AssetDatabase.CreateAsset(definition, path);
             }
             if (!catalog.spheres.Contains(definition)) catalog.spheres.Add(definition);
@@ -172,7 +201,7 @@ namespace EcoSphere.Editor
             if (!definition.resourceVoice)
             {
                 string voice = id == SphereIds.Ice ? "cryosphere" : id == SphereIds.Sunlight ? "heliosphere" :
-                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : id == SphereIds.Civilization ? "politosphere" : id == SphereIds.Magic ? "arcanosphere" : id == SphereIds.Technology ? "technosphere" : id == SphereIds.Spirit ? "ectosphere" : id == SphereIds.Forest ? "florasphere" : id == SphereIds.Fish ? "biosphere" : null;
+                    id == SphereIds.Fire ? "pyrosphere" : id == SphereIds.Void ? "shadowsphere" : id == SphereIds.Stone ? "lithosphere" : id == SphereIds.Water ? "hydrosphere" : id == SphereIds.Plant ? "florasphere" : id == SphereIds.Life ? "biosphere" : id == SphereIds.Mud ? "pelitosphere" : id == SphereIds.Air ? "atmosphere" : id == SphereIds.Crystal ? "latisphere" : id == SphereIds.Civilization ? "politosphere" : id == SphereIds.Magic ? "arcanosphere" : id == SphereIds.Technology ? "technosphere" : id == SphereIds.Spirit ? "ectosphere" : id == SphereIds.Forest ? "florasphere" : id == SphereIds.Fish ? "biosphere" : id == SphereIds.Sand ? "lithosphere" : null;
                 if (voice != null)
                 {
                     definition.resourceVoice = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/EcoSphere/Audio/Voice/" + voice + ".mp3");
@@ -215,6 +244,8 @@ namespace EcoSphere.Editor
                     sphere.contributions.Add(new ElementContribution(ElementId.Forest,2));sphere.contributions.Add(new ElementContribution(ElementId.Plant,1));sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.unallocatedWeight=0;break;
                 case SphereIds.Fish:   // its Life can never exceed the planet's Water (a limited contribution)
                     sphere.contributions.Add(new ElementContribution(ElementId.Life,2,ElementId.Water));sphere.contributions.Add(new ElementContribution(ElementId.Water,1));sphere.contributions.Add(new ElementContribution(ElementId.Fish,1));sphere.unallocatedWeight=0;break;
+                case SphereIds.Sand:
+                    sphere.contributions.Add(new ElementContribution(ElementId.Sunlight,1));sphere.contributions.Add(new ElementContribution(ElementId.Sand,2));sphere.unallocatedWeight=1;break;
                 default:sphere.contributions.Add(new ElementContribution(fallback,1));break;
             }
         }
@@ -276,6 +307,7 @@ namespace EcoSphere.Editor
                 civilization.AmmoEligible && !civilization.availableAtStart && civilization.surface && civilization.icon &&
                 civilization.ContributionSummary()=="Civilization 50% · Human 25%" && civilization.unallocatedWeight==1 && civilization.TotalContributionUnits==4,
                 "Civilization identity: sandstone, Technology category, 1 Human / 2 Civilization / 1 Null, art");
+            Expect(civilization.icon.texture.name=="civilization-icon-v2" && civilization.surface.name=="civilization-surface-v1","Civilization must use its house icon (v2) and v1 surface");
             Expect(civilization.resourceVoice && civilization.resourceVoice.name=="politosphere" && LevelAudio.MatchVoice(SphereIds.Civilization,voiceMinimum)==civilization.resourceVoice,"Civilization must use politosphere");
             foreach(var recipe in catalog.recipeBook.recipes)Expect(recipe.output!=civilization,"Civilization recipe should remain unset for now");
             Expect(magic.namesakeElement==ElementId.Magic && magic.color==(Color)new Color32(53,203,182,255) && magic.category==SphereCategory.Beyond && magic.AmmoEligible && !magic.availableAtStart &&
@@ -305,6 +337,15 @@ namespace EcoSphere.Editor
             Expect(fishLife.limited && fishLife.limitedBy==ElementId.Water && Mathf.Approximately(fishLife.limitRatio,1) &&
                 !fish.contributions.Exists(entry=>entry.element!=ElementId.Life && entry.limited),"Fish's Life (only) must be capped by the planet's Water");
             Expect(catalog.recipeBook.TryCombine(ElementId.Water,ElementId.Life,out var fishFrom) && fishFrom==fish,"Life + Water must unlock Fish");
+            var sand=catalog.Get(SphereIds.Sand);
+            Expect(sand.namesakeElement==ElementId.Sand && sand.color==(Color)new Color32(250,222,155,255) && sand.category==SphereCategory.Basic && sand.AmmoEligible && !sand.availableAtStart &&
+                sand.ContributionSummary()=="Sand 50% · Sunlight 25%" && sand.unallocatedWeight==1 && sand.resourceVoice && sand.resourceVoice.name=="lithosphere",
+                "Sand identity: pale yellow, Basic, 1 Sunlight / 2 Sand / 1 Null, lithosphere");
+            Expect(sand.erodesOnMiss && sand.erodeSound && sand.erodeSound.name=="sandfall" && sand.deflectedHits==0,"Sand must erode on a missed shot with sandfall");
+            Expect(sand.lostBurst==SphereBurst.Crumble && sand.LostBurstColor==sand.color && crystal.lostBurst==SphereBurst.Shatter && crystal.LostBurstColor==(Color)new Color32(155,90,235,255),
+                "Sand must crumble in its own color; Crystal must shatter in purple");
+            foreach(var other in catalog.spheres)Expect(other==sand || !other.erodesOnMiss,"only Sand erodes for now: "+other.displayName);
+            Expect(catalog.recipeBook.TryCombine(ElementId.Sunlight,ElementId.Stone,out var sandFrom) && sandFrom==sand,"Stone + Sunlight must unlock Sand");
             Expect(catalog.recipeBook.TryCombine(ElementId.Plant,ElementId.Plant,out var forestFrom) && forestFrom==forest,"Plant + Plant must unlock Forest");
             Expect(catalog.ElementAppearance(ElementId.Plant)==catalog.Get(SphereIds.Plant) && catalog.ElementColor(ElementId.Plant)==catalog.Get(SphereIds.Plant).color,"Forest must not take over Plant's color or art");
             // Generated body: every corner stays inside the round footprint, faces point outward, front table stays behind the icon.

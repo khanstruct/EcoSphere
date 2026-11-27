@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
@@ -94,6 +94,16 @@ namespace EcoSphere
         public int deflectedHits;
         [Tooltip("Played when this sphere deflects a shot.")] public AudioClip deflectSound;
         [Tooltip("Played when a shot breaks this sphere.")] public AudioClip breakSound;
+        [Header("Erosion")]
+        [Tooltip("After a shot that makes no match, the eroding sphere farthest from the core disappears (no points or elements). " +
+            "Hazarded spheres (e.g. infested) don't count. Anything it was holding falls away as a normal breakaway.")]
+        public bool erodesOnMiss;
+        [Tooltip("Played when this sphere erodes.")] public AudioClip erodeSound;
+        [Header("Lost without points (eroded, broken)")]
+        [Tooltip("Particle burst where the sphere was: Crumble falls away, Shatter scatters. Profiles live in SphereShapeStyle.")]
+        public SphereBurst lostBurst;
+        [Tooltip("Burst color; leave fully transparent to use the sphere color.")] public Color lostBurstColor = Color.clear;
+        public Color LostBurstColor => lostBurstColor.a > 0 ? lostBurstColor : color;
         public int TotalContributionUnits => ContributionUnits+unallocatedWeight;
         public bool Matchable => role == SphereRole.Element;
         public bool AmmoEligible => selectable && Matchable;
@@ -117,6 +127,9 @@ namespace EcoSphere
             if (ContributionUnits + unallocatedWeight > 4) throw new InvalidOperationException(name + ": at most four contribution units including unallocated units");
             if (deflectedHits < 0 || deflectedHits > 10 || (deflectedHits > 0 && (!Matchable || !deflectSound || !breakSound)))
                 throw new InvalidOperationException(name + ": deflecting spheres must be elements with deflect and break sounds (0 to 10 hits)");
+            if (!Enum.IsDefined(typeof(SphereBurst), lostBurst)) throw new InvalidOperationException(name + ": invalid lost-sphere burst");
+            if (erodesOnMiss && (!Matchable || !erodeSound))
+                throw new InvalidOperationException(name + ": eroding spheres must be elements with an erode sound");
             if (color.a <= 0) throw new InvalidOperationException(name + ": the streak/visualizer color must be visible");
             if (string.IsNullOrWhiteSpace(description) || description.Length > MaximumDescriptionLength)
                 throw new InvalidOperationException(name + ": a description of 1 to " + MaximumDescriptionLength + " characters is required");

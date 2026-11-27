@@ -21,3 +21,18 @@ MonoBehaviour:
   crystalMetallic: 0.15
   crystalWobbleDegrees: 13
   crystalWobbleSpeed: 0.7
+  burstMaterial: {fileID: 2100000, guid: 70b63bc783196ff418ba84d20088741b, type: 2}
+  crumble:
+    particles: 60
+    lifetime: 0.9
+    gravity: 0.6
+    size: 0.05
+    speed: 0.5
+    minimumSpeedShare: 0
+  shatter:
+    particles: 45
+    lifetime: 0.45
+    gravity: 0.05
+    size: 0.065
+    speed: 2.2
+    minimumSpeedShare: 0.6

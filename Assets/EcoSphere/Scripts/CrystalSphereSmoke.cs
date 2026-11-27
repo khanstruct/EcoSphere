@@ -82,6 +82,11 @@ namespace EcoSphere
             Expect(score==scoreBeforeBreak && lost==lostBeforeBreak && shotRicochets==0,"a break is not a miss, ricochet or score");
             for(int i=0;i<totals.Length;i++)Expect(totals[i]==totalsBefore[i],"broken crystal must not contribute "+(ElementId)i);
             Expect(played.Contains(crystal.breakSound) && !played.Contains(crystal.deflectSound),"break must play crystal-breaking");
+            var shards=GameObject.Find("Sphere burst (Shatter)");var style=SphereShapeStyle.Current;
+            Expect(shards && shards.GetComponent<ParticleSystem>().main.startColor.colorMax==crystal.LostBurstColor && crystal.LostBurstColor!=crystal.color &&
+                style.shatter.lifetime<style.crumble.lifetime && style.shatter.gravity<style.crumble.gravity && style.shatter.speed>style.crumble.speed,
+                "a breaking crystal must shatter into short, scattering purple shards");
+            yield return new WaitForSeconds(.12f);if(shards)CaptureBurst("shatter",shards.transform.position);
             // Crystal shots attach to crystal like any same-type sphere.
             var fresh=new Vector2Int(1,-3);Add(fresh,SphereIds.Crystal);int beforeSame=board.Cells.Count,ricochetsBeforeSame=ricochets;
             yield return Shoot(SphereIds.Crystal,fresh);

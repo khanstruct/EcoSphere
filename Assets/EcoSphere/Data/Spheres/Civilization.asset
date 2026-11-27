@@ -18,7 +18,7 @@ MonoBehaviour:
   description: Spreads settlements across the land. Their lights glow brighter as technology advances.
   category: 4
   surface: {fileID: 2800000, guid: ad919aeea0873f84bafc38be28d45bd8, type: 3}
-  icon: {fileID: 21300000, guid: 4047ff9662653d64bb7a237f627b7109, type: 3}
+  icon: {fileID: 21300000, guid: a5c69cf042062734f96a0d5b15707681, type: 3}
   color: {r: 0.9098039, g: 0.7176471, b: 0.44705883, a: 1}
   shape: 0
   glowColor: {r: 1, g: 1, b: 1, a: 1}
@@ -43,3 +43,7 @@ MonoBehaviour:
   deflectedHits: 0
   deflectSound: {fileID: 0}
   breakSound: {fileID: 0}
+  erodesOnMiss: 0
+  erodeSound: {fileID: 0}
+  lostBurst: 0
+  lostBurstColor: {r: 0, g: 0, b: 0, a: 0}

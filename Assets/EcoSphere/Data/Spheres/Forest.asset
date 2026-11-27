@@ -48,3 +48,5 @@ MonoBehaviour:
   deflectedHits: 0
   deflectSound: {fileID: 0}
   breakSound: {fileID: 0}
+  erodesOnMiss: 0
+  erodeSound: {fileID: 0}

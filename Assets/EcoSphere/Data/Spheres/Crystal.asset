@@ -31,11 +31,24 @@ MonoBehaviour:
   contributions:
   - element: 2
     amount: 1
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
   - element: 48
     amount: 1
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
   - element: 26
     amount: 2
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
   unallocatedWeight: 0
   deflectedHits: 2
   deflectSound: {fileID: 8300000, guid: 916d3d28e3033ad4c9dacfe0bbb3a4ac, type: 3}
   breakSound: {fileID: 8300000, guid: ea54bcf196d87d34686679a41480ef4d, type: 3}
+  erodesOnMiss: 0
+  erodeSound: {fileID: 0}
+  lostBurst: 2
+  lostBurstColor: {r: 0.60784316, g: 0.3529412, b: 0.92156863, a: 1}

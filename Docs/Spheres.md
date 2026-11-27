@@ -27,6 +27,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Spirit | 15 | Magic: 1, Spirit: 2, Void: 1 | Element; mint #A8E6C2, Beyond category, ectosphere voice, DEV available, Air + Life recipe |
 | Forest | 16 | Forest: 2, Plant: 1, Water: 1 | Element; forest green #1F6B2A, Life category, florasphere voice, DEV available, Plant + Plant recipe |
 | Fish | 17 | Life: 2 (capped by Water), Water: 1, Fish: 1 | Element; orange #F76B0D, Life category, biosphere voice, Water's surface with the v2 fish icon, DEV available, Life + Water recipe |
+| Sand | 18 | Sunlight: 1, Sand: 2, Null: 1 | Element; pale yellow #FADE9B, Basic category, lithosphere voice, erodes on a miss (sandfall), DEV available, Stone + Sunlight recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -179,3 +180,34 @@ Fish (ID 17) is orange (#F76B0D, from the icon; close to Fire's orange-red) and 
 Its Life line is a **limited contribution** (`new ElementContribution(ElementId.Life, 2, ElementId.Water)`, ratio 1): the Life that Fish spheres have added can never exceed the planet's Water. The excess is lost, score is unchanged, and the visualizer shows "Not enough Water" (see Limited contributions). Fish's own Water counts toward its cap because unlimited yield lands first.
 
 Spheres whose art doesn't follow the `<label>-{surface,icon}-v1.png` pattern are listed in `SphereCatalogTools.ArtOverrides` (Stone's v2 art, Fish borrowing Water's surface). `ImportSphereArt` imports whichever files a folder has. `SphereIntroSmoke` now computes the expected yield with the same cap rule as the ledger and checks that a shortage is reported exactly when a line is clipped.
+
+## Sand sphere and erosion
+
+Sand (ID 18) is pale yellow (#FADE9B, between the icon's highlights and mid-tones), uses the lithosphere voice, and contributes 1 Sunlight, 2 Sand and 1 Null. Stone + Sunlight unlocks it.
+
+Sand **erodes**: `SphereDefinition.erodesOnMiss` with `erodeSound` (`Audio/sandfall.mp3`). This is sphere data, not a Sand-only branch; validation requires an erode sound on a matchable sphere. After any shot of a matchable sphere that makes no match (it attaches without matching, breaks a Crystal without matching, or is lost out the bottom):
+
+1. The eroding sphere farthest from the core disappears (`ErosionTarget`; ties go to the lower, then leftmost cell). It gives no points or elements, plays its sound, dissolves and bursts into particles (see Lost-sphere bursts).
+2. Anything it was holding then falls away as a normal breakaway, with scoring, elements and audio. On an attached shot this is the same breakaway as the shot's own.
+3. The ammo check (`TryLoadFromRing`, at the next load) runs after all of this, so eroding the last sand replaces Sand in the cannon and chambers.
+
+A hazarded cell (`IsHazarded`, currently: infested by an alien) doesn't count as its sphere type, so infested sand never erodes; future hazards join that one check. Laser shots aren't matchable, so they never trigger erosion. Crystal breaks and erosion share `LoseSphere` (remove without points, dissolve, play the sphere's sound).
+
+`ErosionSmoke` (`SphereIntroTools.Smoke` with `-erosionSmoke`, DEV mode) uses real pointer shots on test boards with rotation held at 0. It checks:
+- a miss erodes the farthest non-infested sand with sandfall and grains;
+- a farther infested sand is skipped;
+- what the sand held falls away and scores, with no Sand from the eroded sphere;
+- after the last sand erodes, the cannon and chambers drop Sand;
+- a matching shot erodes nothing;
+- infested sand alone erodes nothing;
+- a lost shot erodes and drops what the sand held (called directly, since the lost-shot path calls the same method).
+
+## Lost-sphere bursts
+
+A sphere lost without points (eroded, or broken by a shot) bursts into particles where it was. This happens in the shared `LoseSphere` step, using the definition's `lostBurst` (`None`, `Crumble`, `Shatter`) and `lostBurstColor` (fully transparent means the sphere's own color). `SphereBursts.Spawn` builds the burst from the matching profile in `SphereShapeStyle`:
+- **Crumble:** grains that sag and fall.
+- **Shatter:** fewer, slightly larger shards that fly outward fast, with almost no gravity and about half the lifetime, so it reads as breaking glass.
+
+Both share the saved particle material `Art/Effects/sphere-crumble.mat` (`burstMaterial`), so builds include its shader. Sand crumbles in its own color, and Crystal shatters in purple (#9B5AEB). `SeedLostBurst` only sets a burst that is still unset, so later Inspector edits stay. The erosion smoke checks the crumble and the Crystal smoke checks the shatter. Close-ups: `Logs/burst-crumble.png` and `burst-shatter.png`.
+
+Civilization uses its house icon (`civilization-icon-v2.png`) so it no longer resembles Sand. The art table (`ArtOverrides`) is the single source for spheres whose art doesn't follow the default file names, and `ReapplyArt` updates an existing sphere asset from it.

@@ -380,6 +380,7 @@ namespace EcoSphere
                 {
                     if (levelAudio) levelAudio.Miss();
                     Destroy(projectile); projectile = null; lost++; lastMatch = lastRelease = 0;
+                    ErodeAfterLostShot(loadedType);
                     StartCoroutine(FinishTurn()); return;
                 }
                 projectileDirection = BoardRules.Reflect(projectileDirection, normal).normalized;
@@ -430,11 +431,7 @@ namespace EcoSphere
         // A broken deflector is simply lost: no score, no element contributions, no streak.
         void BreakDeflector(Vector2Int cell)
         {
-            var definition=Definition(board.Cells[cell]);
-            if(board.Infested.Contains(cell))KnockOffAlien(cell,false);
-            var visual=visuals[cell];visuals.Remove(cell);board.Cells.Remove(cell);
-            StartCoroutine(DissolveMatch(visual));
-            if(levelAudio)levelAudio.PlayEffect(definition.breakSound);
+            LoseSphere(cell,Definition(board.Cells[cell]).breakSound);
         }
 
         // Seats the projectile in a board cell and resolves matches, breakaways and audio for the shot.
@@ -460,6 +457,8 @@ namespace EcoSphere
             using (Elements.Batch())
             {
                 RemoveCells(matches, ElementScoring.MatchRate(matches.Count),matchOrigin:chosen,voicePoints:resolutionSpherePoints);
+                // No match: an eroding sphere disappears first, so what it held joins this shot's breakaway.
+                if (matches.Count == 0) ErodeAfterMiss(board.Cells[chosen]);
                 released = board.Disconnected(); lastRelease = released.Count;
                 RecordResolution(lastMatch, lastRelease, shotRicochets);
                 AdvanceTutorial(released);

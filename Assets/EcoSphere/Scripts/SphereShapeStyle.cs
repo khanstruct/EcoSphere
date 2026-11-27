@@ -7,6 +7,20 @@ namespace EcoSphere
     // Append shapes only: sphere definitions serialize these values.
     public enum SphereShape { Sphere = 0, Crystal = 1 }
 
+    // Particle burst when a sphere is lost without points (eroded, broken). Append only: definitions serialize these values.
+    public enum SphereBurst { None = 0, Crumble = 1, Shatter = 2 }
+
+    [Serializable]
+    public sealed class SphereBurstProfile
+    {
+        [Range(4, 200)] public int particles = 60;
+        [Range(.1f, 3)] public float lifetime = .9f;
+        [Range(0, 5), Tooltip("Gravity, in multiples of world gravity.")] public float gravity = .6f;
+        [Range(.005f, .2f), Tooltip("Particle size relative to a sphere's diameter.")] public float size = .05f;
+        [Range(0, 5), Tooltip("Largest initial outward speed, in sphere diameters per second.")] public float speed = .5f;
+        [Range(0, 1), Tooltip("Slowest particle's speed as a share of the largest; higher reads as a sharp scatter.")] public float minimumSpeedShare;
+    }
+
     // Visual-only tuning for non-round sphere bodies. Collision, matching and scoring never read it.
     [CreateAssetMenu(menuName = "EcoSphere/Sphere Shape Style")]
     public sealed class SphereShapeStyle : ScriptableObject
@@ -30,6 +44,16 @@ namespace EcoSphere
         public float crystalWobbleDegrees = 13;
         [Range(0, 3), Tooltip("Wobble speed in radians per second.")]
         public float crystalWobbleSpeed = .7f;
+
+        [Header("Bursts when a sphere is lost without points (each sphere picks one in its definition)")]
+        [Tooltip("Saved particle material (URP Particles/Unlit) so builds include its shader.")]
+        [UnityEngine.Serialization.FormerlySerializedAs("crumbleMaterial")] public Material burstMaterial;
+        [Tooltip("Grains that sag and fall away (eroding sand).")]
+        public SphereBurstProfile crumble = new SphereBurstProfile { particles = 60, lifetime = .9f, gravity = .6f, size = .05f, speed = .5f };
+        [Tooltip("Shards that scatter outward quickly with little gravity (shattering crystal).")]
+        public SphereBurstProfile shatter = new SphereBurstProfile { particles = 45, lifetime = .45f, gravity = .05f, size = .065f, speed = 2.2f, minimumSpeedShare = .6f };
+        public SphereBurstProfile Profile(SphereBurst burst) =>
+            burst == SphereBurst.Crumble ? crumble : burst == SphereBurst.Shatter ? shatter : null;
 
         static SphereShapeStyle current;
         public static SphereShapeStyle Current
