@@ -50,6 +50,7 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Lava,ElementId.Stone,SphereIds.Metal);
             SeedRecipe(catalog,ElementId.Air,ElementId.Air,SphereIds.Wind);
             SeedRecipe(catalog,ElementId.Sunlight,ElementId.Air,SphereIds.Wind);
+            SeedRecipe(catalog,ElementId.Fire,ElementId.Stone,SphereIds.Lava);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -300,6 +301,13 @@ namespace EcoSphere.Editor
                 "Wind identity: pale lavender-white, Weather, 1 Wind / 2 Air / 1 Null, atmosphere");
             Expect(catalog.recipeBook.TryCombine(ElementId.Air,ElementId.Air,out var windFrom) && windFrom==wind && catalog.recipeBook.TryCombine(ElementId.Air,ElementId.Sunlight,out var windFromSun) && windFromSun==wind,"Air + Air and Sunlight + Air must unlock Wind");
             Expect(catalog.ElementAppearance(ElementId.Wind)==wind && !catalog.elementColors.Exists(entry=>entry.element==ElementId.Wind),"Wind's sphere must supply its element color");
+            var lava=catalog.Get(SphereIds.Lava);
+            Expect(lava.namesakeElement==ElementId.Lava && lava.color==(Color)new Color32(204,42,20,255) && lava.category==SphereCategory.Basic && lava.AmmoEligible && !lava.availableAtStart &&
+                lava.surface && lava.surface.name=="lava-surface-v1" && lava.icon && lava.icon.texture.name=="lava-icon-v1" && lava.unlit && lava.glowStrength>0 &&
+                lava.ContributionSummary()=="Lava 50% · Fire 25%" && lava.unallocatedWeight==1 && lava.resourceVoice && lava.resourceVoice.name=="pyrosphere",
+                "Lava identity: deep red-orange, Basic, self-lit with an orange glow, 2 Lava / 1 Fire / 1 Null, pyrosphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Stone,ElementId.Fire,out var lavaFrom) && lavaFrom==lava,"Fire + Stone must unlock Lava");
+            Expect(catalog.ElementAppearance(ElementId.Lava)==lava && !catalog.elementColors.Exists(entry=>entry.element==ElementId.Lava),"Lava's sphere must supply its element color");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",

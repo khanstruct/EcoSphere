@@ -31,6 +31,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Bird | 19 | Bird: 2, Life: 1 (capped by Air), Air: 1 | Element; sky blue #78BEF5, Life category, biosphere voice, feather surface with the v2 bird icon, DEV available, Life + Air or Life + Wind recipes |
 | Metal | 20 | Metal: 2, Null: 2 | Element; dark gray #5A6170, Basic category, ferrosphere voice, DEV available, Lava + Stone recipe; occurs naturally |
 | Wind | 21 | Wind: 1, Air: 2, Null: 1 | Element; pale lavender-white #DCD6F5, Weather category, atmosphere voice, DEV available, Air + Air or Sunlight + Air recipes |
+| Lava | 22 | Lava: 2, Fire: 1, Null: 1 | Element; deep red-orange #CC2A14, Basic category, pyrosphere voice, self-lit with an orange glow, DEV available, Fire + Stone recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -231,7 +232,7 @@ Bird (ID 19, the existing `ElementId.Bird`) is sky blue #78BEF5, sampled from it
 
 ## Metal sphere
 
-Metal (ID 20, the existing `ElementId.Metal`) is dark gray #5A6170, uses its brushed-steel surface and ingot icon (`metal-{surface,icon}-v1.png`), the ferrosphere voice and the Basic category. It contributes 2 Metal and 2 Null. Lava + Stone unlocks it, and until then it can occur naturally (weight 1). Lava has no sphere yet, so for now natural occurrence is the only way to find Metal outside DEV. Its planet profile is empty for now. `SphereIntroSmoke 20` covers it.
+Metal (ID 20, the existing `ElementId.Metal`) is dark gray #5A6170, uses its brushed-steel surface and ingot icon (`metal-{surface,icon}-v1.png`), the ferrosphere voice and the Basic category. It contributes 2 Metal and 2 Null. Lava + Stone unlocks it, and until then it can occur naturally (weight 1). With the Lava sphere, Lava + Stone is reachable too. Its planet profile is empty for now. `SphereIntroSmoke 20` covers it.
 
 Metal is the element that Magnet and Tools will contribute, and spheres that contribute Metal won't be repelled by magnets.
 ## Wind sphere
@@ -241,6 +242,11 @@ Wind (ID 21, the existing `ElementId.Wind`) uses `wind-{surface,icon}-v1.png` an
 With Wind available, Sand's Wind + Stone recipe and Bird's Life + Wind recipe can now be reached. The Wind element already had a planet profile (`WeatherActivity` 1), so Wind stirs up the planet's weather. `SphereIntroSmoke 21` covers it.
 
 The category smoke (`-sphereCategorySmoke`) now takes its expectations from the catalog: categories with no owned sphere must have no tab, and each filter must show as many tiles as the player owns in that category. It used to hard-code empty Weather, Technology and Beyond tabs and fixed Life counts, which broke as soon as Civilization, Magic and Fish were added. It passes in DEV and normal mode.
+## Lava sphere
+
+Lava (ID 22, the existing `ElementId.Lava`) uses `lava-{surface,icon}-v1.png`, the pyrosphere voice (shared with Fire) and the Basic category. Its color, deep red-orange #CC2A14, is darker and redder than Fire's #FF5618 so their bars stay apart. Lava is self-lit (`unlit`) with an orange `SphereGlow` (strength 0.35), using the same data-driven glow Void uses. It contributes 2 Lava, 1 Fire and 1 Null. Fire + Stone unlocks it, and that makes Metal's Lava + Stone recipe reachable.
+
+The Lava element already had a planet profile: Temperature 1, GeologicalActivity 1 and TerrainRuggedness 0.4. `SphereIntroSmoke 22` covers it.
 ## Natural occurrence
 
 A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit and Metal each have weight 1. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.

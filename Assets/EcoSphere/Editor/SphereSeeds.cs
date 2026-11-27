@@ -100,6 +100,10 @@ namespace EcoSphere.Editor
             new SphereSeed { id = SphereIds.Wind, label = "Wind", element = ElementId.Wind, color = new Color32(220,214,245,255), category = SphereCategory.Weather, voice = "atmosphere",
                 description = "Sets the skies in motion, stirring up the planet's weather.",
                 contributions = new[] { C(ElementId.Wind,1), C(ElementId.Air,2) }, unallocated = 1 },
+            new SphereSeed { id = SphereIds.Lava, label = "Lava", element = ElementId.Lava, color = new Color32(204,42,20,255), voice = "pyrosphere",
+                description = "Molten rock wells up from below, heating the world and shaking its ground awake.",
+                contributions = new[] { C(ElementId.Lava,2), C(ElementId.Fire,1) }, unallocated = 1,
+                extra = d => { d.unlit = true; d.glowColor = new Color32(255,120,30,255); d.glowStrength = .35f; } },   // molten: lights itself
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 
