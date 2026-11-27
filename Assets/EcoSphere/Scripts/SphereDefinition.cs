@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18, Bird = 19, Metal = 20, Wind = 21, Lava = 22;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18, Bird = 19, Metal = 20, Wind = 21, Lava = 22, Mountain = 23;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
@@ -19,7 +19,7 @@ namespace EcoSphere
         Plant, Algae, Moss, Fungus, Flower,
         [Obsolete("Retired: unused (Forest covers it). The slot keeps later element IDs stable.")] RetiredTree,
         Bacteria, Insect, Fish, Bird, Reptile,
-        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud, Civilization, Spirit, Forest }
+        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud, Civilization, Spirit, Forest, Mountain }
     public static class ElementIds
     {
         static readonly HashSet<ElementId> retired = Retired();
@@ -72,6 +72,9 @@ namespace EcoSphere
         public const int MaximumDescriptionLength=160;
         public SphereCategory category;
         public Texture2D surface;
+        [Tooltip("Multiplied over the surface texture wherever the sphere is drawn (board, ammo, previews). White leaves it unchanged; " +
+            "lets a sphere reuse another's texture in its own color, e.g. Mountain on Stone's.")]
+        public Color surfaceTint = Color.white;
         public Sprite icon;
         public Color color = Color.white;
         [Tooltip("Visual body only. Collision, matching and scoring always use the round sphere footprint.")]

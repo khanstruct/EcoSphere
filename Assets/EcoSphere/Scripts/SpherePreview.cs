@@ -48,7 +48,7 @@ namespace EcoSphere
             if (surfaceMaterial) { material.SetFloat("_SeaLevel", seaLevel); material.SetFloat("_StoneRuggedness",stoneRuggedness); material.SetFloat("_IceCoverage",iceCoverage); }
             else
             {
-                material.SetTexture("_BaseMap", surface); material.SetColor("_BaseColor", Color.white);
+                material.SetTexture("_BaseMap", surface); material.SetColor("_BaseColor", definition ? definition.surfaceTint : Color.white);
                 material.SetFloat("_Smoothness", .35f);
                 SphereShapes.ApplyFinish(material, shape);
             }

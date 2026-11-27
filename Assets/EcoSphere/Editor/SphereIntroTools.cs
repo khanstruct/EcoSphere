@@ -6,7 +6,7 @@ namespace EcoSphere.Editor
     public static class SphereIntroTools
     {
         // (label, art version). Fish has only an icon in its folder (it borrows Water's surface); Civilization's v2 is its house icon; Bird uses its v1 surface and v2 icon.
-        static readonly (string label,string version)[] Spheres = { ("Civilization","v2"), ("Magic","v1"), ("Technology","v1"), ("Spirit","v1"), ("Forest","v1"), ("Fish","v2"), ("Sand","v1"), ("Bird","v1"), ("Bird","v2"), ("Metal","v1"), ("Wind","v1"), ("Lava","v1") };
+        static readonly (string label,string version)[] Spheres = { ("Civilization","v2"), ("Magic","v1"), ("Technology","v1"), ("Spirit","v1"), ("Forest","v1"), ("Fish","v2"), ("Sand","v1"), ("Bird","v1"), ("Bird","v2"), ("Metal","v1"), ("Wind","v1"), ("Lava","v1"), ("Mountain","v1") };
 
         // Imports the art, seeds the spheres and their planet profiles, then validates the catalog and city light data.
         public static void Configure()
@@ -27,6 +27,8 @@ namespace EcoSphere.Editor
             SphereCatalogTools.SeedNaturalWeight(SphereIds.Spirit);
             // Profiles first: the color and city light checks below sample them.
             var planetStats=PlanetStatCatalog.Current;planetStats.EnsureProfiles();planetStats.SeedForest();
+            // Mountain lifts the land well above the sea (Stone only roughens it): negative SurfaceWater lowers the sea level, plus rugged peaks.
+            planetStats.SeedEffects(ElementId.Mountain,(PlanetStat.SurfaceWater,-.7f),(PlanetStat.TerrainRuggedness,1),(PlanetStat.Mineralization,.15f));
             EditorUtility.SetDirty(planetStats);AssetDatabase.SaveAssets();
             CityLightTools.Configure();
             ConfigureCrumble();

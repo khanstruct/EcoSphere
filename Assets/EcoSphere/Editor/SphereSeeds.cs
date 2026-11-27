@@ -104,6 +104,10 @@ namespace EcoSphere.Editor
                 description = "Molten rock wells up from below, heating the world and shaking its ground awake.",
                 contributions = new[] { C(ElementId.Lava,2), C(ElementId.Fire,1) }, unallocated = 1,
                 extra = d => { d.unlit = true; d.glowColor = new Color32(255,120,30,255); d.glowStrength = .35f; } },   // molten: lights itself
+            new SphereSeed { id = SphereIds.Mountain, label = "Mountain", element = ElementId.Mountain, color = new Color32(168,147,214,255), voice = "lithosphere",
+                description = "Thrusts the land up into towering peaks.",
+                contributions = new[] { C(ElementId.Mountain,1), C(ElementId.Stone,2) }, unallocated = 1,
+                extra = d => d.surfaceTint = new Color32(255,222,255,255) },   // Stone's surface in pale purple
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 

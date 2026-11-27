@@ -247,7 +247,7 @@ namespace EcoSphere
             var definition = Definition(type);
             var mesh = SphereShapes.CreateBody(definition.shape, "Rotating surface");
             mesh.transform.SetParent(root.transform, false); mesh.transform.localScale = Vector3.one * Radius * 2;
-            ApplySurface(mesh.GetComponent<Renderer>(), sphereMaterials[type], definition.surface, Color.white);
+            ApplySurface(mesh.GetComponent<Renderer>(), sphereMaterials[type], definition.surface, definition.surfaceTint);
             var appearance = root.AddComponent<SphereAppearance>(); appearance.surface = mesh.transform; appearance.shape = definition.shape;
             appearance.glow=SphereGlow.Create(root.transform,definition,Radius*2,root.layer);
             appearance.spin = type < 0 ? 8 : 12;

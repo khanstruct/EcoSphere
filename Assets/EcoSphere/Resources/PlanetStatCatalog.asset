@@ -570,6 +570,17 @@ MonoBehaviour:
       strength: 0.9
     atmosphereColor: {r: 0.5, g: 0.82, b: 0.78, a: 1}
     atmosphereStrength: 0.12
+  - element: 56
+    effects:
+    - stat: 2
+      amount: -0.7
+    - stat: 1
+      amount: 1
+    - stat: 15
+      amount: 0.15
+    colors: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
   responses:
   - stat: 0
     contributionForFullEffect: 1

@@ -189,6 +189,12 @@ namespace EcoSphere
             forest.atmosphereColor=new Color(.5f,.82f,.78f,1);forest.atmosphereStrength=.12f;
             NotifyChanged();
         }
+        // Sets authored effects on one element's profile (creating it if needed); other effects on that profile stay.
+        public void SeedEffects(ElementId element,params (PlanetStat stat,float amount)[] effects)
+        {
+            foreach(var (stat,amount) in effects)SetEffect(element,stat,amount);
+            NotifyChanged();
+        }
         void SetEffect(ElementId element,PlanetStat stat,float amount)
         {
             var profile=elements.Find(x=>x.element==element);

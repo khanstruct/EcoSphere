@@ -51,6 +51,7 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Air,ElementId.Air,SphereIds.Wind);
             SeedRecipe(catalog,ElementId.Sunlight,ElementId.Air,SphereIds.Wind);
             SeedRecipe(catalog,ElementId.Fire,ElementId.Stone,SphereIds.Lava);
+            SeedRecipe(catalog,ElementId.Stone,ElementId.Stone,SphereIds.Mountain);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -74,6 +75,7 @@ namespace EcoSphere.Editor
             {SphereIds.Fish,("Spheres/Water/water-surface-v1.png","Spheres/Fish/fish-icon-v2.png")},   // Fish swims in Water's surface
             {SphereIds.Civilization,("Spheres/Civilization/civilization-surface-v1.png","Spheres/Civilization/civilization-icon-v2.png")},   // house icon, distinct from Sand
             {SphereIds.Bird,("Spheres/Bird/bird-surface-v1.png","Spheres/Bird/bird-icon-v2.png")},   // the red bird (v2) icon
+            {SphereIds.Mountain,("Spheres/Stone/stone-surface-v2.png","Spheres/Mountain/mountain-icon-v1.png")},   // Stone's surface, tinted pale purple (surfaceTint)
         };
 
         // The one place that picks a sphere's surface and icon: the default folder files, Core's art, or an ArtOverrides entry.
@@ -308,6 +310,22 @@ namespace EcoSphere.Editor
                 "Lava identity: deep red-orange, Basic, self-lit with an orange glow, 2 Lava / 1 Fire / 1 Null, pyrosphere");
             Expect(catalog.recipeBook.TryCombine(ElementId.Stone,ElementId.Fire,out var lavaFrom) && lavaFrom==lava,"Fire + Stone must unlock Lava");
             Expect(catalog.ElementAppearance(ElementId.Lava)==lava && !catalog.elementColors.Exists(entry=>entry.element==ElementId.Lava),"Lava's sphere must supply its element color");
+            var mountain=catalog.Get(SphereIds.Mountain);
+            Expect(mountain.namesakeElement==ElementId.Mountain && mountain.color==(Color)new Color32(168,147,214,255) && mountain.category==SphereCategory.Basic && mountain.AmmoEligible && !mountain.availableAtStart &&
+                mountain.surface==stone.surface && mountain.surfaceTint==(Color)new Color32(255,222,255,255) && mountain.icon && mountain.icon.texture.name=="mountain-icon-v1" &&
+                mountain.ContributionSummary()=="Stone 50% · Mountain 25%" && mountain.unallocatedWeight==1 && mountain.resourceVoice && mountain.resourceVoice.name=="lithosphere",
+                "Mountain identity: pale purple, Basic, Stone's surface tinted pale purple, 1 Mountain / 2 Stone / 1 Null, lithosphere");
+            foreach(var other in catalog.spheres)Expect(other==mountain || other.surfaceTint==Color.white,other.displayName+": only Mountain tints its surface for now");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Stone,ElementId.Stone,out var mountainFrom) && mountainFrom==mountain,"Stone + Stone must unlock Mountain");
+            var mountainProfile=PlanetStatCatalog.Current.elements.Find(x=>x.element==ElementId.Mountain);
+            Expect(mountainProfile!=null && mountainProfile.effects.Exists(e=>e.stat==PlanetStat.TerrainRuggedness && e.amount>0) && mountainProfile.effects.Exists(e=>e.stat==PlanetStat.SurfaceWater && e.amount<0),"Mountain must raise the land out of the sea and make it rugged");
+            {
+                double[] World(ElementId land){var totals=new double[ElementComposition.Capacity];totals[(int)ElementId.Water]=400;totals[(int)land]=400;return totals;}
+                var withStone=PlanetStatCalculator.Evaluate(World(ElementId.Stone));var withMountain=PlanetStatCalculator.Evaluate(World(ElementId.Mountain));
+                Expect(withMountain.SurfaceWater<withStone.SurfaceWater-.1f && withMountain.Ruggedness>0,
+                    "Mountain must raise more land out of the sea than Stone (sea cover "+withMountain.SurfaceWater.ToString("0.00")+" vs "+withStone.SurfaceWater.ToString("0.00")+")");
+                UnityEngine.Debug.Log("ECOSPHERE_MOUNTAIN_LAND: sea cover with Water+Stone "+withStone.SurfaceWater.ToString("0.00")+", with Water+Mountain "+withMountain.SurfaceWater.ToString("0.00"));
+            }
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",
