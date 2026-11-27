@@ -14,6 +14,9 @@ Shader "EcoSphere/Barren Planet"
         _FullyFrozen ("Fully frozen temperature",Range(-1,0))=-1
         _GeologicalActivity ("Geological activity",Range(0,1))=0
         _Sediment ("Sediment",Range(0,1))=0
+        _SandColor ("Sand color (sediment)",Color)=(0.93,0.85,0.64,1)
+        _SandReach ("Sand reach: x at first sediment, y at full (share of land height); z slope resistance",Vector)=(0.04,1.05,0.35,0)
+        _SandEdge ("Sand edge softness",Range(0.005,0.3))=0.05
         _Soil ("Soil",Range(0,1))=0
         _Moisture ("Moisture",Range(0,1))=0
         _Vegetation ("Vegetation growth",Range(0,1))=0
@@ -58,6 +61,9 @@ Shader "EcoSphere/Barren Planet"
                 float _Temperature, _GeologicalActivity;
                 float _FreezeStart, _FullyFrozen;
                 float _Sediment, _Soil, _Moisture;
+                half4 _SandColor;
+                float4 _SandReach;
+                float _SandEdge;
                 float _Vegetation;
                 half4 _WaterTint, _VegetationTint, _LandTint, _CityLightsTint, _CityLightsColor;
                 float4 _CityLightsBrightness;
@@ -115,8 +121,6 @@ Shader "EcoSphere/Barren Planet"
                 half rockLuminance=dot(rock,half3(.2126,.7152,.0722));
                 half3 soilColor=rockLuminance*half3(1.18,.72,.38);
                 rock=lerp(rock,soilColor,soilTint);
-                half drySand=_Sediment*(1-_Moisture)*(.7+.3*(1-exposed));
-                rock=lerp(rock,half3(.7,.5,.28)*(.65+rock.r),drySand);
                 // Land color trait: recolor luminance toward the blended element hue. An sRGB mid-gray hue (linear .214) keeps brightness;
                 // dark hues (coal) darken and pale ones (salt) brighten, while the rock detail survives.
                 half landLuminance=dot(rock,half3(.2126,.7152,.0722));
@@ -125,6 +129,18 @@ Shader "EcoSphere/Barren Planet"
                 half scorch=heat*.15 + smoothstep(.25,.95,heat)*.85;
                 rock=lerp(rock,rock*half3(1.16,.77,.56),heat*.65);
                 rock=lerp(rock,rock*half3(.25,.20,.19),scorch*.8);
+                // Sand (sediment) starts at the shoreline and climbs inland as sediment grows: a little gives beaches,
+                // a lot gives sandy plains and deserts. Steep slopes and peaks hold out longest; a little noise keeps the
+                // edge from tracing the contours exactly. Applied after heat so hot sandy worlds keep pale sand.
+                float shoreLevel=max(_SeaLevel,_TerrainBounds.x);
+                half shoreHeight=saturate((elevation-shoreLevel)/max(.05,_TerrainBounds.y-shoreLevel));
+                half sediment=saturate(_Sediment);
+                half sandReach=lerp(_SandReach.x,_SandReach.y,sediment);
+                float3 sandDirection=normalize(input.planetDirection);
+                half sandEdge=(IceNoise(sandDirection*17+2.3)-.5)*_SandEdge*2;
+                half sand=(1-smoothstep(sandReach-_SandEdge,sandReach+_SandEdge,shoreHeight+exposed*_SandReach.z+sandEdge))*smoothstep(0,.02,sediment);
+                half sandGrain=.86+.28*IceNoise(sandDirection*90+5.1);
+                rock=lerp(rock,_SandColor.rgb*sandGrain,sand);
                 half water = 1 - smoothstep(_SeaLevel - .008, _SeaLevel + .008, elevation);
                 half depth = saturate((_SeaLevel - elevation) * 9);
                 half3 ocean = lerp(_WaterColor.rgb * half3(1.6, 1.8, 1.65), _WaterColor.rgb, depth);

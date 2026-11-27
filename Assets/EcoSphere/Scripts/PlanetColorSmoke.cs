@@ -21,7 +21,7 @@ namespace EcoSphere
                 view.transform.position=new Vector3(planet.position.x,planet.position.y,-25);view.orthographicSize=5.6f;view.aspect=1;
                 view.Render();var previous=RenderTexture.active;RenderTexture.active=target;
                 var capture=new Texture2D(512,512,TextureFormat.RGB24,false);capture.ReadPixels(new Rect(0,0,512,512),0,0);capture.Apply();RenderTexture.active=previous;
-                File.WriteAllBytes(Path.Combine(Application.dataPath,"../Logs/planet-color-"+name+".png"),capture.EncodeToPNG());return capture;
+                if(name!=null)File.WriteAllBytes(Path.Combine(Application.dataPath,"../Logs/planet-color-"+name+".png"),capture.EncodeToPNG());return capture;
             }
             // Each case renders twice in the same frame state: with its color traits, then with them cleared on the
             // renderer. Only the tints differ, so element dilution (less Plant, different foliage) cannot confuse the check.
@@ -97,6 +97,37 @@ namespace EcoSphere
                 var world=Capture(i==0?"compare-plant":"compare-forest");grown[i]=Foliage(world);Destroy(world);
             }
             Expect(grown[1]>grown[0],"Forest must cover more land in vegetation than Plant (plant "+grown[0]+", forest "+grown[1]+")");
+
+            // Sand starts at the shoreline and spreads inland with more sediment. Each case renders with and without
+            // sediment (same frame state), so the difference is only the sand.
+            var shore=new (int pixels,float nearWater,float sandLuma,float landLuma)[2];
+            for(int i=0;i<2;i++)
+            {
+                Array.Clear(input,0,input.Length);
+                input[(int)ElementId.Water]=350;input[(int)ElementId.Stone]=600;input[(int)ElementId.Sand]=i==0?150:1400;
+                surface.ApplyComposition(input);yield return new WaitForSeconds(3.6f);
+                var withSand=Capture(i==0?"sand-beaches":"sand-inland");
+                var noSand=new MaterialPropertyBlock();renderer.GetPropertyBlock(noSand);noSand.SetFloat("_Sediment",0);renderer.SetPropertyBlock(noSand);
+                var without=Capture(null);
+                bool Water(Color c)=>c.b>c.r*1.6f && c.b>c.g*1.15f;
+                int sandPixels=0,nearWater=0;float sandLuma=0,landLuma=0;
+                for(int y=60;y<452;y+=2)for(int x=60;x<452;x+=2)
+                {
+                    if((x-256)*(x-256)+(y-256)*(y-256)>195*195)continue;
+                    var before=without.GetPixel(x,y);var after=withSand.GetPixel(x,y);
+                    if(Water(before) || Luma(after-before)<.04f)continue;
+                    sandPixels++;sandLuma+=Luma(after);landLuma+=Luma(before);
+                    bool close=false;
+                    for(int dy=-12;dy<=12 && !close;dy+=3)for(int dx=-12;dx<=12 && !close;dx+=3)close=Water(without.GetPixel(x+dx,y+dy));
+                    if(close)nearWater++;
+                }
+                Destroy(withSand);Destroy(without);
+                shore[i]=(sandPixels,sandPixels>0?nearWater/(float)sandPixels:0,sandPixels>0?sandLuma/sandPixels:0,sandPixels>0?landLuma/sandPixels:0);
+                Debug.Log($"ECOSPHERE_SAND_SHORE {(i==0?"beaches":"inland")}: sand pixels={shore[i].pixels}, near water={shore[i].nearWater:0.00}, sand luma={shore[i].sandLuma:0.000} vs land {shore[i].landLuma:0.000}");
+            }
+            Expect(shore[0].pixels>60 && shore[0].nearWater>.75f,"a little sand must form beaches along the water (near water "+shore[0].nearWater+")");
+            Expect(shore[1].pixels>shore[0].pixels*2 && shore[1].nearWater<shore[0].nearWater-.1f,"more sand must spread inland (pixels "+shore[1].pixels+", near water "+shore[1].nearWater+")");
+            Expect(shore[0].sandLuma>shore[0].landLuma && shore[1].sandLuma>shore[1].landLuma,"sand must be lighter than the land it covers");
 
             // A completed world keeps its tints in the saved snapshot and its preview shader inputs.
             yield return Show("crystal-magic",(ElementId.Crystal,450),(ElementId.Magic,450),(ElementId.Mud,300));

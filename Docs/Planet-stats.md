@@ -171,3 +171,16 @@ The first texture assignment after a planet shader reimport can be dropped while
 Add `-cityLightLooks` to render every case and log failed checks instead of stopping, for tuning. Renders: `Logs/city-lights-*.png`.
 
 A higher-resolution mask would sharpen the lights further, but it needs an explicit exception to the 256px texture rule.
+
+## Sand shorelines
+
+Sediment (from Sand, and from Ash, Dust, Clay and Salt) is drawn as light sand that starts at the shoreline and climbs inland as sediment grows. A little gives narrow beaches along the water; a lot covers sandy plains and deserts. The shader measures each point's height above the waterline, as a share of the land's height range. Sand covers land below a reach that grows linearly from `_SandReach.x` (0.04) at the first sediment to `.y` (1.05) at full sediment. Steep slopes and peaks count as higher (`_SandReach.z`, 0.35), so cliffs and mountains stay rock longest. A little noise (`_SandEdge`, 0.05) keeps the edge from tracing the contours exactly, and a fine grain varies the color.
+
+The color is `_SandColor` (light sand, sRGB 0.93/0.85/0.64). It's applied after the heat and scorch tint, so hot sandy worlds (Sand adds some Sunlight) keep pale sand, and before water, snow, foliage and lava, which draw over it. Moisture no longer suppresses sand: beaches sit right next to water. These settings live on the planet material. The data-side `DesertPotential` is unchanged.
+
+The planet color smoke renders a small (150) and a large (1400) amount of Sand on a Water and Stone world, each with and without sediment. It checks:
+- with a little, most sand pixels lie near water (measured about 91%);
+- with a lot, there's far more sand and a smaller share near water (about 40%);
+- the sand is lighter than the land it covers.
+
+Renders: `Logs/planet-color-sand-beaches.png` and `planet-color-sand-inland.png`.
