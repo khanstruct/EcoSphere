@@ -64,6 +64,7 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Forest,ElementId.Spirit,SphereIds.Magic);
             SeedRecipe(catalog,ElementId.Air,ElementId.Life,SphereIds.Spirit);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
+            SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             // Stand-in visualizer colors are only for elements without a sphere; drop any whose element has gained one.
             catalog.InvalidateIndexes();catalog.elementColors.RemoveAll(entry=>catalog.ElementAppearance(entry.element));
             EditorUtility.SetDirty(catalog);
@@ -303,7 +304,7 @@ namespace EcoSphere.Editor
             var fishLife=fish.contributions.Find(entry=>entry.element==ElementId.Life);
             Expect(fishLife.limited && fishLife.limitedBy==ElementId.Water && Mathf.Approximately(fishLife.limitRatio,1) &&
                 !fish.contributions.Exists(entry=>entry.element!=ElementId.Life && entry.limited),"Fish's Life (only) must be capped by the planet's Water");
-            foreach(var recipe in catalog.recipeBook.recipes)Expect(recipe.output!=fish,"Fish recipe should remain unset for now");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Water,ElementId.Life,out var fishFrom) && fishFrom==fish,"Life + Water must unlock Fish");
             Expect(catalog.recipeBook.TryCombine(ElementId.Plant,ElementId.Plant,out var forestFrom) && forestFrom==forest,"Plant + Plant must unlock Forest");
             Expect(catalog.ElementAppearance(ElementId.Plant)==catalog.Get(SphereIds.Plant) && catalog.ElementColor(ElementId.Plant)==catalog.Get(SphereIds.Plant).color,"Forest must not take over Plant's color or art");
             // Generated body: every corner stays inside the round footprint, faces point outward, front table stays behind the icon.

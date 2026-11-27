@@ -26,7 +26,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Technology | 14 | Civilization: 1, Technology: 2, Null: 1 | Element; electric blue #0D98ED, Technology category, technosphere voice, DEV available, no recipe yet |
 | Spirit | 15 | Magic: 1, Spirit: 2, Void: 1 | Element; mint #A8E6C2, Beyond category, ectosphere voice, DEV available, Air + Life recipe |
 | Forest | 16 | Forest: 2, Plant: 1, Water: 1 | Element; forest green #1F6B2A, Life category, florasphere voice, DEV available, Plant + Plant recipe |
-| Fish | 17 | Life: 2 (capped by Water), Water: 1, Fish: 1 | Element; orange #F76B0D, Life category, biosphere voice, Water's surface with the v2 fish icon, DEV available, no recipe yet |
+| Fish | 17 | Life: 2 (capped by Water), Water: 1, Fish: 1 | Element; orange #F76B0D, Life category, biosphere voice, Water's surface with the v2 fish icon, DEV available, Life + Water recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -174,7 +174,7 @@ Element IDs are saved as numbers, so an unused element is retired rather than de
 
 ## Fish sphere
 
-Fish (ID 17) is orange (#F76B0D, from the icon; close to Fire's orange-red) and uses the biosphere voice. It reuses Water's surface texture with its own `fish-icon-v2.png`. It contributes 2 Life, 1 Water and 1 Fish, in the Life category, with no recipe yet.
+Fish (ID 17) is orange (#F76B0D, from the icon; close to Fire's orange-red) and uses the biosphere voice. It reuses Water's surface texture with its own `fish-icon-v2.png`. It contributes 2 Life, 1 Water and 1 Fish, in the Life category. Life + Water unlocks it.
 
 Its Life line is a **limited contribution** (`new ElementContribution(ElementId.Life, 2, ElementId.Water)`, ratio 1): the Life that Fish spheres have added can never exceed the planet's Water. The excess is lost, score is unchanged, and the visualizer shows "Not enough Water" (see Limited contributions). Fish's own Water counts toward its cap because unlimited yield lands first.
 

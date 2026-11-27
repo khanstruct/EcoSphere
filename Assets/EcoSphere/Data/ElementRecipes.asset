@@ -40,3 +40,6 @@ MonoBehaviour:
   - first: 55
     second: 54
     output: {fileID: 11400000, guid: 3cfffb5e59c5255429ea873aa869cf45, type: 2}
+  - first: 11
+    second: 5
+    output: {fileID: 11400000, guid: 80b628d9a2e09c74fa8edde613b0a89c, type: 2}
