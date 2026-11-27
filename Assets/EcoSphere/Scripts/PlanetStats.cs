@@ -14,7 +14,9 @@ namespace EcoSphere
         Mineralization, ExoticActivity, AtmosphereExpansion,
         [Obsolete("Superseded by the Water color trait; kept so old snapshots keep their index and tint.")] WaterGreenness,
         CloudDarkness,
-        CityLightIntensity }
+        CityLightIntensity,
+        // Molten rock at the surface: draws the glowing orange fissures. Separate from Temperature and GeologicalActivity.
+        Magma }
 
     // Colors that elements tint, blended by weighted contribution. Append only: snapshots store this order.
     // Each maps to the planet shader property "_<Trait>Tint" (rgb = blended color, a = amount).
@@ -100,7 +102,9 @@ namespace EcoSphere
         public float VegetationTemperatureSuitability => Mathf.SmoothStep(0,1,Mathf.InverseLerp(vegetationTemperatureRangeFahrenheit.x,vegetationTemperatureRangeFahrenheit.y,TemperatureFahrenheit))
             *(1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(vegetationTemperatureRangeFahrenheit.z,vegetationTemperatureRangeFahrenheit.w,TemperatureFahrenheit)));
         public float VegetationPotential => this[PlanetStat.BiologicalCoverage]*Mathf.Lerp(dryVegetationGrowth,1,this[PlanetStat.Moisture])*(1-IceCoverage)*VegetationTemperatureSuitability;
-        public float VolcanicPotential => Geology;
+        // Glowing fissures follow Magma only, never Temperature: cold worlds can have lava and hot deserts have none.
+        public float Magma => this[PlanetStat.Magma];
+        public float VolcanicPotential => Magma;
         public float FrozenWater => SurfaceWater*IceCoverage;
         public float LiquidWater => SurfaceWater*(1-IceCoverage);
         public float StormPotential => this[PlanetStat.CloudCover]*this[PlanetStat.WeatherActivity];
@@ -124,7 +128,7 @@ namespace EcoSphere
         public static PlanetStats Legacy(float stone,float ice,float fire,Color color,float strength,float width)
         {
             var result=new PlanetStats();result[PlanetStat.Temperature]=Mathf.Clamp(fire-ice,-1,1);
-            result[PlanetStat.TerrainRuggedness]=stone;result[PlanetStat.GeologicalActivity]=fire;
+            result[PlanetStat.TerrainRuggedness]=stone;result[PlanetStat.GeologicalActivity]=fire;result[PlanetStat.Magma]=fire;   // legacy saves drew lava from their fire value
             result[PlanetStat.AtmosphereDensity]=strength;result.atmosphereColor=color;result.atmosphereWidth=width;return result;
         }
         public void Apply(MaterialPropertyBlock properties)
@@ -133,6 +137,7 @@ namespace EcoSphere
             properties.SetFloat("_FreezeStart",freezingStartsAt);properties.SetFloat("_FullyFrozen",fullyFrozenAt);
             properties.SetFloat("_StoneRuggedness",Ruggedness);
             properties.SetFloat("_GeologicalActivity",Geology);
+            properties.SetFloat("_Magma",Magma);
             properties.SetFloat("_Sediment",this[PlanetStat.Sediment]);
             properties.SetFloat("_Soil",this[PlanetStat.Soil]);
             properties.SetFloat("_Moisture",this[PlanetStat.Moisture]);

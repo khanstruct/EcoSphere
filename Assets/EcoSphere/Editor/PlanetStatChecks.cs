@@ -30,7 +30,10 @@ namespace EcoSphere.Editor
             var neutral=Stats();Expect(neutral.Temperature==0 && neutral.SurfaceWater==0 && neutral.AtmosphereDensity==0,"neutral start");
             Expect(neutral.TemperatureFahrenheit==59 && Stats((ElementId.Ice,1000)).TemperatureFahrenheit==-60,"Fahrenheit baseline and cold endpoint");
             var fireTemperature=Stats((ElementId.Fire,1000));var sunTemperature=Stats((ElementId.Sunlight,1000));
-            Expect(sunTemperature.TemperatureFahrenheit>fireTemperature.TemperatureFahrenheit && sunTemperature.Geology==0 && fireTemperature.Geology>0,"Sunlight hotter than Fire, without volcanism");
+            Expect(sunTemperature.TemperatureFahrenheit>fireTemperature.TemperatureFahrenheit && sunTemperature.Magma==0 && fireTemperature.Magma==0,"Sunlight hotter than Fire; neither draws magma fissures (Fire is heat only)");
+            var lavaWorld=Stats((ElementId.Lava,1000));var volcanoWorld=Stats((ElementId.Volcano,1000));
+            Expect(lavaWorld.Magma>.9f && lavaWorld.Temperature>0 && lavaWorld.Temperature<=.35f && volcanoWorld.Magma>.9f && volcanoWorld.Temperature>0 && volcanoWorld.Temperature<=.35f,"Lava and Volcano draw full magma fissures but warm the world only slightly");
+            Expect(volcanoWorld[PlanetStat.CloudCover]>0 && volcanoWorld[PlanetStat.CloudDarkness]>0,"Volcano adds a few darkened clouds");
             var frozenVolcano=Stats((ElementId.Ice,700),(ElementId.Lava,300));
             Expect(frozenVolcano.IceCoverage==1 && frozenVolcano.Heat==0 && frozenVolcano.VolcanicPotential>0,"cold worlds can have active lava");
             var savedClimate=JsonUtility.FromJson<PlanetStats>(JsonUtility.ToJson(fireTemperature.Copy()));
@@ -53,8 +56,8 @@ namespace EcoSphere.Editor
             Debug.Log($"ECOSPHERE_ATMOSPHERE_EXTENT_PASSED neutral={neutral.atmosphereWidth}, Ice={iceAir.atmosphereWidth}, Fire={fireAir.atmosphereWidth}, Water={waterAir.atmosphereWidth}, minorityWater={minorWater.atmosphereWidth}");
             var hot=Stats((ElementId.Sunlight,500),(ElementId.Sand,500));
             Expect(hot.Temperature>0 && hot.DesertPotential>0 && hot.VolcanicPotential==0,"hot desert must not be volcanic");
-            var volcano=Stats((ElementId.Fire,500),(ElementId.Stone,500));
-            Expect(Mathf.Approximately(volcano.Temperature,.4f) && Mathf.Approximately(volcano.Ruggedness,catalog.Respond(PlanetStat.TerrainRuggedness,.5f)) && volcano.VolcanicPotential>0,"hot rugged volcano");
+            var volcano=Stats((ElementId.Fire,500),(ElementId.Stone,500));var lavaRock=Stats((ElementId.Lava,500),(ElementId.Stone,500));
+            Expect(Mathf.Approximately(volcano.Temperature,.4f) && Mathf.Approximately(volcano.Ruggedness,catalog.Respond(PlanetStat.TerrainRuggedness,.5f)) && volcano.VolcanicPotential==0 && lavaRock.VolcanicPotential>0,"hot rugged Fire world without fissures; Lava on rock draws them");
             var stone=Stats((ElementId.Stone,1000));Expect(stone.Temperature==0 && stone.Geology==0 && stone.Ruggedness==1,"Stone supplies relief, not temperature or active volcanism");
             var cold=Stats((ElementId.Ice,1000));Expect(cold.Temperature==-1 && cold.SurfaceWater>0 && cold.FrozenWater>0 && cold.LiquidWater==0,"frozen ocean state");
             var secondPlaceIce=Stats((ElementId.Ice,490),(ElementId.Void,510));
@@ -75,9 +78,9 @@ namespace EcoSphere.Editor
             Expect(Stats((ElementId.Ice,55),(ElementId.Fire,55)).Temperature<0,"signed contributions combine at low scores; Ice is stronger than Fire");
             Debug.Log($"ECOSPHERE_LOW_SCORE_FREEZING_PASSED 110 Ice/100 Void={smallLevel.IceCoverage}, 98 Ice/102 Void={smallSecondPlace.IceCoverage}, first match={firstMatch.IceCoverage}");
             Debug.Log($"ECOSPHERE_FREEZING_RESPONSE_PASSED 10% Ice coverage={frost.IceCoverage}, 30%={moderateIce.IceCoverage}, 49%={secondPlaceIce.IceCoverage}");
-            var balanced=Stats((ElementId.Ice,500),(ElementId.Fire,500));Expect(Mathf.Approximately(balanced.Temperature,-.1f) && balanced.Heat==0 && balanced.SurfaceWater>0 && balanced.VolcanicPotential>0,"cold worlds retain volcanic activity and water");
+            var balanced=Stats((ElementId.Ice,500),(ElementId.Fire,500));Expect(Mathf.Approximately(balanced.Temperature,-.1f) && balanced.Heat==0 && balanced.SurfaceWater>0 && balanced.VolcanicPotential==0,"cold Fire/Ice worlds keep water and draw no fissures");
             var minority=Stats((ElementId.Fire,600),(ElementId.Stone,1800),(ElementId.Void,300));
-            Expect(Mathf.Approximately(minority.Temperature,600f/2700*.8f) && minority.VolcanicPotential>0,"whole-planet denominator, no ignored Stone");
+            Expect(Mathf.Approximately(minority.Temperature,600f/2700*.8f),"whole-planet denominator, no ignored Stone");
             var scaled=Stats((ElementId.Fire,1200),(ElementId.Stone,3600),(ElementId.Void,600));
             Expect(Mathf.Approximately(minority.Temperature,scaled.Temperature),"same mature proportions must give same temperature");
             var tiny=Stats((ElementId.Fire,1),(ElementId.Stone,3));Expect(tiny.Heat<minority.Heat,"early buildup prevents instant intense visuals");
@@ -86,8 +89,8 @@ namespace EcoSphere.Editor
             Expect(weather.CloudLightning>0 && Stats((ElementId.Lightning,1000)).CloudLightning==0,"lightning inside actual storm clouds");
             Expect(Stats((ElementId.City,1000))[PlanetStat.Civilization]==1 && Stats((ElementId.Fish,1000))[PlanetStat.Civilization]==0,"optional globe effects");
             var json=JsonUtility.ToJson(minority);var copy=JsonUtility.FromJson<PlanetStats>(json);
-            Expect(copy.Temperature==minority.Temperature && copy.Geology==minority.Geology && copy.Ruggedness==minority.Ruggedness,"snapshot serialization");
-            var shortened=JsonUtility.FromJson<PlanetStats>("{\"values\":[0.3]}");Expect(shortened.Temperature==.3f && shortened.Geology==0,"future appended stat compatibility");
+            Expect(copy.Temperature==minority.Temperature && copy.Geology==minority.Geology && copy.Magma==minority.Magma && copy.Ruggedness==minority.Ruggedness,"snapshot serialization");
+            var shortened=JsonUtility.FromJson<PlanetStats>("{\"values\":[0.3]}");Expect(shortened.Temperature==.3f && shortened.Geology==0 && shortened.Magma==0,"future appended stat compatibility");
             var legacy=PlanetStats.Legacy(.6f,.2f,.7f,Color.red,.3f,.04f);Expect(Mathf.Approximately(legacy.Temperature,.5f) && legacy.Ruggedness==.6f,"legacy preview compatibility");
             var result=new PlanetStats();var dirty=Totals((ElementId.Fire,double.NaN),(ElementId.Water,double.PositiveInfinity),(ElementId.Stone,-1));PlanetStatCalculator.Evaluate(dirty,catalog,result);
             foreach(float value in result.values)Expect(!float.IsNaN(value) && !float.IsInfinity(value),"finite output");

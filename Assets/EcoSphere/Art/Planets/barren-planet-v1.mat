@@ -50,7 +50,9 @@ Material:
     - _FullyFrozen: -1
     - _GeologicalActivity: 0
     - _IceCoverage: 0
+    - _Magma: 0
     - _Moisture: 0
+    - _SandEdge: 0.05
     - _SeaLevel: -0.02
     - _Sediment: 0
     - _Soil: 0
@@ -64,6 +66,8 @@ Material:
     - _CityLightsTiling: {r: 3, g: 3, b: 0, a: 0}
     - _CityLightsTint: {r: 0, g: 0, b: 0, a: 0}
     - _LandTint: {r: 0, g: 0, b: 0, a: 0}
+    - _SandColor: {r: 0.93, g: 0.85, b: 0.6399999, a: 1}
+    - _SandReach: {r: 0.04, g: 1.05, b: 0.35, a: 0}
     - _TerrainBounds: {r: 0, g: 1, b: 0, a: 0}
     - _VegetationTint: {r: 0, g: 0, b: 0, a: 0}
     - _WaterColor: {r: 0.025, g: 0.15999997, b: 0.31999996, a: 1}

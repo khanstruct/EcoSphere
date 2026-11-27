@@ -13,6 +13,7 @@ Shader "EcoSphere/Barren Planet"
         _FreezeStart ("Freezing onset",Range(-1,0))=0
         _FullyFrozen ("Fully frozen temperature",Range(-1,0))=-1
         _GeologicalActivity ("Geological activity",Range(0,1))=0
+        _Magma ("Magma (glowing fissures)",Range(0,1))=0
         _Sediment ("Sediment",Range(0,1))=0
         _SandColor ("Sand color (sediment)",Color)=(0.93,0.85,0.64,1)
         _SandReach ("Sand reach: x at first sediment, y at full (share of land height); z slope resistance",Vector)=(0.04,1.05,0.35,0)
@@ -58,7 +59,7 @@ Shader "EcoSphere/Barren Planet"
                 float _StoneRuggedness;
                 float _IceCoverage;
                 float _FireHeat;
-                float _Temperature, _GeologicalActivity;
+                float _Temperature, _GeologicalActivity, _Magma;
                 float _FreezeStart, _FullyFrozen;
                 float _Sediment, _Soil, _Moisture;
                 half4 _SandColor;
@@ -179,7 +180,8 @@ Shader "EcoSphere/Barren Planet"
                 albedo = lerp(albedo,lerp(snow,seaIce,water),ice);
                 // Warped contour networks produce thin, branching fissures without sprite textures.
                 // Even a minority contribution leaves sparse, dim fissures; dominance expands them.
-                half activity=saturate(_GeologicalActivity);
+                // Driven by Magma alone (Lava, Volcano): independent of temperature and of general geological activity.
+                half activity=saturate(_Magma);
                 half volcanic=sqrt(activity)*.5 + smoothstep(.35,1,activity)*.5;
                 float3 fissurePosition=planetDirection*11 + (IceNoise(planetDirection*6)-.5)*2;
                 half ridge=abs(IceNoise(fissurePosition)-.5);

@@ -164,6 +164,10 @@ namespace EcoSphere
             foreach(ElementId element in Enum.GetValues(typeof(ElementId)))
                 if(element!=ElementId.Core && element!=ElementId.Laser && !ElementIds.IsRetired(element) && !elements.Exists(x=>x.element==element))
                     elements.Add(new ElementPlanetProfile{element=element});
+            // An appended PlanetStat (e.g. Magma) gets its default response curve, like a new element gets its profile.
+            responses??=new List<PlanetStatResponse>();
+            foreach(var response in DefaultResponses())
+                if(!responses.Exists(x=>x.stat==response.stat))responses.Add(response);
             NotifyChanged();
         }
         public void SeedCityLights()
@@ -227,7 +231,7 @@ namespace EcoSphere
             Add(ElementId.Snow,(PlanetStat.Temperature,-.8f),(PlanetStat.SurfaceWater,.6f),(PlanetStat.Moisture,.4f));
             Add(ElementId.Wind,(PlanetStat.WeatherActivity,1));
             Add(ElementId.Lightning,(PlanetStat.ElectricalActivity,1),(PlanetStat.WeatherActivity,.5f));
-            Add(ElementId.Lava,(PlanetStat.Temperature,1),(PlanetStat.GeologicalActivity,1),(PlanetStat.TerrainRuggedness,.4f));
+            Add(ElementId.Lava,(PlanetStat.Magma,1),(PlanetStat.Temperature,.3f),(PlanetStat.GeologicalActivity,1),(PlanetStat.TerrainRuggedness,.4f));
             Add(ElementId.Smoke,(PlanetStat.Pollution,.8f),(PlanetStat.CloudThickness,.3f),(PlanetStat.AtmosphereExpansion,.3f));
             Add(ElementId.Ash,(PlanetStat.Sediment,.6f),(PlanetStat.Soil,.35f),(PlanetStat.Pollution,.25f));
             Add(ElementId.Dust,(PlanetStat.Sediment,.8f),(PlanetStat.Pollution,.3f));

@@ -113,6 +113,10 @@ namespace EcoSphere.Editor
                 description = "Volcanic glass, born where lava meets water, glinting with a dark violet light.",
                 contributions = new[] { C(ElementId.Stone,2), C(ElementId.Void,2) },
                 extra = d => { d.glowColor = new Color32(150,80,255,255); d.glowStrength = .4f; } },   // purple glow in gameplay
+            new SphereSeed { id = SphereIds.Volcano, label = "Volcano", element = ElementId.Volcano, color = new Color32(245,150,40,255), voice = "lithosphere",
+                description = "Erupts with fire and ash, shaking the world and building new land from molten rock.",
+                contributions = new[] { C(ElementId.Volcano,1), C(ElementId.Mountain,1), C(ElementId.Lava,2) },
+                extra = d => { d.glowColor = new Color32(255,110,30,255); d.glowStrength = .25f; } },   // its lava cracks glow
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 

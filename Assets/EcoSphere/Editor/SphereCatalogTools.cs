@@ -53,6 +53,7 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Fire,ElementId.Stone,SphereIds.Lava);
             SeedRecipe(catalog,ElementId.Stone,ElementId.Stone,SphereIds.Mountain);
             SeedRecipe(catalog,ElementId.Lava,ElementId.Water,SphereIds.Obsidian);
+            SeedRecipe(catalog,ElementId.Mountain,ElementId.Lava,SphereIds.Volcano);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -334,6 +335,14 @@ namespace EcoSphere.Editor
                 obsidian.ContributionSummary()=="Stone 50% · Void 50%" && obsidian.unallocatedWeight==0 && obsidian.resourceVoice && obsidian.resourceVoice.name=="lithosphere",
                 "Obsidian identity: near-black, Basic, purple glow, 2 Stone / 2 Void, no namesake, lithosphere");
             Expect(catalog.recipeBook.TryCombine(ElementId.Water,ElementId.Lava,out var obsidianFrom) && obsidianFrom==obsidian,"Lava + Water must unlock Obsidian");
+            var volcano=catalog.Get(SphereIds.Volcano);
+            Expect(volcano.namesakeElement==ElementId.Volcano && volcano.color==(Color)new Color32(245,150,40,255) && volcano.category==SphereCategory.Basic && volcano.AmmoEligible && !volcano.availableAtStart &&
+                volcano.surface && volcano.surface.name=="volcano-surface-v1" && volcano.icon && volcano.icon.texture.name=="volcano-icon-v1" && volcano.glowStrength>0 &&
+                volcano.ContributionSummary()=="Lava 50% · Volcano 25% · Mountain 25%" && volcano.unallocatedWeight==0 && volcano.resourceVoice && volcano.resourceVoice.name=="lithosphere",
+                "Volcano identity: amber-orange, Basic, glowing cracks, 1 Volcano / 1 Mountain / 2 Lava, lithosphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Lava,ElementId.Mountain,out var volcanoFrom) && volcanoFrom==volcano,"Mountain + Lava must unlock Volcano");
+            var volcanoProfile=PlanetStatCatalog.Current.elements.Find(x=>x.element==ElementId.Volcano);
+            Expect(volcanoProfile!=null && volcanoProfile.effects.Exists(e=>e.stat==PlanetStat.Magma && e.amount>0) && volcanoProfile.effects.Exists(e=>e.stat==PlanetStat.CloudCover && e.amount>0),"Volcano must draw magma fissures and add clouds");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",

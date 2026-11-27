@@ -196,12 +196,14 @@ MonoBehaviour:
     atmosphereStrength: 0
   - element: 18
     effects:
-    - stat: 0
-      amount: 1
     - stat: 7
       amount: 1
     - stat: 1
       amount: 0.4
+    - stat: 21
+      amount: 1
+    - stat: 0
+      amount: 0.3
     colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
@@ -581,6 +583,27 @@ MonoBehaviour:
     colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
+  - element: 57
+    effects:
+    - stat: 21
+      amount: 1
+    - stat: 7
+      amount: 1
+    - stat: 0
+      amount: 0.25
+    - stat: 9
+      amount: 0.25
+    - stat: 19
+      amount: 0.5
+    - stat: 14
+      amount: 0.2
+    - stat: 2
+      amount: -0.4
+    - stat: 1
+      amount: 0.8
+    colors: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
   responses:
   - stat: 0
     contributionForFullEffect: 1
@@ -643,6 +666,9 @@ MonoBehaviour:
     contributionForFullEffect: 0.45
     negativeContributionForFullEffect: 0.45
   - stat: 20
+    contributionForFullEffect: 0.45
+    negativeContributionForFullEffect: 0.45
+  - stat: 21
     contributionForFullEffect: 0.45
     negativeContributionForFullEffect: 0.45
   colorResponses:

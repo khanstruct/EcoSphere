@@ -34,6 +34,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Lava | 22 | Lava: 2, Fire: 1, Null: 1 | Element; deep red-orange #CC2A14, Basic category, pyrosphere voice, self-lit with an orange glow, DEV available, Fire + Stone recipe |
 | Mountain | 23 | Mountain: 1, Stone: 2, Null: 1 | Element; pale purple #A893D6, Basic category, lithosphere voice, Stone's surface tinted pale purple, DEV available, Stone + Stone recipe |
 | Obsidian | 24 | Stone: 2, Void: 2 | Element; near-black #231C2E, Basic category, lithosphere voice, purple glow, no namesake element, DEV available, Lava + Water recipe |
+| Volcano | 25 | Volcano: 1, Mountain: 1, Lava: 2 | Element; amber-orange #F59628, Basic category, lithosphere voice, orange glow, DEV available, Mountain + Lava recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -248,7 +249,7 @@ The category smoke (`-sphereCategorySmoke`) now takes its expectations from the 
 
 Lava (ID 22, the existing `ElementId.Lava`) uses `lava-{surface,icon}-v1.png`, the pyrosphere voice (shared with Fire) and the Basic category. Its color, deep red-orange #CC2A14, is darker and redder than Fire's #FF5618 so their bars stay apart. Lava is self-lit (`unlit`) with an orange `SphereGlow` (strength 0.35), using the same data-driven glow Void uses. It contributes 2 Lava, 1 Fire and 1 Null. Fire + Stone unlocks it, and that makes Metal's Lava + Stone recipe reachable.
 
-The Lava element already had a planet profile: Temperature 1, GeologicalActivity 1 and TerrainRuggedness 0.4. `SphereIntroSmoke 22` covers it.
+Lava's planet profile: Magma 1 (the glowing fissures), Temperature 0.3 (only slight warming), GeologicalActivity 1 and TerrainRuggedness 0.4. `SphereIntroSmoke 22` covers it.
 ## Mountain sphere
 
 Mountain (ID 23) adds the appended `ElementId.Mountain`. It has its own icon (`mountain-icon-v1.png`) and borrows Stone's surface through `ArtOverrides`, tinted pale purple. Its bar and streak color is pale purple #A893D6, and it uses the lithosphere voice and the Basic category. It contributes 1 Mountain, 2 Stone and 1 Null. Stone + Stone unlocks it, a self-recipe.
@@ -263,6 +264,13 @@ The profile is set with the new general `PlanetStatCatalog.SeedEffects(element, 
 Obsidian (ID 24) uses `obsidian-{surface,icon}-v1.png`, the lithosphere voice and the Basic category. It contributes 2 Stone and 2 Void, with no Null. It has no element of its own (no namesake, as Forest had before it gained the Forest element), so it needs no planet profile: its Stone and Void use theirs. Lava + Water unlocks it.
 
 It is black, with a hint of purple (#231C2E) so its streak isn't pure black. Its purple glow (#9650FF, strength 0.4) uses the same `SphereGlow` data as Void and Lava, and it shows on the board, the ammo, the chambers and every preview. Unlike Lava, it isn't self-lit, so its glassy surface still catches the light. `SphereIntroSmoke 24` covers it.
+## Volcano sphere
+
+Volcano (ID 25) adds the appended `ElementId.Volcano` and uses `volcano-{surface,icon}-v1.png`, the lithosphere voice and the Basic category. It contributes 1 Volcano, 1 Mountain and 2 Lava, with no Null. Mountain + Lava unlocks it.
+
+Fire (#FF5618), Lava (#CC2A14) and Fish (#F76B0D) already cover red through orange, so Volcano's color is amber-orange #F59628, between Fish and Sunlight, to keep its bars distinct. A mild orange glow (strength 0.25) brings out its lava cracks.
+
+Its planet profile, seeded with `SeedEffects`: Magma 1 (the glowing fissures), GeologicalActivity 1, Temperature 0.25 (slight), CloudCover 0.25 and CloudDarkness 0.5 (a few ash-darkened clouds), Pollution 0.2, SurfaceWater -0.4 (new land) and TerrainRuggedness 0.8. Its Mountain and Lava units add their own profiles on top, so a Volcano world is hot, active and high. `SphereIntroSmoke 25` covers it.
 ## Natural occurrence
 
 A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit and Metal each have weight 1. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.

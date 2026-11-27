@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6221ada88df1f8f4b92be8060335312f, type: 3}
+  m_Name: Volcano
+  m_EditorClassIdentifier: Assembly-CSharp::EcoSphere.SphereDefinition
+  id: 25
+  namesakeElement: 57
+  displayName: Volcano
+  description: Erupts with fire and ash, shaking the world and building new land from molten rock.
+  category: 0
+  surface: {fileID: 2800000, guid: f3f48281dfb91084ca1ef0c0e6c4b9ab, type: 3}
+  surfaceTint: {r: 1, g: 1, b: 1, a: 1}
+  icon: {fileID: 21300000, guid: 71ab0768740be6242ad2707a39b5b58f, type: 3}
+  color: {r: 0.9607843, g: 0.5882353, b: 0.15686275, a: 1}
+  shape: 0
+  glowColor: {r: 1, g: 0.43137255, b: 0.11764706, a: 1}
+  glowStrength: 0.25
+  resourceVoice: {fileID: 8300000, guid: 9c2443ee6b6e408469446abc7bda67c8, type: 3}
+  role: 0
+  availableAtStart: 0
+  selectable: 1
+  unlit: 0
+  contributions:
+  - element: 57
+    amount: 1
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  - element: 56
+    amount: 1
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  - element: 18
+    amount: 2
+    limited: 0
+    limitedBy: 0
+    limitRatio: 0
+  unallocatedWeight: 0
+  deflectedHits: 0
+  deflectSound: {fileID: 0}
+  breakSound: {fileID: 0}
+  damagedOverlay: {fileID: 0}
+  erodesOnMiss: 0
+  erodeSound: {fileID: 0}
+  naturalWeight: 0
+  lostBurst: 0
+  lostBurstColor: {r: 0, g: 0, b: 0, a: 0}

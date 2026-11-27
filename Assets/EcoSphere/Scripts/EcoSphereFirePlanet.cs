@@ -19,8 +19,9 @@ namespace EcoSphere
             foreach(int type in new[]{SphereIds.Void,SphereIds.Fire,SphereIds.Ice,SphereIds.Water,SphereIds.Stone,SphereIds.Sunlight})IncludeElements(Definition(type));
             displayedElements.Add(ElementId.Sand);
             displayedElements.Add(ElementId.Lava);
+            displayedElements.Add(ElementId.Volcano);
             var target=new RenderTexture(512,512,24);view.targetTexture=target;
-            var cases=new[]{"neutral","water","ice","light-frost","mixed-cold","ice-void","low-score-ice","low-score-second-ice","balanced","hot-desert","rocky-volcano","frozen-volcano","minor-fire"};
+            var cases=new[]{"neutral","water","ice","light-frost","mixed-cold","ice-void","low-score-ice","low-score-second-ice","balanced","hot-desert","rocky-volcano","volcano","hot-rock","frozen-volcano","minor-fire"};
             foreach(string sample in cases)
             {
                 if(LaunchFlags.Has("-frozenVolcanoOnly") && sample!="frozen-volcano")continue;
@@ -37,14 +38,16 @@ namespace EcoSphere
                     case "low-score-second-ice":totals[(int)ElementId.Ice]=98;totals[(int)ElementId.Void]=102;break;
                     case "balanced":totals[(int)ElementId.Ice]=450;totals[(int)ElementId.Fire]=450;break;
                     case "hot-desert":totals[(int)ElementId.Sunlight]=450;totals[(int)ElementId.Sand]=450;break;
-                    case "rocky-volcano":totals[(int)ElementId.Fire]=450;totals[(int)ElementId.Stone]=450;break;
+                    case "rocky-volcano":totals[(int)ElementId.Lava]=450;totals[(int)ElementId.Stone]=450;break;
+                    case "volcano":totals[(int)ElementId.Volcano]=600;totals[(int)ElementId.Water]=300;break;
+                    case "hot-rock":totals[(int)ElementId.Fire]=450;totals[(int)ElementId.Stone]=450;break;
                     case "frozen-volcano":totals[(int)ElementId.Ice]=700;totals[(int)ElementId.Lava]=300;break;
                     case "minor-fire":totals[(int)ElementId.Fire]=600;totals[(int)ElementId.Stone]=1800;totals[(int)ElementId.Void]=300;break;
                 }
                 UpdateComposition();yield return new WaitForSeconds(3.5f);
                 view.transform.position=new Vector3(planet.position.x,planet.position.y,-25);view.orthographicSize=5.6f;view.aspect=1;
                 var block=new MaterialPropertyBlock();planet.GetComponent<Renderer>().GetPropertyBlock(block);
-                if(Mathf.Abs(block.GetFloat("_Temperature")-surface.Stats.Temperature)>.001f || Mathf.Abs(block.GetFloat("_GeologicalActivity")-surface.Stats.Geology)>.001f)
+                if(Mathf.Abs(block.GetFloat("_Temperature")-surface.Stats.Temperature)>.001f || Mathf.Abs(block.GetFloat("_GeologicalActivity")-surface.Stats.Geology)>.001f || Mathf.Abs(block.GetFloat("_Magma")-surface.Stats.Magma)>.001f)
                     throw new Exception("Shared planet stats did not reach shader: "+sample);
                 if(TemperatureLabel.text!=PlanetTemperatureDisplay.Average(surface.Stats.TemperatureFahrenheit))throw new Exception("Gameplay temperature label disagrees with climate: "+sample);
                 view.Render();var previous=RenderTexture.active;RenderTexture.active=target;
@@ -57,7 +60,7 @@ namespace EcoSphere
                     if(c.r>.45f && c.r>c.g*1.7f && c.g>c.b*1.5f)lava++;
                     if(c.r>.55f && c.g>.55f && c.b>.55f)white++;
                 }
-                if(sample=="water" && blue<10000 || sample=="ice" && white<10000 || sample=="hot-desert" && lava>20 || sample=="rocky-volcano" && lava<100 || sample=="minor-fire" && lava<50)
+                if(sample=="water" && blue<10000 || sample=="ice" && white<10000 || sample=="hot-desert" && lava>20 || sample=="rocky-volcano" && lava<100 || sample=="volcano" && lava<100 || (sample=="minor-fire" || sample=="hot-rock") && lava>20)
                     throw new Exception($"Planet stat rendering {sample}: blue={blue}, lava={lava}, ice={white}");
                 if(sample=="ice-void" && white<50000 || sample=="mixed-cold" && white<20000)
                     throw new Exception($"Minority Ice must create substantial frozen terrain: {sample}, white={white}");
@@ -66,7 +69,7 @@ namespace EcoSphere
                 if(sample=="frozen-volcano")System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.dataPath,"../Logs/planet-stats-frozen-volcano.png"),capture.EncodeToPNG());
                 if(sample=="frozen-volcano" && (lava<100 || white<20000 || surface.Stats.Heat>0))throw new Exception($"Cold world lost lava or snow: lava={lava}, white={white}, heat={surface.Stats.Heat}");
                 System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.dataPath,"../Logs/planet-stats-"+sample+".png"),capture.EncodeToPNG());Destroy(capture);
-                Debug.Log($"ECOSPHERE_PLANET_STATS_PREVIEW {sample}: temp={surface.Stats.Temperature}, geology={surface.Stats.Geology}, blue={blue}, lava={lava}, white={white}");
+                Debug.Log($"ECOSPHERE_PLANET_STATS_PREVIEW {sample}: temp={surface.Stats.Temperature}, geology={surface.Stats.Geology}, magma={surface.Stats.Magma}, blue={blue}, lava={lava}, white={white}");
             }
             var completed=GameServices.Progress.Complete(6,0,surface.TargetSeaLevel,42,null,selectedElementTotals).world;
             var restored=JsonUtility.FromJson<CompletedWorld>(JsonUtility.ToJson(completed));
