@@ -51,13 +51,13 @@ namespace EcoSphere
                 foreach(var world in system.worlds)if(!world.IsProcedural)Expect(!world.naturalSpheres.Exists(n=>n.sphereId==SphereIds.Spirit),"predefined worlds keep their authored placements only");
                 // At the authored chance: never more than one per system, never touching the core, inside the cluster.
                 worlds.naturalOccurrenceChance=authoredChance;bird.naturalWeight=1;
-                var profile=new PlayerProfile{universeSeed=99};int systemsWithOne=0,spirits=0,birds=0;const int Systems=200;
+                var profile=new PlayerProfile{universeSeed=99};int systemsWithOne=0,spirits=0,birds=0,outerRing=0;const int Systems=200;
                 for(int number=1;number<=Systems;number++)
                 {
                     var found=Rolled(Generate(profile,number));
                     Expect(found.Count<=1,"system "+number+" has "+found.Count+" natural spheres");
                     if(found.Count==0)continue;
-                    systemsWithOne++;var cell=found[0].natural.cell;
+                    systemsWithOne++;var cell=found[0].natural.cell;if(NaturalOccurrence.Ring(cell)==found[0].world.rules.clusterRings)outerRing++;
                     Expect(NaturalOccurrence.IsAllowedCell(cell,found[0].world.rules.clusterRings) && NaturalOccurrence.Ring(cell)>=2,"a natural sphere touches the core or leaves the cluster ("+cell+")");
                     if(found[0].natural.sphereId==SphereIds.Spirit)spirits++;else if(found[0].natural.sphereId==SphereIds.Bird)birds++;
                     else Expect(false,"picked a sphere that doesn't occur naturally");
@@ -65,6 +65,7 @@ namespace EcoSphere
                 int procedural=Generate(new PlayerProfile{universeSeed=1234},3).worlds.FindAll(w=>w.IsProcedural).Count;
                 double expected=Systems*(1-Math.Pow(1-authoredChance,procedural));
                 Expect(Math.Abs(systemsWithOne-expected)<expected*.5+5,"systems with a natural sphere: "+systemsWithOne+", expected about "+expected.ToString("0"));
+                Expect(outerRing>0,"natural spheres may sit on the outer ring too");
                 Expect(spirits>0 && birds>0,"the pick must draw from every unowned candidate ("+spirits+" Spirit, "+birds+" Bird)");
                 var owner=new PlayerProfile{universeSeed=99};owner.unlockedSpheres.Add(SphereIds.Spirit);
                 for(int number=1;number<=Systems;number++)foreach(var found in Rolled(Generate(owner,number)))Expect(found.natural.sphereId==SphereIds.Bird,"an owned sphere must not occur naturally");

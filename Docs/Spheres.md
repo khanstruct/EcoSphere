@@ -233,7 +233,7 @@ A system holds at most one naturally occurring sphere. When a system is created,
 
 The roll uses its own random stream from the system seed, so tuning the chance or the weights never changes world names, rules or boards.
 
-A natural sphere never touches the core. `NaturalOccurrence.IsAllowedCell` allows ring 2 out to the cluster edge, because the player never has that sphere as ammo, can't match it, and has to be able to break it away. Rolled spheres also stay off the outer ring when the cluster is big enough, so they have to be dug out. The same rule applies to authored placements: gameplay refuses a placement that breaks it, and `GameplayGeometryChecks` validates the authored worlds against it.
+A natural sphere never touches the core. `NaturalOccurrence.IsAllowedCell` allows ring 2 out to the cluster edge, because the player never has that sphere as ammo, can't match it, and has to be able to break it away. Any other cell, the outer ring included, is allowed: the sphere can never be matched, so it always has to be broken away. The same rule applies to authored placements: gameplay refuses a placement that breaks it, and `GameplayGeometryChecks` validates the authored worlds against it.
 
 A rolled sphere becomes an ordinary `NaturalSpherePlacement` on the world record. From there it takes the same path as Genesis Beta's authored Stone: the board places it, `IsNaturalPlacement` marks it, releasing it in a breakaway counts it as released, and completion records a Natural discovery that Results shows.
 
@@ -243,7 +243,7 @@ A rolled sphere becomes an ordinary `NaturalSpherePlacement` on the world record
 
 The natural-occurrence smoke (`SphereIntroTools.Smoke -naturalSmoke`) checks these cases on throwaway profiles:
 - at chance 1, only the first procedural world gets one;
-- over 200 systems, never more than one per system, never touching the core, and roughly the expected number of systems with one;
+- over 200 systems, never more than one per system, never touching the core, some on the outer ring, and roughly the expected number of systems with one;
 - the pick draws from every unowned candidate and skips owned ones;
 - nothing is placed when every candidate is owned, at chance 0, or in DEV;
 - rolls are deterministic and don't reshuffle the rest of generation.

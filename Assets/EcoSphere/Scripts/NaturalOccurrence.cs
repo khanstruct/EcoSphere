@@ -48,18 +48,16 @@ namespace EcoSphere
             return candidates[candidates.Count - 1];
         }
 
-        // Prefers the interior (off the outer ring, so it has to be dug out); falls back to the outer ring on very small clusters.
+        // Any allowed cell, the outer ring included: it can't be matched, so it always has to be broken away.
         static bool TryPickCell(WorldRecord world, System.Random random, out Vector2Int cell)
         {
             int rings = world.rules.clusterRings;
-            var interior = new List<Vector2Int>(); var outer = new List<Vector2Int>();
+            var pool = new List<Vector2Int>();
             for (int q = -rings; q <= rings; q++) for (int r = -rings; r <= rings; r++)
             {
                 var candidate = new Vector2Int(q, r);
-                if (!IsAllowedCell(candidate, rings) || world.naturalSpheres.Exists(natural => natural.cell == candidate)) continue;
-                (Ring(candidate) < rings ? interior : outer).Add(candidate);
+                if (IsAllowedCell(candidate, rings) && !world.naturalSpheres.Exists(natural => natural.cell == candidate)) pool.Add(candidate);
             }
-            var pool = interior.Count > 0 ? interior : outer;
             cell = pool.Count > 0 ? pool[random.Next(pool.Count)] : default;
             return pool.Count > 0;
         }
