@@ -31,10 +31,13 @@ namespace EcoSphere.Editor
             planetStats.SeedEffects(ElementId.Mountain,(PlanetStat.SurfaceWater,-.7f),(PlanetStat.TerrainRuggedness,1),(PlanetStat.Mineralization,.15f));
             // Lava and Volcano draw the glowing fissures through Magma (Fire is heat only) and warm the world only slightly.
             planetStats.SeedEffects(ElementId.Lava,(PlanetStat.Magma,1),(PlanetStat.Temperature,.3f));
+            // Moon puts moons in orbit: one at a low share, more as it grows (thresholds on PlanetVisualStyle).
+            planetStats.SeedEffects(ElementId.Moon,(PlanetStat.Moons,1));
             // Volcano also shakes the world, adds a few clouds darkened with ash, and builds new land.
             planetStats.SeedEffects(ElementId.Volcano,(PlanetStat.Magma,1),(PlanetStat.GeologicalActivity,1),(PlanetStat.Temperature,.25f),(PlanetStat.CloudCover,.25f),(PlanetStat.CloudDarkness,.5f),(PlanetStat.Pollution,.2f),(PlanetStat.SurfaceWater,-.4f),(PlanetStat.TerrainRuggedness,.8f));
             EditorUtility.SetDirty(planetStats);AssetDatabase.SaveAssets();
             CityLightTools.Configure();
+            PlanetMoonTools.Configure();
             ConfigureCrumble();
             SphereCatalogTools.Validate();
             PlanetStatChecks.Validate();

@@ -192,3 +192,25 @@ The planet color smoke renders a small (150) and a large (1400) amount of Sand o
 - the sand is lighter than the land it covers.
 
 Renders: `Logs/planet-color-sand-beaches.png` and `planet-color-sand-inland.png`.
+
+## Moons
+
+The Moon element raises an appended `Moons` stat (profile: Moons 1; default response, full at 0.45). `PlanetVisualStyle.moonOrbits` lists up to three moons. Each one appears once Moons reaches its threshold:
+
+| Moon | Threshold | Distance | Size | Orbit | Inclination |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 0.1 | 1.55 | 0.22 | 40 s | 14° |
+| 2 | 0.55 | 1.85 | 0.16 | 62 s | −22° |
+| 3 | 0.9 | 2.15 | 0.12 | 90 s | 30° |
+
+Distance is in planet radii, and size is a share of the planet's diameter. In practice, one Moon sphere in a four-sphere world (about 19% Moon) gives one moon, about 30% Moon gives two, and a Moon-heavy world gives three. The stat also builds up with the amount of Moon, so a world with very few points needs a bigger share. The thresholds, orbits and grow-in time (`moonAppearSeconds`) can all be tuned on the style.
+
+`PlanetMoons` builds the moons as lit sphere primitives. The live gameplay planet (`PlanetSurface`) and completed-world previews (`SpherePreview`: Results and System) share it, the same way they share `PlanetClouds`. The moons wear `Art/Planets/planet-moon.mat`, which `PlanetMoonTools.Configure` builds from the surface of whichever sphere represents the Moon element, without the icon. The orbits keep a fixed frame toward the viewer while the globe spins underneath them; `PlanetMoons` runs after `PlanetSurface` so the frame is reset last each frame. Fairly flat inclinations let moons pass in front of and behind the planet. Moons are tidally locked, grow in or shrink away when the count changes, and hold while the game is paused.
+
+Previews show their moons fully grown at once. A preview with moons zooms its camera out just enough to keep the outermost visible orbit in frame; a moonless planet keeps its usual framing.
+
+`PlanetMoonTools.Smoke` with `-planetMoonSmoke` checks:
+- 0, 1, 2 and 3 moons as the stat rises (`Logs/Planet-moons-*.png`);
+- the moons orbit clear of the planet, in a frame that doesn't spin with the globe, and hold while paused;
+- real compositions: one Moon sphere of four gives 1 moon, 30% Moon gives 2, and a Moon world gives 3;
+- previews show all their moons inside a zoomed-out frame, and a moonless preview keeps its framing (`Logs/Planet-moons-preview.png`).

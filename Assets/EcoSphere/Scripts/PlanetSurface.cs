@@ -22,6 +22,8 @@ namespace EcoSphere
         MaterialPropertyBlock properties;
         PlanetAtmosphere atmosphere;
         PlanetClouds clouds;
+        PlanetMoons moons;
+        internal PlanetMoons Moons => moons;
         float[] elevationCdf;
         Vector4 terrainBounds;
         bool compositionDriven;
@@ -36,6 +38,7 @@ namespace EcoSphere
             terrainBounds=TerrainBounds(surface.sharedMaterial);
             atmosphere=PlanetAtmosphere.Create(transform);
             clouds=PlanetClouds.Create(transform);
+            moons=PlanetMoons.Create(transform);
         }
         public static float Coverage(IReadOnlyList<double> elements,float fullInfluence=250,float dominanceBonus=.25f)
             =>PlanetStatCalculator.Influence(elements,ElementId.Water,fullInfluence,dominanceBonus);
@@ -111,6 +114,7 @@ namespace EcoSphere
             shownStats.Apply(properties);surface.SetPropertyBlock(properties);
             if(atmosphere)atmosphere.SetAppearance(shownStats.atmosphereColor,shownStats.AtmosphereDensity,shownStats.atmosphereWidth);
             if(clouds)clouds.SetAppearance(shownStats);
+            if(moons)moons.SetAppearance(shownStats);
         }
     }
 }

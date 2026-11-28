@@ -22,6 +22,8 @@ namespace EcoSphere
         RenderTexture target;
         Material material;
         public Camera PreviewCamera { get; private set; }
+        PlanetMoons moons;
+        internal PlanetMoons Moons => moons;
         public Renderer BodyRenderer { get; private set; }
         public Quaternion SurfaceRotation => globe ? globe.localRotation : Quaternion.identity;
         public void ConfigurePlanet(CompletedWorld world,Material planetMaterial,float spin=2)
@@ -61,6 +63,7 @@ namespace EcoSphere
                 var atmosphere=PlanetAtmosphere.Create(globe);
                 if(atmosphere)atmosphere.SetAppearance(stats.atmosphereColor,stats.AtmosphereDensity,stats.atmosphereWidth);
                 var clouds=PlanetClouds.Create(globe);if(clouds)clouds.SetAppearance(stats);
+                moons=PlanetMoons.Create(globe);if(moons){moons.SetAppearance(stats);moons.Settle();}
             }
             SphereGlow.Create(stage.transform,definition,1.65f,layer);
             var symbol = new GameObject("Sphere icon"); symbol.layer = layer;
@@ -76,6 +79,8 @@ namespace EcoSphere
             target = new RenderTexture(256,256,24,RenderTextureFormat.ARGB32); target.Create();
             PreviewCamera.targetTexture = target;
             PreviewCamera.aspect = 1;
+            // A planet with moons zooms out just enough to keep its outermost visible orbit in frame.
+            if(moons)PreviewCamera.orthographicSize=Mathf.Max(1,moons.Extent*globe.localScale.x*1.04f);
             var image=GetComponent<RawImage>();image.texture = target;
             if(surfaceMaterial)
             {

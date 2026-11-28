@@ -610,7 +610,9 @@ MonoBehaviour:
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
   - element: 59
-    effects: []
+    effects:
+    - stat: 22
+      amount: 1
     colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
@@ -679,6 +681,9 @@ MonoBehaviour:
     contributionForFullEffect: 0.45
     negativeContributionForFullEffect: 0.45
   - stat: 21
+    contributionForFullEffect: 0.45
+    negativeContributionForFullEffect: 0.45
+  - stat: 22
     contributionForFullEffect: 0.45
     negativeContributionForFullEffect: 0.45
   colorResponses:

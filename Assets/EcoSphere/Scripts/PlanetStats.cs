@@ -16,7 +16,9 @@ namespace EcoSphere
         CloudDarkness,
         CityLightIntensity,
         // Molten rock at the surface: draws the glowing orange fissures. Separate from Temperature and GeologicalActivity.
-        Magma }
+        Magma,
+        // How many moons orbit the planet (PlanetVisualStyle.moonOrbits thresholds). Supplied by the Moon element.
+        Moons }
 
     // Colors that elements tint, blended by weighted contribution. Append only: snapshots store this order.
     // Each maps to the planet shader property "_<Trait>Tint" (rgb = blended color, a = amount).
@@ -104,6 +106,7 @@ namespace EcoSphere
         public float VegetationPotential => this[PlanetStat.BiologicalCoverage]*Mathf.Lerp(dryVegetationGrowth,1,this[PlanetStat.Moisture])*(1-IceCoverage)*VegetationTemperatureSuitability;
         // Glowing fissures follow Magma only, never Temperature: cold worlds can have lava and hot deserts have none.
         public float Magma => this[PlanetStat.Magma];
+        public float Moons => this[PlanetStat.Moons];
         public float VolcanicPotential => Magma;
         public float FrozenWater => SurfaceWater*IceCoverage;
         public float LiquidWater => SurfaceWater*(1-IceCoverage);

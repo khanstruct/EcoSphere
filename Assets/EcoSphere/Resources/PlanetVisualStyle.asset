@@ -26,6 +26,30 @@ MonoBehaviour:
   lightningFade: 0.22
   lightningFlickerChance: 0.35
   lightningFlickerDelay: 0.11
+  moonMaterial: {fileID: 2100000, guid: 8c0ba62bf4edda145a9158594a92ca59, type: 2}
+  moonOrbits:
+  - threshold: 0.1
+    distance: 1.55
+    size: 0.22
+    period: 40
+    inclination: 14
+    roll: 6
+    startAngle: 30
+  - threshold: 0.55
+    distance: 1.85
+    size: 0.16
+    period: 62
+    inclination: -22
+    roll: -10
+    startAngle: 160
+  - threshold: 0.9
+    distance: 2.15
+    size: 0.12
+    period: 90
+    inclination: 30
+    roll: 16
+    startAngle: 260
+  moonAppearSeconds: 0.8
   nightLightScale: 0.25
   nightAmbientScale: 0.4
   nightAtmosphereScale: 0.5
