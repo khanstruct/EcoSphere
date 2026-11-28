@@ -25,13 +25,17 @@ namespace EcoSphere
                 sprite.hideFlags=HideFlags.HideAndDontSave; return sprite;
             }
         }
+        // A sphere's own glow (Void, Lava, Obsidian…), shown wherever the sphere is drawn.
         public static Transform Create(Transform parent,SphereDefinition definition,float sphereDiameter,int layer)
+            =>definition ? Create(parent,definition.glowColor,definition.glowStrength,sphereDiameter,layer) : null;
+        // Any halo in the shared style, e.g. a freed sphere's glow (see SphereDefinition.freedGlowColor).
+        public static Transform Create(Transform parent,Color tint,float strength,float sphereDiameter,int layer,string name="Sphere glow")
         {
-            if(!definition || definition.glowStrength<=0)return null;
-            var glow=new GameObject("Sphere glow"); glow.layer=layer;
+            if(strength<=0)return null;
+            var glow=new GameObject(name); glow.layer=layer;
             glow.transform.SetParent(parent,false); glow.transform.localPosition=new Vector3(0,0,.03f);
             var renderer=glow.AddComponent<SpriteRenderer>(); renderer.sprite=Shared; renderer.sortingOrder=2;
-            Color color=definition.glowColor; color.a*=definition.glowStrength; renderer.color=color;
+            Color color=tint; color.a*=strength; renderer.color=color;
             glow.transform.localScale=Vector3.one*sphereDiameter/(.78f*sprite.bounds.size.x);
             return glow.transform;
         }

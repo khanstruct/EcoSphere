@@ -146,8 +146,9 @@ namespace EcoSphere
                 using (Elements.Batch())
                 {
                     RemoveCells(hit, ElementScoring.Breakaway, true);
-                    RemoveCells(board.Disconnected(), ElementScoring.Breakaway, true);
+                    RemoveCells(FallingAfterBreak(), ElementScoring.Breakaway, true);
                 }
+                RefreshFreedGlows();
                 yield return LaserBeam(origin, origin + direction * distance);
             }
         }

@@ -124,6 +124,10 @@ namespace EcoSphere.Editor
             new SphereSeed { id = SphereIds.Tools, label = "Tools", element = ElementId.Tools, color = new Color32(170,175,184,255), category = SphereCategory.Technology, voice = "technosphere",
                 description = "Puts metal to work in the hands of builders, raising settlements as it goes.",
                 contributions = new[] { C(ElementId.Tools,2), C(ElementId.Civilization,1), C(ElementId.Metal,1) } },
+            new SphereSeed { id = SphereIds.Moon, label = "Moon", element = ElementId.Moon, color = new Color32(230,224,138,255), category = SphereCategory.Forces, voice = "stellarsphere",
+                description = "Hangs in place when cut loose from the cluster, glowing softly until it is matched or reconnected.",
+                contributions = new[] { C(ElementId.Gravity,1), C(ElementId.Moon,3) },
+                extra = d => { d.staysWhenFreed = true; d.freedGlowColor = new Color32(170,210,255,255); d.freedGlowStrength = .55f; } },   // pale blue only while freed
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 

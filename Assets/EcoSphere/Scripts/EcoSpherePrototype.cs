@@ -461,13 +461,14 @@ namespace EcoSphere
                 RemoveCells(matches, ElementScoring.MatchRate(matches.Count),matchOrigin:chosen,voicePoints:resolutionSpherePoints);
                 // No match: an eroding sphere disappears first, so what it held joins this shot's breakaway.
                 if (matches.Count == 0) ErodeAfterMiss(board.Cells[chosen]);
-                released = board.Disconnected(); lastRelease = released.Count;
+                released = FallingAfterBreak(); lastRelease = released.Count;
                 RecordResolution(lastMatch, lastRelease, shotRicochets);
                 AdvanceTutorial(released);
                 RemoveCells(released, ElementScoring.Breakaway, true,voicePoints:resolutionSpherePoints);
             }
             if (levelAudio) levelAudio.Resolve(lastMatch, lastRelease);
             if (levelAudio)shotHasElementCallout=levelAudio.AnnounceResolution(resolutionSpherePoints);
+            RefreshFreedGlows();
             complete = board.Cells.Count == 0;
             // Resolve the callout in the impact frame, not after the rotation animation.
             if (levelAudio && !complete && !shotHasElementCallout && lastMatch >= 3 && shotRicochets > 0 &&

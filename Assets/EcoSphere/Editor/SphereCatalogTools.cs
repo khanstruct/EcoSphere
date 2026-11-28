@@ -57,6 +57,7 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Air,ElementId.Fire,SphereIds.Lightning);
             SeedRecipe(catalog,ElementId.Wind,ElementId.Fire,SphereIds.Lightning);
             SeedRecipe(catalog,ElementId.Human,ElementId.Metal,SphereIds.Tools);
+            SeedRecipe(catalog,ElementId.Mountain,ElementId.Void,SphereIds.Moon);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -360,6 +361,14 @@ namespace EcoSphere.Editor
                 tools.ContributionSummary()=="Tools 50% · Civilization 25% · Metal 25%" && tools.unallocatedWeight==0 && tools.resourceVoice && tools.resourceVoice.name=="technosphere",
                 "Tools identity: light gray, Technology, 2 Tools / 1 Civilization / 1 Metal, technosphere");
             Expect(catalog.recipeBook.TryCombine(ElementId.Metal,ElementId.Human,out var toolsFrom) && toolsFrom==tools,"Human + Metal must unlock Tools");
+            var moon=catalog.Get(SphereIds.Moon);
+            Expect(moon.namesakeElement==ElementId.Moon && moon.color==(Color)new Color32(230,224,138,255) && moon.category==SphereCategory.Forces && moon.AmmoEligible && !moon.availableAtStart &&
+                moon.surface && moon.surface.name=="moon-surface-v1" && moon.icon && moon.icon.texture.name=="moon-icon-v1" && moon.glowStrength==0 &&
+                moon.ContributionSummary()=="Moon 75% · Gravity 25%" && moon.unallocatedWeight==0 && moon.resourceVoice && moon.resourceVoice.name=="stellarsphere",
+                "Moon identity: pale yellow, Forces, no glow of its own, 1 Gravity / 3 Moon, stellarsphere");
+            Expect(moon.staysWhenFreed && moon.freedGlowStrength>0 && moon.freedGlowColor.b>moon.freedGlowColor.r,"Moon must stay when freed, with a pale blue freed glow");
+            foreach(var other in catalog.spheres)Expect(other==moon || !other.staysWhenFreed,"only Moon stays when freed for now: "+other.displayName);
+            Expect(catalog.recipeBook.TryCombine(ElementId.Void,ElementId.Mountain,out var moonFrom) && moonFrom==moon,"Mountain + Void must unlock Moon");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",

@@ -52,6 +52,9 @@ MonoBehaviour:
   damagedOverlay: {fileID: 0}
   erodesOnMiss: 0
   erodeSound: {fileID: 0}
+  staysWhenFreed: 0
+  freedGlowColor: {r: 1, g: 1, b: 1, a: 1}
+  freedGlowStrength: 0
   naturalWeight: 0
   lostBurst: 0
   lostBurstColor: {r: 0, g: 0, b: 0, a: 0}

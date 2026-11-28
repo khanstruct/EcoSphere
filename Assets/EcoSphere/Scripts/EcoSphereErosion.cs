@@ -48,11 +48,12 @@ namespace EcoSphere
             resolutionSpherePoints.Clear();
             using (Elements.Batch())
             {
-                var released = board.Disconnected(); lastRelease = released.Count;
+                var released = FallingAfterBreak(); lastRelease = released.Count;
                 RecordResolution(0, lastRelease, 0);
                 RemoveCells(released, ElementScoring.Breakaway, true, voicePoints: resolutionSpherePoints);
             }
             if (levelAudio) { levelAudio.Resolve(0, lastRelease); levelAudio.AnnounceResolution(resolutionSpherePoints); }
+            RefreshFreedGlows();
             complete = board.Cells.Count == 0;
         }
 

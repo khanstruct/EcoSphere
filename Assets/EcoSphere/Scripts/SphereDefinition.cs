@@ -7,7 +7,7 @@ namespace EcoSphere
     // Sphere IDs remain stable so existing boards and discovery saves keep their meaning.
     public static class SphereIds
     {
-        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18, Bird = 19, Metal = 20, Wind = 21, Lava = 22, Mountain = 23, Obsidian = 24, Volcano = 25, Lightning = 26, Tools = 27;
+        public const int Core = -1, Ice = 0, Sunlight = 1, Laser = 2, Stone = 3, Fire = 4, Void = 5, Water = 6, Plant = 7, Life = 8, Mud = 9, Air = 10, Crystal = 11, Civilization = 12, Magic = 13, Technology = 14, Spirit = 15, Forest = 16, Fish = 17, Sand = 18, Bird = 19, Metal = 20, Wind = 21, Lava = 22, Mountain = 23, Obsidian = 24, Volcano = 25, Lightning = 26, Tools = 27, Moon = 28;
     }
 
     // Append new IDs only: existing sphere assets and saves serialize these numeric values.
@@ -19,7 +19,7 @@ namespace EcoSphere
         Plant, Algae, Moss, Fungus, Flower,
         [Obsolete("Retired: unused (Forest covers it). The slot keeps later element IDs stable.")] RetiredTree,
         Bacteria, Insect, Fish, Bird, Reptile,
-        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud, Civilization, Spirit, Forest, Mountain, Volcano, Tools }
+        Mammal, Human, Ocean, Swamp, Energy, Magic, Technology, Sound, City, Mud, Civilization, Spirit, Forest, Mountain, Volcano, Tools, Moon }
     public static class ElementIds
     {
         static readonly HashSet<ElementId> retired = Retired();
@@ -103,6 +103,13 @@ namespace EcoSphere
             "Hazarded spheres (e.g. infested) don't count. Anything it was holding falls away as a normal breakaway.")]
         public bool erodesOnMiss;
         [Tooltip("Played when this sphere erodes.")] public AudioClip erodeSound;
+        [Header("Freed from the cluster")]
+        [Tooltip("When a breakaway cuts this sphere off from the core it keeps its cell instead of falling (no points or elements), " +
+            "unless it is hazarded (e.g. infested). It can still be matched or reconnected by later shots.")]
+        public bool staysWhenFreed;
+        [Tooltip("Glow shown only while this sphere is on the board and cut off from the core; never on ammo or connected spheres.")]
+        public Color freedGlowColor=Color.white;
+        [Range(0,1)] public float freedGlowStrength;
         [Header("Natural occurrence")]
         [Min(0), UnityEngine.Serialization.FormerlySerializedAs("naturalChance"),
          Tooltip("Relative weight of this sphere when a system's natural occurrence picks one of the spheres the player doesn't own yet " +

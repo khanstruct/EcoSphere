@@ -15,33 +15,13 @@ namespace EcoSphere
         {
             void Expect(bool value,string message){if(!value)throw new Exception("Erosion: "+message);}
             var sand=Definition(SphereIds.Sand);
-            var mouse=Mouse.current ?? InputSystem.AddDevice<Mouse>();
-            InputSystem.settings.backgroundBehavior=InputSettings.BackgroundBehavior.IgnoreFocus;
-            InputSystem.settings.editorInputBehaviorInPlayMode=InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
             var played=new List<AudioClip>();levelAudio.EffectPlayed+=played.Add;
-            void Board(params (int x,int y,int type,bool infested)[] cells)
-            {
-                foreach(var model in visuals.Values)Destroy(model);visuals.Clear();board.Cells.Clear();
-                foreach(var alien in aliens.Values)Destroy(alien);aliens.Clear();board.Infested.Clear();
-                foreach(var c in cells)
-                {
-                    var cell=new Vector2Int(c.x,c.y);board.Cells.Add(cell,c.type);visuals.Add(cell,MakeSphere("Erosion test "+cell,c.type,cluster,BoardRules.Position(cell)));
-                    if(c.infested)board.Infested.Add(cell);   // a hazard only; no alien art needed for the rule
-                }
-            }
+            void Board(params (int x,int y,int type,bool infested)[] cells)=>SetTestBoard("Erosion test",cells);
             IEnumerator Shoot(int type,Vector2Int aimCell)
             {
                 while(!ready || projectile || armBusy)yield return null;
-                rotationDegrees=0;
-                if(loaded)Destroy(loaded);loadedType=type;loaded=MakeSphere("Loaded "+Definition(type).displayName,type,gun,LoadedLocal);
-                yield return null;
-                Vector2 point=view.WorldToScreenPoint(visuals[aimCell].transform.position);
                 played.Clear();
-                InputSystem.QueueStateEvent(mouse,new MouseState{position=point});yield return null;yield return null;
-                InputSystem.QueueStateEvent(mouse,new MouseState{position=point,buttons=1});yield return null;yield return null;
-                InputSystem.QueueStateEvent(mouse,new MouseState{position=point});yield return null;
-                Expect(!ready,"real click did not fire");
-                while(projectile)yield return null;
+                yield return RealShot(type,aimCell);
             }
             while(!ready || projectile || armBusy)yield return null;
 

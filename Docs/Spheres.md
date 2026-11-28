@@ -37,6 +37,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Volcano | 25 | Volcano: 1, Mountain: 1, Lava: 2 | Element; amber-orange #F59628, Basic category, lithosphere voice, orange glow, DEV available, Mountain + Lava recipe |
 | Lightning | 26 | Lightning: 2, Air: 1, Null: 1 | Element; blue-white #B0C8FF, Weather category, atmosphere voice, blue glow, DEV available, Air + Fire or Wind + Fire recipes |
 | Tools | 27 | Tools: 2, Civilization: 1, Metal: 1 | Element; light gray #AAAFB8, Technology category, technosphere voice, DEV available, Human + Metal recipe |
+| Moon | 28 | Moon: 3, Gravity: 1 | Element; pale yellow #E6E08A, Forces category, stellarsphere voice, stays when freed with a pale blue freed glow, DEV available, Mountain + Void recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -285,6 +286,27 @@ Its world shows lightning flashes inside the clouds (see Planet-stats.md, clouds
 Tools (ID 27) adds the appended `ElementId.Tools` and uses `tools-{surface,icon}-v1.png` (a leather-brown surface with a crossed hammer and wrench), the technosphere voice and the Technology category. It contributes 2 Tools, 1 Civilization and 1 Metal, with no Null. Human + Metal unlocks it. Human has no sphere yet, so outside DEV, Tools stays locked until Human exists.
 
 Its color is light gray #AAAFB8, darker than Stone's pale gray #D0D3D8 so their bars stay apart. Because it contributes Metal, magnets won't repel Tools shots once Magnet exists. Its Civilization unit isn't capped by Human, unlike the Civilization sphere's. Its Civilization and Metal units use their existing planet profiles, and the Tools element's own profile is empty for now. `SphereIntroSmoke 27` covers it.
+## Moon sphere and freed spheres
+
+Moon (ID 28) adds the appended `ElementId.Moon`. It uses `moon-{surface,icon}-v1.png` (a cratered gray surface with a gold crescent), the stellarsphere voice and the Forces category. Its color is pale yellow #E6E08A, more lemon than Sand's peachy #FADE9B. It contributes 3 Moon and 1 Gravity, with no Null. Mountain + Void unlocks it. Gravity has no sphere yet, so its bar borrows the color of the sphere contributing the most Gravity (Moon, for now) until the Gravity sphere exists.
+
+**Stays when freed.** `SphereDefinition.staysWhenFreed` is general sphere data; only Moon sets it for now. Every breakaway asks the shared `FallingAfterBreak` instead of `BoardRules.Disconnected`: normal shots, lost shots (erosion) and the laser. It drops from the falling set any cut-off sphere that stays when freed, unless it is hazarded (currently: infested).
+
+- **What happens to it:** that sphere keeps its cell, earns nothing and doesn't count as released.
+- **What it held:** anything that hung only from it still falls and scores as a normal breakaway.
+- **Hazarded:** a hazarded Moon falls like any other sphere.
+- **Clearing it:** a freed Moon can still be matched, the laser can still remove it, and a later shot can reconnect it. The level still completes only once the board is empty, so freed Moons have to be matched.
+
+**Freed glow.** `freedGlowColor` and `freedGlowStrength` (Moon: pale blue #AAD2FF at 0.55) draw a halo only while a board sphere is freed. `RefreshFreedGlows` runs after every resolution and adds or removes each board sphere's "Freed glow" to match `FreedCells()`. Ammo, chambers, previews and connected Moons never get it, because the glow belongs to the board rule and not to the sphere's look. `SphereGlow.Create` gained a general overload (any tint and strength) that both the definition glow and the freed glow use.
+
+`FreedSphereSmoke` (`SphereIntroTools.Smoke -freedSphereSmoke`) fires a real pointer shot. A Fire match cuts a Moon off from the core, and the smoke checks that:
+- that Moon stays, with the pale blue freed glow;
+- the Stone it held and an infested Moon fall, two released, and the shot scores;
+- a Moon touching the core doesn't glow;
+- Moon ammo and the cannon don't glow;
+- linking the Moon back to the core removes its glow.
+
+Close-up: `Logs/burst-freed-moon.png`. `SphereIntroSmoke 28` covers the sphere's data. The board builder and real-click shot that the erosion and freed-sphere smokes share now live in `EcoSphereTestShots.cs` (`SetTestBoard`, `RealShot`).
 ## Natural occurrence
 
 A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit and Metal each have weight 1. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.
