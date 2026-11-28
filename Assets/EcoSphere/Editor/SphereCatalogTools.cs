@@ -54,6 +54,8 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Stone,ElementId.Stone,SphereIds.Mountain);
             SeedRecipe(catalog,ElementId.Lava,ElementId.Water,SphereIds.Obsidian);
             SeedRecipe(catalog,ElementId.Mountain,ElementId.Lava,SphereIds.Volcano);
+            SeedRecipe(catalog,ElementId.Air,ElementId.Fire,SphereIds.Lightning);
+            SeedRecipe(catalog,ElementId.Wind,ElementId.Fire,SphereIds.Lightning);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -343,6 +345,14 @@ namespace EcoSphere.Editor
             Expect(catalog.recipeBook.TryCombine(ElementId.Lava,ElementId.Mountain,out var volcanoFrom) && volcanoFrom==volcano,"Mountain + Lava must unlock Volcano");
             var volcanoProfile=PlanetStatCatalog.Current.elements.Find(x=>x.element==ElementId.Volcano);
             Expect(volcanoProfile!=null && volcanoProfile.effects.Exists(e=>e.stat==PlanetStat.Magma && e.amount>0) && volcanoProfile.effects.Exists(e=>e.stat==PlanetStat.CloudCover && e.amount>0),"Volcano must draw magma fissures and add clouds");
+            var lightning=catalog.Get(SphereIds.Lightning);
+            Expect(lightning.namesakeElement==ElementId.Lightning && lightning.color==(Color)new Color32(176,200,255,255) && lightning.category==SphereCategory.Weather && lightning.AmmoEligible && !lightning.availableAtStart &&
+                lightning.surface && lightning.surface.name=="lightning-surface-v1" && lightning.icon && lightning.icon.texture.name=="lightning-icon-v1" && lightning.glowStrength>0 &&
+                lightning.ContributionSummary()=="Lightning 50% · Air 25%" && lightning.unallocatedWeight==1 && lightning.resourceVoice && lightning.resourceVoice.name=="atmosphere",
+                "Lightning identity: blue-white, Weather, 2 Lightning / 1 Air / 1 Null, atmosphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Fire,ElementId.Air,out var lightningFromAir) && lightningFromAir==lightning &&
+                catalog.recipeBook.TryCombine(ElementId.Fire,ElementId.Wind,out var lightningFromWind) && lightningFromWind==lightning,"Air + Fire and Wind + Fire must unlock Lightning");
+            Expect(catalog.ElementAppearance(ElementId.Lightning)==lightning && !catalog.elementColors.Exists(entry=>entry.element==ElementId.Lightning),"Lightning's sphere must supply its element color");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",

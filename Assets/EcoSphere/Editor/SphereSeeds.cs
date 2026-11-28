@@ -117,6 +117,10 @@ namespace EcoSphere.Editor
                 description = "Erupts with fire and ash, shaking the world and building new land from molten rock.",
                 contributions = new[] { C(ElementId.Volcano,1), C(ElementId.Mountain,1), C(ElementId.Lava,2) },
                 extra = d => { d.glowColor = new Color32(255,110,30,255); d.glowStrength = .25f; } },   // its lava cracks glow
+            new SphereSeed { id = SphereIds.Lightning, label = "Lightning", element = ElementId.Lightning, color = new Color32(176,200,255,255), category = SphereCategory.Weather, voice = "atmosphere",
+                description = "Charges the skies with electricity, splitting storm clouds with flashes of light.",
+                contributions = new[] { C(ElementId.Lightning,2), C(ElementId.Air,1) }, unallocated = 1,
+                extra = d => { d.glowColor = new Color32(140,180,255,255); d.glowStrength = .3f; } },   // crackling blue-white
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 

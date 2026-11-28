@@ -7,8 +7,8 @@ Shader "EcoSphere/Planet Clouds"
         _Density("Density",Range(0,1))=0
         _Darkness("Darkness",Range(0,1))=0
         _Drift("Independent drift",Float)=0
-        _LightningCenter("Future flash direction and radius",Vector)=(0,1,0,.15)
-        _LightningStrength("Future localized flash",Range(0,4))=0
+        _LightningCenter("Flash direction (object space) and radius",Vector)=(0,1,0,.15)
+        _LightningStrength("Flash brightness (driven by PlanetClouds)",Range(0,4))=0
     }
     SubShader
     {
@@ -51,8 +51,13 @@ Shader "EcoSphere/Planet Clouds"
                 // _PlanetNightAmbientDim (global, 0 by default) dims the fixed ambient term in the day/night view.
                 color*=(float3(.23,.25,.3)*(1-_PlanetNightAmbientDim)+light.color*diffuse*.77)*lerp(.8,1,mask);
                 float distanceFromFlash=1-dot(normalize(i.normalOS),normalize(_LightningCenter.xyz));
-                float flash=exp(-distanceFromFlash/max(.001,_LightningCenter.w))*_LightningStrength;
-                color+=float3(.72,.82,1)*flash*cloud;
+                // A soft glow with a sharper hot core, only inside cloud. Blending toward bright blue-white (rather than
+                // adding) keeps the flash readable on sunlit clouds that are already near white.
+                float radius=max(.001,_LightningCenter.w);
+                float flash=(exp(-distanceFromFlash/radius)*.6+exp(-distanceFromFlash/(radius*.25)))*_LightningStrength;
+                float lit=saturate(flash*.5)*cloud;
+                color=lerp(color,float3(.75,.86,1)*1.8,lit);
+                alpha=max(alpha,lit);
                 return half4(color,alpha);
             }
             ENDHLSL

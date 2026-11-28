@@ -35,6 +35,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Mountain | 23 | Mountain: 1, Stone: 2, Null: 1 | Element; pale purple #A893D6, Basic category, lithosphere voice, Stone's surface tinted pale purple, DEV available, Stone + Stone recipe |
 | Obsidian | 24 | Stone: 2, Void: 2 | Element; near-black #231C2E, Basic category, lithosphere voice, purple glow, no namesake element, DEV available, Lava + Water recipe |
 | Volcano | 25 | Volcano: 1, Mountain: 1, Lava: 2 | Element; amber-orange #F59628, Basic category, lithosphere voice, orange glow, DEV available, Mountain + Lava recipe |
+| Lightning | 26 | Lightning: 2, Air: 1, Null: 1 | Element; blue-white #B0C8FF, Weather category, atmosphere voice, blue glow, DEV available, Air + Fire or Wind + Fire recipes |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -271,6 +272,13 @@ Volcano (ID 25) adds the appended `ElementId.Volcano` and uses `volcano-{surface
 Fire (#FF5618), Lava (#CC2A14) and Fish (#F76B0D) already cover red through orange, so Volcano's color is amber-orange #F59628, between Fish and Sunlight, to keep its bars distinct. A mild orange glow (strength 0.25) brings out its lava cracks.
 
 Its planet profile, seeded with `SeedEffects`: Magma 1 (the glowing fissures), GeologicalActivity 1, Temperature 0.25 (slight), CloudCover 0.25 and CloudDarkness 0.5 (a few ash-darkened clouds), Pollution 0.2, SurfaceWater -0.4 (new land) and TerrainRuggedness 0.8. Its Mountain and Lava units add their own profiles on top, so a Volcano world is hot, active and high. `SphereIntroSmoke 25` covers it.
+## Lightning sphere
+
+Lightning (ID 26, the existing `ElementId.Lightning`) uses `lightning-{surface,icon}-v1.png`, the atmosphere voice and the Weather category. Its color is blue-white #B0C8FF, bluer than Void's and Wind's near-whites and paler than Bird's sky blue. It has a mild blue glow (strength 0.3). It contributes 2 Lightning, 1 Air and 1 Null. Air + Fire or Wind + Fire unlocks it.
+
+Its element's planet profile was already in place: ElectricalActivity 1 and WeatherActivity 0.5. `PlanetStats.CloudLightning` (cloud cover × weather activity × electrical activity) measures lightning inside actual storm clouds. The Air unit supplies cloud cover, so a Lightning world has the clouds the lightning lives in. `SphereIntroSmoke 26` covers it.
+
+Its world shows lightning flashes inside the clouds (see Planet-stats.md, clouds).
 ## Natural occurrence
 
 A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit and Metal each have weight 1. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.
