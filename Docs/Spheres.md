@@ -36,6 +36,7 @@ Each definition has a stable integer ID, explicit namesake element, category, di
 | Obsidian | 24 | Stone: 2, Void: 2 | Element; near-black #231C2E, Basic category, lithosphere voice, purple glow, no namesake element, DEV available, Lava + Water recipe |
 | Volcano | 25 | Volcano: 1, Mountain: 1, Lava: 2 | Element; amber-orange #F59628, Basic category, lithosphere voice, orange glow, DEV available, Mountain + Lava recipe |
 | Lightning | 26 | Lightning: 2, Air: 1, Null: 1 | Element; blue-white #B0C8FF, Weather category, atmosphere voice, blue glow, DEV available, Air + Fire or Wind + Fire recipes |
+| Tools | 27 | Tools: 2, Civilization: 1, Metal: 1 | Element; light gray #AAAFB8, Technology category, technosphere voice, DEV available, Human + Metal recipe |
 
 Fire and Void contribute only their namesake elements. Ice contributes Water plus Ice; Sunlight contributes Fire plus Sunlight. All six playable elemental spheres now use four total units including Null. Water now has its own registered sphere definition and matching surface/icon. Its assigned blue is #1464E1, darker than Ice, and its voice is hydrosphere. Laser now contributes its own resource when consumed, while retaining zero total score for the consumed powerup. Core has the same attribute schema but its structural role prevents collection. Its existing halo serves as its artwork icon, while the board keeps its special halo presentation.
 
@@ -279,6 +280,11 @@ Lightning (ID 26, the existing `ElementId.Lightning`) uses `lightning-{surface,i
 Its element's planet profile was already in place: ElectricalActivity 1 and WeatherActivity 0.5. `PlanetStats.CloudLightning` (cloud cover × weather activity × electrical activity) measures lightning inside actual storm clouds. The Air unit supplies cloud cover, so a Lightning world has the clouds the lightning lives in. `SphereIntroSmoke 26` covers it.
 
 Its world shows lightning flashes inside the clouds (see Planet-stats.md, clouds).
+## Tools sphere
+
+Tools (ID 27) adds the appended `ElementId.Tools` and uses `tools-{surface,icon}-v1.png` (a leather-brown surface with a crossed hammer and wrench), the technosphere voice and the Technology category. It contributes 2 Tools, 1 Civilization and 1 Metal, with no Null. Human + Metal unlocks it. Human has no sphere yet, so outside DEV, Tools stays locked until Human exists.
+
+Its color is light gray #AAAFB8, darker than Stone's pale gray #D0D3D8 so their bars stay apart. Because it contributes Metal, magnets won't repel Tools shots once Magnet exists. Its Civilization unit isn't capped by Human, unlike the Civilization sphere's. Its Civilization and Metal units use their existing planet profiles, and the Tools element's own profile is empty for now. `SphereIntroSmoke 27` covers it.
 ## Natural occurrence
 
 A system holds at most one naturally occurring sphere. When a system is created, `NaturalOccurrence.Roll` goes through its procedural worlds in slot order and gives each one `WorldCatalog.naturalOccurrenceChance` (10%) to hold one. The first world that rolls it gets one, and the rest of that system is not checked. That world then gets one sphere the player doesn't own yet, picked from the spheres with a `SphereDefinition.naturalWeight` above 0. The weight is relative, so a sphere with weight 2 is picked twice as often as one with weight 1. Spirit and Metal each have weight 1. If the player owns every candidate, nothing is placed. Predefined worlds keep only their authored placements.

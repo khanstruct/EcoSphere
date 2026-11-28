@@ -604,6 +604,11 @@ MonoBehaviour:
     colors: []
     atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
     atmosphereStrength: 0
+  - element: 58
+    effects: []
+    colors: []
+    atmosphereColor: {r: 1, g: 1, b: 1, a: 1}
+    atmosphereStrength: 0
   responses:
   - stat: 0
     contributionForFullEffect: 1

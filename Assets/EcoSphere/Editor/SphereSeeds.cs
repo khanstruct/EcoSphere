@@ -121,6 +121,9 @@ namespace EcoSphere.Editor
                 description = "Charges the skies with electricity, splitting storm clouds with flashes of light.",
                 contributions = new[] { C(ElementId.Lightning,2), C(ElementId.Air,1) }, unallocated = 1,
                 extra = d => { d.glowColor = new Color32(140,180,255,255); d.glowStrength = .3f; } },   // crackling blue-white
+            new SphereSeed { id = SphereIds.Tools, label = "Tools", element = ElementId.Tools, color = new Color32(170,175,184,255), category = SphereCategory.Technology, voice = "technosphere",
+                description = "Puts metal to work in the hands of builders, raising settlements as it goes.",
+                contributions = new[] { C(ElementId.Tools,2), C(ElementId.Civilization,1), C(ElementId.Metal,1) } },
             new SphereSeed { id = SphereIds.Core, label = "Core", element = ElementId.Core, color = new Color32(163,64,255,255), role = SphereRole.Core, extra = d => d.unlit = true },
         };
 

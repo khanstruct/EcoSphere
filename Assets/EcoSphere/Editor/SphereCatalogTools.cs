@@ -56,6 +56,7 @@ namespace EcoSphere.Editor
             SeedRecipe(catalog,ElementId.Mountain,ElementId.Lava,SphereIds.Volcano);
             SeedRecipe(catalog,ElementId.Air,ElementId.Fire,SphereIds.Lightning);
             SeedRecipe(catalog,ElementId.Wind,ElementId.Fire,SphereIds.Lightning);
+            SeedRecipe(catalog,ElementId.Human,ElementId.Metal,SphereIds.Tools);
             SeedRecipe(catalog,ElementId.Plant,ElementId.Plant,SphereIds.Forest);
             SeedRecipe(catalog,ElementId.Life,ElementId.Water,SphereIds.Fish);
             RetireRecipe(catalog,ElementId.Stone,ElementId.Sunlight);   // Sand moved to Wind + Stone
@@ -353,6 +354,12 @@ namespace EcoSphere.Editor
             Expect(catalog.recipeBook.TryCombine(ElementId.Fire,ElementId.Air,out var lightningFromAir) && lightningFromAir==lightning &&
                 catalog.recipeBook.TryCombine(ElementId.Fire,ElementId.Wind,out var lightningFromWind) && lightningFromWind==lightning,"Air + Fire and Wind + Fire must unlock Lightning");
             Expect(catalog.ElementAppearance(ElementId.Lightning)==lightning && !catalog.elementColors.Exists(entry=>entry.element==ElementId.Lightning),"Lightning's sphere must supply its element color");
+            var tools=catalog.Get(SphereIds.Tools);
+            Expect(tools.namesakeElement==ElementId.Tools && tools.color==(Color)new Color32(170,175,184,255) && tools.category==SphereCategory.Technology && tools.AmmoEligible && !tools.availableAtStart &&
+                tools.surface && tools.surface.name=="tools-surface-v1" && tools.icon && tools.icon.texture.name=="tools-icon-v1" &&
+                tools.ContributionSummary()=="Tools 50% · Civilization 25% · Metal 25%" && tools.unallocatedWeight==0 && tools.resourceVoice && tools.resourceVoice.name=="technosphere",
+                "Tools identity: light gray, Technology, 2 Tools / 1 Civilization / 1 Metal, technosphere");
+            Expect(catalog.recipeBook.TryCombine(ElementId.Metal,ElementId.Human,out var toolsFrom) && toolsFrom==tools,"Human + Metal must unlock Tools");
             var forest=catalog.Get(SphereIds.Forest);
             Expect(forest.namesakeElement==ElementId.Forest && forest.color==(Color)new Color32(31,107,42,255) && forest.category==SphereCategory.Life && forest.AmmoEligible && !forest.availableAtStart &&
                 forest.ContributionSummary()=="Forest 50% · Plant 25% · Water 25%" && forest.unallocatedWeight==0 && forest.resourceVoice && forest.resourceVoice.name=="florasphere",
